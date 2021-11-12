@@ -1,0 +1,87 @@
+<svg viewBox="0 0 22 25"
+     version="1.1"
+     xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink">
+    <defs>
+        <symbol id="pixel">
+            <path d="M0,0 l1,0 l0,1 l-1,0 l0,-1 Z" />
+        </symbol>
+        <symbol id="left">
+            <g id="leg">
+                <path d="
+                    M0,25 l5,0 l0,-16 l-3,0 l0,1 l2,0 l0,14 l-3,0 l0,-2 l-1,0
+                        l0,3 Z
+                    M1,10 l1,0 l0,2 l2,0 l0,1 l-1,0 l0,6 l1,0 l0,1 l-2,0 l0,-7
+                        l-1,0 l0,-3 Z
+                    M1,20 l1,0 l0,2 l-1,0 l0,-2 Z
+                " fill="black" />
+                <path d="M3,20 l1,0 l0,2 l-1,0 l0,-2 Z" fill="darkgray" />
+                <path d="
+                    M2,10 l2,0 l0,2 l-2,0 l0,-2 Z
+                    M3,13 l1,0 l0,6 l-1,0 l0,-6 Z
+                    M1,22 l1,0 l0,-2 l1,0 l0,2 l1,0 l0,2 l-3,0 l0,-2 Z
+                " fill="white" />
+            </g>
+            <g id="torso">
+                <path d="
+                    M5,21 l6,0 l0,1 l-2,0 l0,1 l-1,0 l0,-1 l-3,0 l0,01 Z
+                    M7,23 l1,0 l0,1 l3,0 l0,1 l-4,0 l0,-2 Z
+                " fill="black" />
+                <use xlink:href="#pixel" x="8" y="23" fill="white" />
+                <use xlink:href="#pixel" x="9" y="22" fill="white" />
+                <use xlink:href="#pixel" x="10" y="22" fill="darkgray" />
+                <use xlink:href="#pixel" x="9" y="23" fill="darkgray" />
+                <use xlink:href="#pixel" x="10" y="23" fill="white" />
+                <path d="M5,9 l6,0 l0,12 l-6,0 l0,-12" fill="white" />
+                <path d="
+                    M5,10 l3,0 l0,11 l-1,0 l0,-3 l-2,0 l0,-1 l2,0 l0,-6 l-2,0
+                    l0,-1
+                " fill="darkgray" />
+                <path d="
+                    M9,10 l2,0 l0,1 l-2,0 l0,-1 Z
+                    M9,12 l2,0 l0,1 l-2,0 l0,-1 Z
+                    M9,14 l1,0 l0,2 l-1,0 l0,-2 Z
+                    M9,17 l2,0 l0,1 l-1,0 l0,2 l1,0 l0,1 l-2,0 l0,04
+                " fill="#0350ff" />
+            </g>
+            <g id="head">
+                <path d="
+                    M11,1 l0,7 l-6,0 l0,-5 l3,0 l0,-2 l3,0 Z
+                " fill="darkgray" />
+                <path d="
+                    M11,0 l0,1 l-2,0 l0,1 l-2,0 l0,1 l-1,0 l0,2 l-1,0 l0,3 l6,0
+                    l0,1 l-7,0 l0,-4 l1,0 l0,-2 l1,0 l0,-1 l1,0 l0,-1 l2,0 l0,-1
+                    l2,0 Z
+                " fill="black" />
+                <path d="
+                    M10,1 l1,0 l0,1 l-1,0 l0,2 l1,0 l0,1 l-2,0 l0,-3 l1,0 l0,-1
+                    M6,3 l1,0 l0,-1 l1,0 l0,1 l-1,0 l0,1 l-1,0 l0,-1 Z
+                " fill="#0350ff" />
+            </g>
+        </symbol>
+    </defs>
+    <use xlink:href="#left" x="0" y="0" />
+    <g transform="translate(22 0) scale(-1 1)">
+        <use xlink:href="#left" x="0" y="0" />
+    </g>
+    <g id="eye">
+        <path d="M10,2 l1,0 l0,1 l1,0 l0,1 l-2,0 Z" fill="black" />
+        <use xlink:href="#pixel" x="11" y="2" fill="white" />
+    </g>
+    <g id="face">
+        <use xlink:href="#pixel" x="9" y="7" fill="red" />
+        <path d="
+            M6,6 l1,0 l0,2 l-1,0 Z
+            M8,6 l3,0 l0,2 l-1,0 l0,-1 l-1,0 l0,1 l-1,0 Z
+            M12,6 l1,0 l0,2 l-1,0 Z
+            M14,5 l2,0 l0,1 l-2,0 Z
+            M14,7 l2,0 l0,1 l-2,0 Z
+        " fill="#0350ff" />
+    </g>
+    <g id="socket">
+        <use xlink:href="#pixel" x="10" y="18" fill="black" />
+        <use xlink:href="#pixel" x="10" y="19" fill="darkgray" />
+        <use xlink:href="#pixel" x="11" y="19" fill="black" />
+        <use xlink:href="#pixel" x="11" y="18" fill="darkgray" />
+    </g>
+</svg>
