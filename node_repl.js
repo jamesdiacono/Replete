@@ -15,8 +15,8 @@ import replize_script from "./replize_script.js";
 import import_module from "./import_module.js";
 import scriptify_module from "./scriptify_module.js";
 
-//debug import assert from "./assert.js";
-//debug import jscheck from "./jscheck.js";
+//debug import assert from "@pkg/js/assert.js";
+//debug import jscheck from "@pkg/js/jscheck.js";
 //debug const specify = jscheck();
 
 function node_repl_constructor(capabilities) {

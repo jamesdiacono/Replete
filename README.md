@@ -11,25 +11,46 @@ This encourages the development of modules in isolation, rather than in the cont
 
 Replete is in the public domain.
 
+Watch the demonstration: https://youtu.be/ZXXcn7jLNdk?t=1387.
+
+## The files
+- _replete.js_: A Node.js program. It is a minimal Replete REPL. Read this file.
+
+- _browser_repl.js_: A Node.js module exporting the constructor for a browser REPL. It evaluates messages in a browser environment.
+
+- _node_repl.js_: A Node.js module exporting the constructor for a Node.js REPL. It evaluates messages in a Node.js environment.
+
+- _import_module.js_: A Node.js module exporting a function which imports a module dynamically, according to its capabilities.
+
+- _scriptify_module.js_: A module exporting a function which deconstructs the source code of a JavaScript module into a script, its imports and its exports.
+
+- _replize_script.js_: In a REPL, source code is evaluated over and over again in the same execution context. However, some JavaScript statements throw an exception when evaluated multiple times. For example, two `let` declarations using the same name can not be evaluated twice in the same context. The exported `replize_script` function transforms the offending statements within a script, making it safe for reevaluation.
+
+- _alter_string.js_: A module exporting a string manipulation function, used for code transformations.
+
+- _webl/_: A directory containing source code for the WEBL, which is used by the browser REPL. The WEBL is a standalone tool for evaluating source code in the browser. See webl/README.md for more information.
+
+- _package.json_: The package manifest. It specifies the Acorn dependency, and forces Node to interpret Replete's JavaScript files as modules.
+
 ## The message
-__Messages__ are JSON-encoded objects sent to Replete, from a text editor or similar. A message contains the following properties:
+__Messages__ are sent to Replete, from a text editor or similar. A message is an object containing the following properties:
 
 - `source`: The JavaScript source code to be evaluated. The source may contain `import` and `export` statements, but does not have to.
 - `locator`: The locator of the module which contains `source`. This property is required only when the source contains `import` statements.
 
-A message may also contain other properties, but Replete ignores these.
+A message may also contain other properties, which are ignored by Replete.
 
 ## The capabilities
-Replete requires that the user provide several __capability__ functions. These offer a rich opportunity to customise the behaviour of Replete. The `capabilities` parameter passed to several of Replete's functions should be an object containing the following properties:
+You must supply Replete with several __capability__ functions. These offer an opportunity to customise the behaviour of Replete. The `capabilities` parameter passed to several of Replete's functions should be an object containing the following properties:
 
 ### capabilities.locate(_specifier_, _parent_locator_)
 The __locate__ capability is responsible for resolving module specifiers. It is passed a _specifier_ string, which specifies which module is to be located. Usually, it is also passed a _parent_locator_ parameter, which is the locator of the module which contains the specifier. It returns a Promise which resolves to the locator.
 
 A __specifier__ is the string portion of a module's `import` statement, for example "../my_module.js".
 
-A __locator__ is a string containing sufficient information to physically locate a file on disk. If the file is to be accessible from the browser, it must begin with a "/", but otherwise its structure is completely up to you.
+A __locator__ is a string containing sufficient information to locate a file on disk. If the file is to be accessible from the browser, it must begin with a "/", but otherwise its structure is completely up to you.
 
-Because the example REPL (replete.js) uses absolute paths for locators, we would expect it's `locate` capability to behave like so for a relative specifier:
+Because the minimal REPL (replete.js) uses absolute paths for locators, we would expect it's `locate` capability to behave like so for a relative specifier:
 
     capabilities.locate("../chocolate.js", "/food/fruit/orange.js")
     -> "/food/chocolate.js"
@@ -61,30 +82,10 @@ The __mime__ capability is used by the browser REPL. It takes a _locator_ and re
 
 For example, given a _locator_ ending with ".js", `mime` might return "text/javascript".
 
-## The files
-This section contains an overview of Replete's files. Refer to the files themselves for more detailed documentation.
-
-- _replete.js_: A Node.js program that is a minimal Replete REPL. Reading thru the source will illuminate how Replete's components fit together at a high level.
-
-- _browser_repl.js_: A Node.js module exporting the constructor for a browser REPL. It evaluates messages in a browser environment.
-
-- _node_repl.js_: A Node.js module exporting the constructor for a Node.js REPL. It evaluates messages in a Node.js environment.
-
-- _import_module.js_: A Node.js module exporting a function which, using its capabilities, imports a module dynamically.
-
-- _scriptify_module.js_: A module exporting a function which deconstructs the source code of a JavaScript module into a script, its imports and its exports.
-
-- _replize_script.js_: In a REPL, source code is evaluated over and over again in the same execution context. However, some JavaScript statements throw an exception when evaluated multiple times. For example, two `let` declarations using the same name can not be evaluated twice in the same context. The `replize_script` function transforms any offending statements within a script, making it safe for reevaluation.
-
-- _webl/_: A directory containing source code for the WEBL. The WEBL is a standalone tool used internally to evaluate source code in the browser. See webl/README.md for more information.
-
 ## Dependencies
-The replize_script.js and scriptify_module.js modules depend on JSLint (https://github.com/jamesdiacono/JSLint). Place the jslint.js file in the same directory as this README.
-
-Replete currently supports only the subset of JavaScript which is parseable by JSLint (i.e. the Good Parts). If evaluation of Bad Parts is desired, then the `replize_script.js` and `scriptify_module.js` modules must be rewritten to use a different parser.
+The _scriptify_module.js_ and _replize_script.js_ modules depend on the Acorn JavaScript parser (https://github.com/acornjs/acorn).
 
 ## Links
-- A demonstration of Replete https://youtu.be/ZXXcn7jLNdk?t=1387
 - REPL-driven development in Clojure (Stuart Halloway, 2017) https://vimeo.com/223309989
 - Whats makes a REPL (Eric Normand, 2019) https://lispcast.com/what-makes-a-repl/
 

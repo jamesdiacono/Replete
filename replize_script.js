@@ -1,10 +1,9 @@
-/*jslint eval */
-
-import jslint from "./jslint.js";
+import {parse} from "acorn";
+import alter_string from "./alter_string.js";
 
 //debug import vm from "vm";
-//debug import valid from "./jsvalid.js";
-//debug import jscheck from "./jscheck.js";
+//debug import valid from "@pkg/js/jsvalid.js";
+//debug import jscheck from "@pkg/js/jscheck.js";
 //debug const specify = jscheck();
 
 function make_identifiers_object_literal(top_names, imports) {
@@ -110,141 +109,120 @@ function replize_script(script, imports) {
 // The resulting script expects a $imports variable to be available, which
 // should be an array containing the imported module objects.
 
-    const {tokens, tree, stop, warnings} = jslint(script);
-    if (stop) {
-        throw new Error(JSON.stringify(warnings, undefined, "    "));
-    }
-    const lines = script.split("\n");
-    const top_names = [];
-
-// Variable declarations (var, let, const and function statements) are rewritten
-// as assignments to local variables. This avoids collisions when repeatedly
-// evaluating similar declarations in the same context.
-
-    tree.filter(function (token) {
-        return (
-            token.statement === true &&
-            (
-                token.id === "let" ||
-                token.id === "const" ||
-                token.id === "var"
-            )
-        );
-    }).forEach(function (declaration) {
-
-// Keep a record of the declared identifiers. This will come in useful later.
-
-        top_names.push(...declaration.names.map((name_token) => name_token.id));
-        if (
-            declaration.expression === undefined &&
-            declaration.names.length === 1 &&
-            declaration.names[0].expression === undefined
-        ) {
-
-// An uninitialised variable has been declared. Reinitialise it with
-// 'undefined'. We could remove the declaration entirely if we wanted to.
-
-            let line = lines[declaration.line];
-            line = (
-                line.slice(0, declaration.from) +
-                declaration.names[0].id +
-                " = undefined" +
-                line.slice(declaration.names[0].thru)
-            );
-            lines[declaration.line] = line;
-        } else {
-
-// A variable has been declared and initialised.
-
-// Parenthesise the assignment if it is a destructured assignment, and discard
-// the const/let/var.
-
-            const next_statement = tree[tree.indexOf(declaration) + 1];
-
-// Find the semicolon which terminates the rvalue, by backtracking from the
-// following statement. We need to know its position to parenthesise the
-// expression.
-
-            let cursor = (
-                next_statement === undefined
-                ? tokens.length - 1
-                : tokens.indexOf(next_statement)
-            );
-            let semicolon;
-            while (cursor >= 0) {
-                if (tokens[cursor].id === ";") {
-                    semicolon = tokens[cursor];
-                    break;
-                }
-                cursor -= 1;
-            }
-            if (semicolon === undefined) {
-                throw "Missing semicolon.";
-            }
-            const post_declaration_token = tokens[
-                tokens.indexOf(declaration) + 1
-            ];
-            const is_destructured_object = post_declaration_token.id === "{";
-            if (is_destructured_object) {
-                lines[semicolon.line] = (
-                    lines[semicolon.line].slice(0, semicolon.from) +
-                    ")" +
-                    lines[semicolon.line].slice(semicolon.from)
-                );
-            }
-            lines[declaration.line] = (
-                lines[declaration.line].slice(0, declaration.from) +
-                (
-                    is_destructured_object
-                    ? "("
-                    : ""
-                ) +
-                lines[declaration.line].slice(post_declaration_token.from)
-            );
-        }
-    });
+    let tree = parse(script, {ecmaVersion: "latest"});
+    let alterations = [];
+    let top_names = [];
+    function function_or_class_declaration(node) {
 
 // To properly persist functions declarations in the simulated lexical scope we
 // create with 'eval', we must assign its value to the scope explicitly. Failure
 // to do so leaves the identifier unchanged.
 
-    tree.filter(function (token) {
-        return token.id === "function" && token.statement === true;
-    }).forEach(function (declaration) {
-        top_names.push(declaration.name.id);
+        top_names.push(node.id.name);
 
 // Declaring the function is not enough! It must become an assignment,
 // overwriting the local variable with the same name.
 
-        lines[declaration.line] = (
-            lines[declaration.line].slice(0, declaration.from)
-            + declaration.name.id
-            + " = "
-            + lines[declaration.line].slice(declaration.from)
-        );
+        alterations.push([
+            {
+                start: node.start,
+                end: node.start
+            },
+            node.id.name + " = "
+        ]);
 
 // Because the function declaration has become an assignment, it now requires a
 // terminating semicolon to protect it from being inadvertently invoked.
-// Backtrack from the following statement and insert it after the function
-// declaration's closing brace.
 
-        const next_statement = tree[tree.indexOf(declaration) + 1];
-        if (next_statement !== undefined) {
-            let cursor = tokens.indexOf(next_statement) - 1;
-            while (cursor >= 0) {
-                if (tokens[cursor].id === "}") {
-                    const brace = tokens[cursor];
-                    lines[brace.line] = (
-                        lines[brace.line].slice(0, brace.from)
-                        + "};"
-                        + lines[brace.line].slice(brace.thru)
-                    );
-                    break;
+        alterations.push([
+            {
+                start: node.end,
+                end: node.end
+            },
+            ";"
+        ]);
+    }
+    const handlers = {
+        VariableDeclaration(variable_node) {
+
+// Variable declarations (var, let, const and function statements) are rewritten
+// as assignments to local variables. This avoids collisions when repeatedly
+// evaluating similar declarations in the same context.
+
+// Discard the var, let or const. This will turn the statement into a
+// comma-separated list of assignments.
+
+            alterations.push([
+                {
+                    start: variable_node.start,
+                    end: variable_node.declarations[0].start
+                },
+                ""
+            ]);
+            variable_node.declarations.forEach(function (declarator_node) {
+                const {id, init} = declarator_node;
+                if (init) {
+
+// A variable has been declared and initialised.
+
+                    if (id.type === "ObjectPattern") {
+                        id.properties.forEach(function (property_node) {
+                            top_names.push(property_node.key.name);
+                        });
+
+// Parenthesise the assignment if it is a destructured assignment, otherwise it
+// will be misinterpreted as a naked block.
+
+                        alterations.push([
+                            {
+                                start: id.start,
+                                end: id.start
+                            },
+                            "("
+                        ]);
+                        alterations.push([
+                            {
+                                start: init.end,
+                                end: init.end
+                            },
+                            ")"
+                        ]);
+                    } else if (id.type === "ArrayPattern") {
+                        id.elements.forEach(function (identifier_node) {
+                            top_names.push(identifier_node.name);
+                        });
+                    } else {
+                        top_names.push(id.name);
+                    }
+                } else {
+
+// An uninitialised variable has been declared. Reinitialise it as undefined.
+
+                    alterations.push([
+                        {
+                            start: id.end,
+                            end: id.end
+                        },
+                        " = undefined"
+                    ]);
                 }
-                cursor -= 1;
+            });
+        },
+
+// The abominable class declaration is luckily very similar to the function
+// declaration. They can use the same handler.
+
+        FunctionDeclaration: function_or_class_declaration,
+        ClassDeclaration: function_or_class_declaration
+    };
+    tree.body.forEach(
+        function (node) {
+            const handler = handlers[node.type];
+            if (handler !== undefined) {
+                return handler(node);
             }
         }
-    });
+    );
 
 // Now we nest our payload script in a harness script containing two nested
 // evals. The things we do for strict mode!
@@ -257,7 +235,9 @@ function replize_script(script, imports) {
         JSON.stringify(
             inner_template.replace(
                 "{payload_script_json}",
-                JSON.stringify(lines.join("\n"))
+                JSON.stringify(
+                    alter_string(script, alterations)
+                )
             )
         )
     );
@@ -307,7 +287,7 @@ function replize_script(script, imports) {
 //debug     }
 //debug );
 //debug specify.claim(
-//debug     "replize_script forces strict mode",
+//debug     "replize_script strict mode",
 //debug     function (verdict) {
 //debug         try {
 //debug             vm.runInNewContext(
