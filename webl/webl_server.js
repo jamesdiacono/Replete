@@ -79,26 +79,15 @@ function webl_server_constructor(
 //      The returned object contains three functions:
 
 //          create()
-//              The 'create' method creates the padawan if it does not already
-//              exist. It returns a Promise which resolves wunce the padawan is
-//              ready to perform evaluation.
+//              See ./webl.js.
 
 //          eval(script, imports)
-//              The 'eval' method evaluates a script within the padawan. The
-//              'script' parameter should be a string containing JavaScript
-//              source code devoid of import or export statements. The 'imports'
-//              parameter describes any imports expected by the script.
-
-//              It returns a Promise which resolves to a report object. If the
-//              evaluation was successful, the report contains an 'evaluation'
-//              property containing the evaluated value. In an exception occured
-//              during evaluation, the report will instead contain an
-//              'exception' property, which is guaranteed not to be undefined.
+//              See ./webl.js.
 
 //          destroy()
-//              The 'destroy' method destroys the padawan if is has not already
-//              been destroyed. It returns a Promise which resolves wunce the
-//              padawan has ceased to exist.
+//              Similar to the function as described in ./webl.js, except that
+//              it returns a Promise which resolves wunce the padawan has ceased
+//              to exist.
 
 
     let connections = [];

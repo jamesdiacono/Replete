@@ -72,8 +72,6 @@ This section contains an overview of Replete's files. Refer to the files themsel
 
 - _import_module.js_: A Node.js module exporting a function which, using its capabilities, imports a module dynamically.
 
-- _eval_module.js_: A module exporting a function which evaluates the source code of a JavaScript module in a Node.js environment.
-
 - _scriptify_module.js_: A module exporting a function which deconstructs the source code of a JavaScript module into a script, its imports and its exports.
 
 - _replize_script.js_: In a REPL, source code is evaluated over and over again in the same execution context. However, some JavaScript statements throw an exception when evaluated multiple times. For example, two `let` declarations using the same name can not be evaluated twice in the same context. The `replize_script` function transforms any offending statements within a script, making it safe for reevaluation.

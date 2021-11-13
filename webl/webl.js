@@ -102,17 +102,13 @@ const padawan_create_script_template = `
 // escape newlines. The result of the evaluation is encoded with 'webl_encode'
 // before being transmitted.
 
-// Currently the script is evaluated in sloppy mode. In the future we should
-// force strict mode. This could be the comment wunce that is done: "It is
-// evaluated in strict mode because the payload script is the body of a module,
-// and modules are always evaluated in strict mode. Running 'eval' in strict
-// mode will cause all descendant scripts to also be run in strict mode."
+// The script is evaluated in sloppy mode. Strict mode can be activated by
+// prepending the payload script with "use strict";
 
 const padawan_eval_script_template = `
     Promise.all([
         {import_expressions}
-    ]).then(function ($importations) {
-        {import_declaration}
+    ]).then(function ($imports) {
         return $webl.send({
             name: "evaluation",
             eval_id: "{eval_id}",
@@ -130,25 +126,6 @@ const padawan_eval_script_template = `
         });
     });
 `;
-
-// These are some code generation functions, producing values for the
-// {import_expressions} and {import_declaration} placeholders in the padawan
-// script templates.
-
-function generate_import_expressions(imports) {
-    return imports.map(function ({specifier}) {
-        return "import(\"" + specifier + "\")";
-    }).join(",\n    ");
-}
-function generate_import_declaration(imports) {
-    return imports.map(function ({name}, nr) {
-        return (
-            Array.isArray(name)
-            ? "const {" + name.join(", ") + "} = $importations[" + nr + "];"
-            : "const " + name + " = $importations[" + nr + "].default;"
-        );
-    }).join("\n    ");
-}
 
 function make_iframe_padawan(
     name,
@@ -243,10 +220,15 @@ function webl_constructor() {
 //              ready to perform evaluation.
 
 //          eval(script, imports)
-//              The 'eval' method evaluates a script within the padawan. The
-//              'script' parameter should be a string containing JavaScript
-//              source code devoid of import or export statements. The 'imports'
-//              parameter describes any imports expected by the script.
+//              The 'eval' method evaluates a script within the padawan.
+
+//              The 'script' parameter should be a string containing JavaScript
+//              source code devoid of import or export statements.
+
+//              The 'imports' parameter is an array of module specifiers which
+//              are to be imported prior to the scripts evaluation. A
+//              corresponding array of module objects is made available to the
+//              script via the "$import" variable.
 
 //              It returns a Promise which resolves to a report object. If the
 //              evaluation was successful, the report contains an 'evaluation'
@@ -339,9 +321,6 @@ function webl_constructor() {
             });
         }
         function eval_module(script, imports = []) {
-            const import_expressions = generate_import_expressions(imports);
-            const import_declaration = generate_import_declaration(imports);
-            const payload_script_json = JSON.stringify(script);
             const id = String(eval_count);
             eval_count += 1;
             return new Promise(function (resolve) {
@@ -357,9 +336,14 @@ function webl_constructor() {
                     padawan_eval_script_template,
                     {
                         eval_id: id,
-                        import_expressions,
-                        import_declaration,
-                        payload_script_json
+                        import_expressions: imports.map(
+                            function generate_import_expression(specifier) {
+                                return "import(\"" + specifier + "\")";
+                            }
+                        ).join(
+                            ",\n    "
+                        ),
+                        payload_script_json: JSON.stringify(script)
                     }
                 ));
             });

@@ -201,52 +201,37 @@ function browser_repl_constructor(
             );
         });
     }
-    function browserify_import(the_import, parent_locator) {
-        return capabilities.locate(
-            the_import.specifier,
-            parent_locator
-        ).then(
-            function browserify_specifier(locator) {
-
-// Turn the module's import specifier into a locator, which starts with a "/"
-// and is browser-friendly.
-
-                return Object.assign({}, the_import, {specifier: locator});
-            }
-        );
-    }
     function prepare_for_evaluation(message) {
 
 // Prepare the message's source code for evaluation.
 
         return capabilities.transform(message).then(
-            scriptify_module
-        ).then(
-            function ({imports, script}) {
-                return Promise.all(
-                    [replize_script(script, true)].concat(
+            function (source) {
+                const {script, imports} = scriptify_module(source);
+                return Promise.all([
+                    Promise.resolve(replize_script(script, imports)),
+                    Promise.all(
 
 // Resolve the specifiers in parallel.
 
-                        imports.map(function (the_import) {
-                            return browserify_import(
-                                the_import,
-                                message.locator
-                            );
-                        })
+                        imports.map(
+                            function (the_import) {
+                                return the_import.specifier;
+                            }
+                        ).map(
+                            function (specifier) {
+                                return capabilities.locate(
+                                    specifier,
+                                    message.locator
+                                );
+                            }
+                        )
                     )
-                );
-            }
-        ).then(
-            function (array) {
-                return {
-                    script: array[0],
-                    imports: array.slice(1)
-                };
+                ]);
             }
         );
     }
-    function evaluate(padawan, {script, imports}) {
+    function evaluate(padawan, [script, imports]) {
         return padawan.eval(script, imports).then(
             function examine_report(report) {
                 if (report.exception === undefined) {
@@ -256,25 +241,23 @@ function browser_repl_constructor(
             }
         );
     }
-    function evaluate_many(padawans_array, value) {
+    function evaluate_many(padawans_array, tuple) {
 
 // Evaluates the module in many padawans at wunce.
 
         return Promise.all(
             padawans_array.map(function (padawan) {
-                return evaluate(padawan, value);
+                return evaluate(padawan, tuple);
             })
         );
     }
     function send(message) {
-        return prepare_for_evaluation(message).then(
-            function (prepped) {
-                return evaluate_many(
-                    Array.from(clients_and_padawans.values()),
-                    prepped
-                );
-            }
-        );
+        return prepare_for_evaluation(message).then(function (tuple) {
+            return evaluate_many(
+                Array.from(clients_and_padawans.values()),
+                tuple
+            );
+        });
     }
     return Object.freeze({start, send});
 }
