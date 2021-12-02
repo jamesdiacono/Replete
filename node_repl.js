@@ -7,7 +7,7 @@
     createContext, error, exports, freeze, imports, locate, locator, log, map,
     on_exception, on_log, process, runInContext, script, send, setImmediate,
     setInterval, setTimeout, specifier, then, transform, claim, source,
-    platform, action, resolve, PI, check, on_report, nr_trials
+    platform, action, resolve, PI, check, on_report, nr_trials, assign
 */
 
 import vm from "vm";
@@ -36,10 +36,10 @@ function node_repl_constructor(capabilities) {
         clearTimeout,
         clearInterval,
         clearImmediate,
-        console: {
+        console: Object.assign({}, console, {
             log: capabilities.on_log,
             error: capabilities.on_exception
-        },
+        }),
         Buffer,
         process
     });

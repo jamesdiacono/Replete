@@ -54,16 +54,18 @@ const padawan_create_script_template = `
     }(window.opener ?? window.parent));
 
 // The 'console.log' function is commonly used to send output to the REPL during
-// debugging. Here we monkey patch it, redirecting its arguments to the master.
-// The master is also informed of any unhandled exceptions.
+// debugging. Here we apply a wiretap, sending its arguments to the master.
 
-    window.console.log = function (...args) {
-        return $webl.send({
-            name: "log",
-            padawan: "{name}",
-            values: $webl.encode(args)
-        });
-    };
+    (function (original_log) {
+        window.console.log = function (...args) {
+            $webl.send({
+                name: "log",
+                padawan: "{name}",
+                values: $webl.encode(args)
+            });
+            return original_log(...args);
+        };
+    })(window.console.log);
 
 // Inform the master of any uncaught exceptions.
 
