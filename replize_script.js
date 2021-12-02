@@ -112,36 +112,6 @@ function replize_script(script, imports) {
     let tree = parse(script, {ecmaVersion: "latest"});
     let alterations = [];
     let top_names = [];
-    function function_or_class_declaration(node) {
-
-// To properly persist functions declarations in the simulated lexical scope we
-// create with 'eval', we must assign its value to the scope explicitly. Failure
-// to do so leaves the identifier unchanged.
-
-        top_names.push(node.id.name);
-
-// Declaring the function is not enough! It must become an assignment,
-// overwriting the local variable with the same name.
-
-        alterations.push([
-            {
-                start: node.start,
-                end: node.start
-            },
-            node.id.name + " = "
-        ]);
-
-// Because the function declaration has become an assignment, it now requires a
-// terminating semicolon to protect it from being inadvertently invoked.
-
-        alterations.push([
-            {
-                start: node.end,
-                end: node.end
-            },
-            ";"
-        ]);
-    }
     const handlers = {
         VariableDeclaration(variable_node) {
 
@@ -205,15 +175,56 @@ function replize_script(script, imports) {
                         },
                         " = undefined"
                     ]);
+                    top_names.push(id.name);
                 }
             });
         },
+        FunctionDeclaration(node) {
 
-// The abominable class declaration is luckily very similar to the function
-// declaration. They can use the same handler.
+// To properly persist functions declarations in the simulated lexical scope we
+// create with 'eval', we must assign its value to the scope explicitly. Failure
+// to do so leaves the identifier unchanged.
 
-        FunctionDeclaration: function_or_class_declaration,
-        ClassDeclaration: function_or_class_declaration
+            top_names.push(node.id.name);
+
+// Declaring the function is not enough! We must have an assignment operation
+// which overwrites the local variable with the same name. This is tricky,
+// because treating the function declaration as an expression and assigning it
+// to the variable will prevent the function from being hoisted, which can break
+// poorly organised code.
+
+// Our strategy is to tweak the name of the function being declared, and insert
+// an assignment statement at the start of the script.
+
+            const hoisted_name = "$" + node.id.name;
+            alterations.push([node.id, hoisted_name]);
+            alterations.push([
+                {
+                    start: 0,
+                    end: 0
+                },
+                node.id.name + " = " + hoisted_name + ";"
+            ]);
+        },
+        ClassDeclaration(node) {
+
+// Class declarations are similar to function declarations, except they are not
+// hoisted. This requires that we use a totally different strategy.
+
+            top_names.push(node.id.name);
+
+
+// We turn the statement into an expression, which is assigned to the local
+// variable.
+
+            alterations.push([
+                {
+                    start: node.start,
+                    end: node.start
+                },
+                node.id.name + " = "
+            ]);
+        }
     };
     tree.body.forEach(
         function (node) {
@@ -249,6 +260,7 @@ function replize_script(script, imports) {
 //debug         const script = `
 //debug const x = "x";
 //debug     let y = "y";
+//debug z();
 //debug function z() {
 //debug     return "z";
 //debug }
