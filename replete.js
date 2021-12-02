@@ -23,8 +23,6 @@
 //          Either "browser" or "node". This property determines which REPL will
 //          evaluate the source. If undefined, the Node REPL is used.
 
-// The message object may contain additional properties.
-
 // The process writes free-form text to STDOUT. This includes textual
 // representations of evaluated values, as well as values logged with
 // 'console.log'. Each time an exception is encountered, a textual
@@ -91,7 +89,6 @@ const capabilities = Object.freeze({
     locate(specifier, parent_locator) {
 
 // The simplest possible locator format is the absolute path of a file on disk.
-// It must be turned into a URL for use with import.meta.resolve.
 
         if (parent_locator !== undefined) {
             parent_locator = "file://" + parent_locator;
@@ -117,18 +114,24 @@ const capabilities = Object.freeze({
         return fs.promises.readFile(locator);
     },
     transform(message) {
+
+// We do not apply any transformations to the evaluated source code.
+
         return Promise.resolve(message.source);
     },
     transform_file(buffer, locator) {
         return Promise.resolve(buffer);
     },
-    import(locator) {
+    import(locator, evaluate) {
+
+// We defer to the system's 'import' function.
+
         return import(locator);
     },
     mime(locator) {
 
 // By default, only JavaScript files are served to the browser. If you wish to
-// server other types of files, such as images, just return a suitable mime
+// serve other types of files, such as images, just return a suitable mime
 // type.
 
         if (locator.endsWith(".js")) {
