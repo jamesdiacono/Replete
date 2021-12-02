@@ -112,6 +112,20 @@ function replize_script(script, imports) {
     let tree = parse(script, {ecmaVersion: "latest"});
     let alterations = [];
     let top_names = [];
+
+// Each of the importations should be retained in the scope.
+
+    imports.forEach(function (the_import) {
+        if (the_import.default !== undefined) {
+            top_names.push(the_import.default);
+        }
+        if (typeof the_import.names === "string") {
+            top_names.push(the_import.names);
+        }
+        if (typeof the_import.names === "object") {
+            top_names.push(...Object.values(the_import.names));
+        }
+    });
     const handlers = {
         VariableDeclaration(variable_node) {
 
