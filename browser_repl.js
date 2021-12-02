@@ -193,6 +193,7 @@ function browser_repl_constructor(
 
 // Prepare the message's source code for evaluation.
 
+        const webl_url = "http://" + host + ":" + webl_server_port;
         return capabilities.transform(message).then(
             function (source) {
                 const {script, imports} = scriptify_module(source);
@@ -211,7 +212,14 @@ function browser_repl_constructor(
                                 return capabilities.locate(
                                     specifier,
                                     message.locator
-                                );
+                                ).then(function (locator) {
+
+// Generally, padawans will have a different origin to that of the WEBL client.
+// This means that it is unsafe to pass locators directly to import(). We must
+// instead pass a fully qualified URL.
+
+                                    return webl_url + locator;
+                                });
                             }
                         )
                     )
