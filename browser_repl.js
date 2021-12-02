@@ -20,18 +20,6 @@ function replace_specifiers(source, from_array, to_array) {
     return source;
 }
 
-function parse_imports(source) {
-    try {
-        return scriptify_module(source).imports;
-    } catch (ignore) {
-
-// If the module could not be parsed, we just cross our fingers and hope it does
-// not have any import statements.
-
-        return [];
-    }
-}
-
 function browser_repl_constructor(
     capabilities,
     location_of_the_webl_base,
@@ -114,7 +102,7 @@ function browser_repl_constructor(
 // If this is a JavaScript module, rewrite the import specifiers as locators.
 
                     const source = buffer.toString("utf8");
-                    const imports = parse_imports(source);
+                    const imports = scriptify_module(source).imports;
                     return Promise.all(
                         imports.map(function (the_import) {
                             return capabilities.locate(
