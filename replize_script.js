@@ -94,7 +94,9 @@ const outer_template = `
     eval(
         {inner_template_json}.replace(
             /"""/g,
-            Object.keys($scope).join(", ")
+            function replacer() {
+                return Object.keys($scope).join(", ");
+            }
         )
     );
 `;
@@ -252,19 +254,30 @@ function replize_script(script, imports) {
 // Now we nest our payload script in a harness script containing two nested
 // evals. The things we do for strict mode!
 
+    const inner_script = inner_template.replace(
+        "{payload_script_json}",
+
+// The 'replace' method has a nasty gotcha: it recognises several special
+// patterns which, when present strings passed as the second parameter, make it
+// act clever. We disable this "feature" by passing a replacer function as the
+// second parameter.
+
+        function replacer() {
+            return JSON.stringify(
+                alter_string(script, alterations)
+            );
+        }
+    );
     return outer_template.replace(
         "{identifiers_object_literal}",
-        make_identifiers_object_literal(top_names, imports)
+        function replacer() {
+            return make_identifiers_object_literal(top_names, imports);
+        }
     ).replace(
         "{inner_template_json}",
-        JSON.stringify(
-            inner_template.replace(
-                "{payload_script_json}",
-                JSON.stringify(
-                    alter_string(script, alterations)
-                )
-            )
-        )
+        function replacer() {
+            return JSON.stringify(inner_script);
+        }
     );
 }
 
@@ -278,6 +291,8 @@ function replize_script(script, imports) {
 //debug function z() {
 //debug     return "z";
 //debug }
+//debug let uninitialised;
+//debug const special_string_replacement_pattern = "$'";
 //debug   const {
 //debug     a,
 //debug     b

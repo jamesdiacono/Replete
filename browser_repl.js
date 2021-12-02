@@ -14,7 +14,9 @@ function replace_specifiers(source, from_array, to_array) {
     from_array.forEach(function (from, from_nr) {
         source = source.replace(
             " from \"" + from + "\"",
-            " from \"" + to_array[from_nr] + "\""
+            function replacer() {
+                return " from \"" + to_array[from_nr] + "\"";
+            }
         );
     });
     return source;
