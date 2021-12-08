@@ -76,9 +76,10 @@ const inner_template = `
 const outer_template = `
 
 // Ensure the global scope object is available. It persists the state of the
-// identifiers across evaluations.
+// identifiers across evaluations. We are assuming sloppy mode, where 'this' is
+// bound to the global object.
 
-    var $scope = $scope || {
+    this.$scope = this.$scope || {
         $default: undefined,
         $evaluation: undefined
     };
