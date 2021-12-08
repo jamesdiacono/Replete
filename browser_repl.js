@@ -1,32 +1,21 @@
 /*jslint node */
 
-// The browser REPL evaluates JavaScript source code in a browser environment.
+// This REPL evaluates JavaScript source code in a browser environment.
 
+import path from "path";
+import alter_string from "./alter_string.js";
+import find_specifiers from "./find_specifiers.js";
 import scriptify_module from "./scriptify_module.js";
 import replize_script from "./replize_script.js";
-import webl_server_constructor from "./webl/webl_server.js";
-
-function replace_specifiers(source, from_array, to_array) {
-
-// Replaces the some or all of the specifier strings of the source's import
-// statements.
-
-    from_array.forEach(function (from, from_nr) {
-        source = source.replace(
-            " from \"" + from + "\"",
-            function replacer() {
-                return " from \"" + to_array[from_nr] + "\"";
-            }
-        );
-    });
-    return source;
-}
+import make_webl_server from "./webl/webl_server.js";
 
 function browser_repl_constructor(
     capabilities,
-    location_of_the_webl_base,
+    path_to_replete,
     webl_server_port,
-    launch = capabilities.on_log,
+    launch = function (url) {
+        return capabilities.log("Waiting for WEBL: " + url + "\n");
+    },
     host = "localhost",
     humanoid = false
 ) {
@@ -34,11 +23,11 @@ function browser_repl_constructor(
 // The 'browser_repl_constructor' function takes several parameters:
 
 //      capabilities
-//          An object containing the standard Replete functions.
+//          An object containing the standard Replete capability functions.
 
-//      location_of_the_webl_base
-//          The absolute path to the directory containing the WEBL's source
-//          files on disk.
+//      path_to_replete
+//          The absolute path to the directory containing Replete's source files
+//          on disk.
 
 //      webl_server_port
 //          The port number of the WEBL server. If undefined, an unallocated
@@ -59,7 +48,7 @@ function browser_repl_constructor(
 // It returns an object containing two functions:
 
 //      start()
-//          Starts the WEBL, returning a Promise which resolves wunce it is safe
+//          Starts the REPL, returning a Promise which resolves wunce it is safe
 //          to call 'send'.
 
 //      send(message)
@@ -67,6 +56,10 @@ function browser_repl_constructor(
 //          returns a Promise which resolves to an array containing each
 //          client's evaluated value. The Promise rejects if an exception occurs
 //          during evaluation in any of the clients.
+
+    function on_exception(error) {
+        return capabilities.err(error.stack + "\n");
+    }
 
 // Configure the WEBL and its file server.
 
@@ -78,15 +71,19 @@ function browser_repl_constructor(
 // allows us to use the WEBL server to serve modules and other file assets to
 // the padawan.
 
-        const locator = req.url;
+        function fail(reason) {
+            on_exception(reason);
+            res.statusCode = 500;
+            return res.end();
+        }
 
 // Padawans have a "null" origin. We add this header so the request passes CORS.
 
         res.setHeader("access-control-allow-origin", "*");
-        function fail(reason) {
-            res.statusCode = 500;
-            capabilities.on_exception(reason);
-            return res.end();
+        const locator = req.url;
+        const content_type = capabilities.mime(locator);
+        if (content_type === undefined) {
+            return fail(new Error("Unknown content type: " + locator));
         }
         return capabilities.read(locator).then(
             function compile(buffer) {
@@ -94,38 +91,30 @@ function browser_repl_constructor(
             }
         ).then(
             function (buffer) {
-                const content_type = capabilities.mime(locator);
-                if (content_type === undefined) {
-                    return fail(new Error("Unknown content type: " + locator));
-                }
                 res.setHeader("content-type", content_type);
                 if (content_type === "text/javascript") {
 
 // If this is a JavaScript module, rewrite the import specifiers as locators.
 
                     const source = buffer.toString("utf8");
-                    const imports = scriptify_module(source).imports;
+                    const found_specifiers = find_specifiers(source);
                     return Promise.all(
-                        imports.map(function (the_import) {
-                            return capabilities.locate(
-                                the_import.specifier,
-                                locator
-                            );
+                        found_specifiers.map(function ({value}) {
+                            return capabilities.locate(value, locator);
                         })
-                    ).then(
-                        function on_located(locators) {
-                            return res.end(
-                                replace_specifiers(
-                                    source,
-                                    imports.map(function (the_import) {
-                                        return the_import.specifier;
-                                    }),
-                                    locators
-                                )
-                            );
-                        },
-                        fail
-                    );
+                    ).then(function on_located(locators) {
+
+// Serve the source with its altered specifiers.
+
+                        return res.end(
+                            alter_string(
+                                source,
+                                found_specifiers.map(function ({range}, nr) {
+                                    return [range, locators[nr]];
+                                })
+                            )
+                        );
+                    });
                 }
 
 // Otherwise serve the compiled file verbatim.
@@ -136,15 +125,17 @@ function browser_repl_constructor(
         );
     }
     function on_client_found(client) {
-        capabilities.on_log("WEBL found.");
+        capabilities.log("WEBL found.\n");
         clearTimeout(launch_timer);
 
 // Create a single padawan on each connecting client. The padawan is rendered as
 // an iframe which fills the WEBL client's viewport.
 
         const padawan = client.padawan({
-            on_log: capabilities.on_log,
-            on_exception: capabilities.on_exception,
+            on_log(...args) {
+                return capabilities.log(args.join(" ") + "\n");
+            },
+            on_exception: capabilities.err,
             type: "iframe",
             iframe_style_object: {
                 border: "none",
@@ -153,18 +144,18 @@ function browser_repl_constructor(
             }
         });
         clients_and_padawans.set(client, padawan);
-        return padawan.create().catch(capabilities.on_exception);
+        return padawan.create().catch(on_exception);
     }
     function on_client_lost(client) {
-        capabilities.on_log("WEBL lost.");
+        capabilities.log("WEBL lost.\n");
 
 // Forget the client and its padawans.
 
         clients_and_padawans.delete(client);
     }
-    const webl_server = webl_server_constructor(
-        location_of_the_webl_base,
-        capabilities.on_exception,
+    const webl_server = make_webl_server(
+        path.join(path_to_replete, "webl"),
+        on_exception,
         on_client_found,
         on_client_lost,
         on_file_request,
@@ -214,13 +205,17 @@ function browser_repl_constructor(
                                 return capabilities.locate(
                                     specifier,
                                     message.locator
-                                ).then(function (locator) {
+                                ).then(function qualify(locator) {
 
 // Generally, padawans will have a different origin to that of the WEBL client.
-// This means that it is unsafe to pass locators directly to import(). We must
-// instead pass a fully qualified URL.
+// This means that it is unsafe to pass path-style locators directly to
+// import(). In such cases we provide a fully qualified URL instead.
 
-                                    return webl_url + locator;
+                                    return (
+                                        locator.startsWith("/")
+                                        ? webl_url + locator
+                                        : locator
+                                    );
                                 });
                             }
                         )

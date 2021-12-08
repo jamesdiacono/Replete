@@ -3,7 +3,6 @@
 import path from "path";
 import fs from "fs";
 import http from "http";
-import webl_decode from "./webl_decode.js";
 import websocketify from "./websocketify.js";
 
 function webl_server_constructor(
@@ -26,8 +25,8 @@ function webl_server_constructor(
 // directory containing the WEBL's source files on disk. Without it, the source
 // of the webellion can not be found.
 
-// The 'on_exception' parameter is a function which is called when something
-// goes wrong.
+// The 'on_exception' parameter is a function which is called when the WEBL
+// server itself encounters a problem.
 
 // When the WEBL server receives an unrecognised HTTP request, it invokes the
 // optional 'on_unhandled_request' parameter with the req and res objects.
@@ -57,26 +56,8 @@ function webl_server_constructor(
 
 //  padawan(spec)
 //      The 'padawan' method returns an interface for a new, unique padawan. It
-//      takes a 'spec' object, containing the following properties:
-
-//          "on_log"
-//              A function which is called with the arguments of any calls to
-//              console.log. The values of the arguments passed to 'on_log' may
-//              only be an approximation of those passed to console.log, as they
-//              are serialised for transmission.
-//          "on_exception"
-//              A function which is called with the "stack" string of any
-//              exceptions or Promise rejections which are encountered.
-//          "type"
-//              Determines the means of containerisation, and should be either
-//              the string "popup" or "iframe".
-//          "popup_window_features"
-//              The "windowFeatures" string passed to window.open for popup
-//              containers.
-//          "iframe_style_object"
-//              An object containing styles to use for iframe containers.
-
-//      The returned object contains three functions:
+//      takes a 'spec' object, which is described in ./webl.js. The returned
+//      object contains three functions:
 
 //          create()
 //              See ./webl.js.
@@ -128,7 +109,7 @@ function webl_server_constructor(
                 ) {
                     return (
                         message_name === "log"
-                        ? spec.on_log(...webl_decode(parameters.values))
+                        ? spec.on_log(...parameters.values)
                         : spec.on_exception(parameters.reason)
                     );
                 };
@@ -150,13 +131,7 @@ function webl_server_constructor(
                         imports,
                         padawan_name: name
                     }
-                ).then(function decode_evaluation(report) {
-                    return (
-                        report.exception === undefined
-                        ? {evaluation: webl_decode(report.evaluation)}
-                        : report
-                    );
-                });
+                );
             }
             function destroy() {
                 delete on_status_callbacks[name];
@@ -197,8 +172,6 @@ function webl_server_constructor(
         }
         if (
             req.url === "/webl.js" ||
-            req.url === "/webl_encode.js" ||
-            req.url === "/webl_decode.js" ||
             req.url === "/webl_client.js" ||
             req.url === "/webl_relay.js"
         ) {

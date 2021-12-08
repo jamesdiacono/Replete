@@ -150,9 +150,6 @@ function websocketify(
             }
             const fin = Boolean(buffer[0] >> 7);
             const opcode = buffer[0] & 0b1111;
-            if (opcode === 0x9) {
-                console.log(fin, opcode, buffer);
-            }
 
 // Read the payload length field, which can vary in size.
 

@@ -5,8 +5,155 @@
 // source code, and it reports any logging or exceptions. A padawan is sandboxed
 // such that it can not interfere with its master or other padawans.
 
-import webl_encode from "./webl_encode.js";
-import webl_decode from "./webl_decode.js";
+function inspect(value) {
+
+// The 'inspect' function formats the 'value' as a nice readable string. It is
+// useful for debugging.
+
+    if (typeof value === "string") {
+        return value;
+    }
+    function is_primitive(value) {
+        return (
+            typeof value === "string"
+            || typeof value === "number"
+            || typeof value === "boolean"
+            || value === null
+            || value === undefined
+        );
+    }
+    let dent = "";
+    function indent() {
+        dent += "    ";
+    }
+    function outdent() {
+        dent = dent.slice(4);
+    }
+
+// The string is built up as the value is traversed.
+
+    let string = "";
+    function write(fragment) {
+        string += fragment;
+    }
+
+// We keep track of values which have already been (or are being) printed,
+// otherwise we would be at risk of entering an infinite loop.
+
+    let seen = new WeakMap();
+    (function print(value) {
+        if (typeof value === "function") {
+            return write("[Function: " + (value.name || "(anonymous)") + "]");
+        }
+        if (typeof value === "string") {
+
+// Add quotes around strings, and encode any newlines.
+
+            return write(JSON.stringify(value));
+        }
+        if (is_primitive(value) || value.constructor === RegExp) {
+            return write(String(value));
+        }
+        if (value.constructor === Date) {
+            return write("[Date: " + value.toJSON() + "]");
+        }
+        if (seen.has(value)) {
+            return write("[Circular]");
+        }
+        seen.set(value, true);
+        function print_member(key, value, compact, last) {
+
+// The 'print_member' function prints out an element of an array, or property of
+// an object.
+
+            if (!compact) {
+                write("\n" + dent);
+            }
+            if (key !== undefined) {
+                write(key + ": ");
+            }
+            print(value);
+            if (!last) {
+                return write(
+                    compact
+                    ? ", "
+                    : ","
+                );
+            }
+            if (!compact) {
+                return write("\n" + dent.slice(4));
+            }
+        }
+        if (Array.isArray(value)) {
+            const compact = value.length < 3 && value.every(is_primitive);
+            write("[");
+            indent();
+            value.forEach(function (element, element_nr) {
+                print_member(
+                    undefined,
+                    element,
+                    compact,
+                    element_nr === value.length - 1
+                );
+            });
+            outdent();
+            return write("]");
+        }
+
+// The value is an object. Print out its properties.
+
+        if (value.constructor !== Object) {
+
+// The object has an unusual prototype. A descriptive prefix might be helpful.
+
+            if (value.constructor === undefined) {
+                write("[Object: null prototype] ");
+            } else {
+                write("[" + value.constructor.name + "] ");
+            }
+        }
+        const keys = Object.keys(value);
+        write("{");
+        indent();
+        keys.forEach(function (key, key_nr) {
+            print_member(
+                key,
+                value[key],
+                keys.length === 1 && is_primitive(value[key]),
+                key_nr === keys.length - 1
+            );
+        });
+        outdent();
+        return write("}");
+    }(value));
+    return string;
+}
+
+function reason(exception) {
+
+// A self-contained function which formats an exception as a human-readable
+// string.
+
+    try {
+        if (exception && exception.stack) {
+            return (
+                navigator.vendor === "Google Inc."
+
+// Weirdly, the V8 JavaScript engine includes the name and message in the stack,
+// so they are not included here.
+
+                ? exception.stack
+                : (
+                    exception.name + ": " + exception.message
+                    + "\\n" + exception.stack
+                )
+            );
+        }
+        return "Exception: " + String(exception);
+    } catch (ignore) {
+        return "Exception";
+    }
+}
 
 function fill(template, substitutions) {
 
@@ -43,13 +190,8 @@ const padawan_create_script_template = `
                 message.secret = {secret};
                 return master_window.postMessage(message, "*");
             },
-            encode(value) {
-
-// Inject the source code of the webl_encode function, trimming it to ensure it
-// gets interpreted as a function expression, and not as a function statement.
-
-                return (${webl_encode.toString().trim()})(value);
-            }
+            inspect: ${inspect.toString()},
+            reason: ${reason.toString()}
         };
     }(window.opener ?? window.parent));
 
@@ -61,7 +203,7 @@ const padawan_create_script_template = `
             $webl.send({
                 name: "log",
                 padawan: "{name}",
-                values: $webl.encode(args)
+                values: args.map($webl.inspect)
             });
             return original_log(...args);
         };
@@ -73,17 +215,22 @@ const padawan_create_script_template = `
         return $webl.send({
             name: "exception",
             padawan: "{name}",
-            reason: event.reason.stack
+            reason: $webl.reason(event.reason)
         });
     };
     window.onerror = function (...args) {
         return window.onunhandledrejection({reason: args[4]});
     };
 
-// Padawans receive only wun kind of message, namely the fulfillment of the
+// Padawans receive only wun kind of message, containing the fulfillment of the
 // 'padawan_eval_script_template'.
 
     window.onmessage = function (event) {
+
+// Regrettably, the 'event' argument is made available to the eval scope. In a
+// total fluke, the argument's value is identical to window.event, so we can
+// ignore this infraction.
+
         return eval(event.data);
     };
 
@@ -101,8 +248,7 @@ const padawan_create_script_template = `
 // makes them accessible to the payload script during its evaluation.
 
 // The payload script is encoded as a JSON string because this is an easy way to
-// escape newlines. The result of the evaluation is encoded with 'webl_encode'
-// before being transmitted.
+// escape newlines.
 
 // The script is evaluated in sloppy mode. Strict mode can be activated by
 // prepending the payload script with "use strict";
@@ -115,7 +261,7 @@ const padawan_eval_script_template = `
             name: "evaluation",
             eval_id: "{eval_id}",
             value: {
-                evaluation: $webl.encode(eval({payload_script_json}))
+                evaluation: $webl.inspect(eval({payload_script_json}))
             }
         });
     }).catch(function (exception) {
@@ -123,7 +269,7 @@ const padawan_eval_script_template = `
             name: "evaluation",
             eval_id: "{eval_id}",
             value: {
-                exception: exception.stack
+                exception: $webl.reason(exception)
             }
         });
     });
@@ -172,9 +318,8 @@ function make_popup_padawan(
 // The padawan requires a reference to its master's window object to establish a
 // communication channel. Disturbingly, the master and padawan share an origin,
 // so this reference gives the padawan unlimited power over its master. We
-// revoke this power immediately after creation.
-
-// It would be unwise to lower our defenses.
+// revoke this power immediately after creation - it would be unwise to lower
+// our defenses!
 
     padawan_window.eval(fill(padawan_create_script_template, {name, secret}));
     delete padawan_window.opener;
@@ -197,12 +342,13 @@ function webl_constructor() {
 //      'spec' object, containing the following properties:
 
 //          "on_log"
-//              A function which is called with the arguments of any calls to
-//              console.log. Bear in mind that the value of these arguments will
-//              have been passed thru 'encode' and 'decode'.
+//              A function which is called with the stringified arguments of any
+//              calls to console.log. The arguments are stringified by the
+//              'inspect' function.
 //          "on_exception"
-//              A function which is called with the "stack" string of any
-//              exceptions or Promise rejections which are encountered.
+//              A function which is called with a string representation of any
+//              exceptions or Promise rejections encountered outside of
+//              evaluation.
 //          "name"
 //              The name of the padawan, unique to this WEBL.
 //          "type"
@@ -234,10 +380,11 @@ function webl_constructor() {
 
 //              It returns a Promise which resolves to a report object. If the
 //              evaluation was successful, the report contains an 'evaluation'
-//              property containing the evaluated value (which will have been
-//              passed thru 'encode' and 'decode'). If an exception occured
+//              property containing the evaluated value after it has been
+//              stringified by the 'inspect' function. If an exception occured
 //              during evaluation, the report will instead contain an
-//              'exception' property, which is guaranteed not to be undefined.
+//              'exception' property, which contains a string representation of
+//              the exception.
 
 //          destroy()
 //              The 'destroy' method destroys the padawan if is has not already
@@ -290,8 +437,8 @@ function webl_constructor() {
             popup_window_features,
             iframe_style_object
         } = spec;
-        log_callbacks[name] = function (encoded_values) {
-            return on_log(...webl_decode(encoded_values));
+        log_callbacks[name] = function (strings) {
+            return on_log(...strings);
         };
         exception_callbacks[name] = on_exception;
         function create() {
@@ -328,11 +475,7 @@ function webl_constructor() {
             return new Promise(function (resolve) {
                 eval_callbacks[id] = function on_evaluated(report) {
                     delete eval_callbacks[id];
-                    return resolve(
-                        report.exception === undefined
-                        ? {evaluation: webl_decode(report.evaluation)}
-                        : report
-                    );
+                    return resolve(report);
                 };
                 return padawans[name].send(fill(
                     padawan_eval_script_template,

@@ -4,8 +4,7 @@
 // WEBL server. When it is run, a WEBL is created and hooked up to the server.
 // The WEBL may then be operated remotely.
 
-import webl_constructor from "./webl.js";
-import webl_encode from "./webl_encode.js";
+import make_webl from "./webl.js";
 
 let webl;
 let padawans = Object.create(null);
@@ -30,7 +29,7 @@ const message_handlers = {
                 name: "log",
                 value: {
                     padawan_name: spec.name,
-                    values: webl_encode(values)
+                    values
                 }
             });
         }
@@ -82,14 +81,7 @@ const message_handlers = {
                 return worker.postMessage({
                     type: "response",
                     request_id: id,
-                    value: (
-
-// The evaluated value must be encoded for transmission over the wire.
-
-                        report.exception === undefined
-                        ? {evaluation: webl_encode(report.evaluation)}
-                        : report
-                    )
+                    value: report
                 });
             },
             function on_fail(exception) {
@@ -125,7 +117,7 @@ worker.onmessage = function (event) {
 // The connection has been opened or closed.
 
         if (event.data) {
-            webl = webl_constructor();
+            webl = make_webl();
             window.onbeforeunload = webl.destroy;
             document.title = "WEBL";
         } else {

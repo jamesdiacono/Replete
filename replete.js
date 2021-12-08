@@ -20,8 +20,8 @@
 //          otherwise.
 
 //      platform
-//          Either "browser" or "node". This property determines which REPL will
-//          evaluate the source. If undefined, the Node REPL is used.
+//          Either "browser", "node" or "deno". This property determines which
+//          REPL will evaluate the source.
 
 // The process writes free-form text to STDOUT. This includes textual
 // representations of evaluated values, as well as values logged with
@@ -46,18 +46,16 @@
 //               via STDIN   |        |   and STDERR
 //                           |        |
 //                           |        |
-//          +----------------v--------+----------------+
-//          |                                          |
-//          |              Node.js process             |
-//          |                (replete.js)              |
-//          |                                          |
-//          | +-------------------+ +----------------+ |
-//          | |                   | |                | |
-//          | |  browser_repl.js  | |  node_repl.js  | |
-//          | |                   | |                | |
-//          | +-------------------+ +----------------+ |
-//          |                                          |
-//          +------------------------------------------+
+//       +-------------------v--------+--------------------+
+//       |                                                 |
+//       |                 Node.js process                 |
+//       |                   (replete.js)                  |
+//       |                                                 |
+//       | +--------------+ +--------------+ +-----------+ |
+//       | | Browser REPL | | Node.js REPL | | Deno REPL | |
+//       | +--------------+ +--------------+ +-----------+ |
+//       |                                                 |
+//       +-------------------------------------------------+
 
 // Here are some examples of messages and their corresponding output.
 
@@ -77,8 +75,9 @@
 import path from "path";
 import fs from "fs";
 import readline from "readline";
-import browser_repl_constructor from "./browser_repl.js";
-import node_repl_constructor from "./node_repl.js";
+import make_node_repl from "./node_repl.js";
+import make_deno_repl from "./deno_repl.js";
+import make_browser_repl from "./browser_repl.js";
 
 const root_directory = process.cwd();
 
@@ -87,14 +86,20 @@ const root_directory = process.cwd();
 
 const capabilities = Object.freeze({
     locate(specifier, parent_locator) {
+        if (/^https?:/.test(specifier)) {
 
-// The simplest possible locator format is the absolute path of a file on disk.
+// Remote specifiers are left for the runtime to resolve.
 
+            return Promise.resolve(specifier);
+        }
         if (parent_locator !== undefined) {
             parent_locator = "file://" + parent_locator;
         }
         return import.meta.resolve(specifier, parent_locator).then(
             function (file_url) {
+
+// The simplest possible locator format is the absolute path of a file on disk.
+
                 return file_url.replace("file://", "");
             }
         );
@@ -122,12 +127,6 @@ const capabilities = Object.freeze({
     transform_file(buffer, locator) {
         return Promise.resolve(buffer);
     },
-    import(locator, evaluate) {
-
-// We defer to the system's 'import' function.
-
-        return import(locator);
-    },
     mime(locator) {
 
 // By default, only JavaScript files are served to the browser. If you wish to
@@ -139,37 +138,37 @@ const capabilities = Object.freeze({
         }
         throw new Error("Unknown extension: " + locator);
     },
-    on_log: console.log,
-    on_exception: console.error
+    log(string) {
+        process.stdout.write(string);
+    },
+    err(string) {
+        process.stderr.write(string);
+    }
 });
 
-// A separate REPL is run for each platform. No context is shared between them.
+// The REPLs requires access to Replete's source files. They are situated within
+// a directory adjacent to this script file.
 
-const node_repl = node_repl_constructor(capabilities);
-const browser_repl = browser_repl_constructor(
-    capabilities,
+const path_to_replete = path.dirname(process.argv[1]);
 
-// The browser REPL requires access to the WEBL source files. They are situated
-// within a directory adjacent to this script file.
+// A separate REPL is created for each platform. No context is shared between
+// them.
 
-    path.join(path.dirname(process.argv[1]), "webl"),
-
-// By specifying a static port number for the WEBL server, running clients are
-// not orphaned when this process is restarted.
-
-    35897
-);
+const node_repl = make_node_repl(capabilities, path_to_replete, 7375);
+const deno_repl = make_deno_repl(capabilities, path_to_replete, 7376);
+const browser_repl = make_browser_repl(capabilities, path_to_replete, 35897);
 
 function on_message(message) {
 
 // The 'on_message' function sends the 'message' to the relevant REPL, and
 // prints the result to stdout or stderr.
 
-    return (
-        message.platform === "browser"
-        ? browser_repl.send(message)
-        : node_repl.send(message)
-    ).then(
+    const repls = {
+        browser: browser_repl,
+        node: node_repl,
+        deno: deno_repl
+    };
+    return repls[message.platform].send(message).then(
         function (value) {
             return (
                 Array.isArray(value)
@@ -188,12 +187,13 @@ function on_message(message) {
     );
 }
 
-// Start the browser REPL. Note that the Node.js REPL does not require
-// initialisation.
+// Start the REPLs.
 
+node_repl.start().catch(console.error);
+deno_repl.start().catch(console.error);
 browser_repl.start().catch(console.error);
 
-// Begin reading from STDIN, line by line.
+// Begin reading messages from STDIN, line by line.
 
 readline.createInterface({input: process.stdin}).on(
     "line",
