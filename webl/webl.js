@@ -145,7 +145,7 @@ function reason(exception) {
                 ? exception.stack
                 : (
                     exception.name + ": " + exception.message
-                    + "\\n" + exception.stack
+                    + "\n" + exception.stack
                 )
             );
         }

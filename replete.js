@@ -81,10 +81,13 @@ import make_browser_repl from "./browser_repl.js";
 
 const root_directory = process.cwd();
 
-// These are the capabilities given to each platform's REPL. They offer much
-// opportunity for customisation.
+// These are the capabilities given to each platform's REPL. See README.md for a
+// description of each.
 
 const capabilities = Object.freeze({
+    source(message) {
+        return Promise.resolve(message.source);
+    },
     locate(specifier, parent_locator) {
         if (/^https?:/.test(specifier)) {
 
@@ -92,23 +95,26 @@ const capabilities = Object.freeze({
 
             return Promise.resolve(specifier);
         }
+
+// This set of capabilities use absolute file paths as locators. This is the
+// simplest possible locator format.
+
+// The 'import.meta.resolve' function allows us to use Node's own mechanism for
+// locating files. It deals in URLs rather than paths, hence the conversions.
+
         if (parent_locator !== undefined) {
             parent_locator = "file://" + parent_locator;
         }
         return import.meta.resolve(specifier, parent_locator).then(
             function (file_url) {
-
-// The simplest possible locator format is the absolute path of a file on disk.
-
                 return file_url.replace("file://", "");
             }
         );
     },
     read(locator) {
 
-// Read the contents of a file as a Buffer. So that we do not inadvertently
-// expose our entire filesystem to the network, we refuse to read any files
-// which are hidden or not beneath the root directory.
+// So that we do not inadvertently expose sensitive files to the network, we
+// refuse to read any files which are hidden or not beneath the root directory.
 
         if (
             locator.startsWith(".") ||
@@ -117,15 +123,6 @@ const capabilities = Object.freeze({
             return Promise.reject(new Error("Forbidden: " + locator));
         }
         return fs.promises.readFile(locator);
-    },
-    transform(message) {
-
-// We do not apply any transformations to the evaluated source code.
-
-        return Promise.resolve(message.source);
-    },
-    transform_file(buffer, locator) {
-        return Promise.resolve(buffer);
     },
     mime(locator) {
 

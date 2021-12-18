@@ -75,7 +75,7 @@ function command_repl_constructor(capabilities, cmdl) {
 
     const http_server = http.createServer(function (req, res) {
         function fail(reason) {
-            capabilities.err(reason.stack);
+            capabilities.err(reason.stack + "\n");
             res.statusCode = 500;
             return res.end();
         }
@@ -84,10 +84,6 @@ function command_repl_constructor(capabilities, cmdl) {
             return fail(new Error("Bad MIME type: " + locator));
         }
         return capabilities.read(locator).then(
-            function compile(buffer) {
-                return capabilities.transform_file(buffer, locator);
-            }
-        ).then(
             function (buffer) {
                 const source = buffer.toString("utf8");
 
@@ -126,7 +122,11 @@ function command_repl_constructor(capabilities, cmdl) {
         ]);
     }
     function send(message) {
-        return capabilities.transform(message).then(
+        return Promise.resolve(
+            message
+        ).then(
+            capabilities.source
+        ).then(
             function prepare_for_evaluation(source) {
                 const {script, imports} = scriptify_module(source);
                 return Promise.all([

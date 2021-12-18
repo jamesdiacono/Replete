@@ -86,10 +86,6 @@ function browser_repl_constructor(
             return fail(new Error("Unknown content type: " + locator));
         }
         return capabilities.read(locator).then(
-            function compile(buffer) {
-                return capabilities.transform_file(buffer, locator);
-            }
-        ).then(
             function (buffer) {
                 res.setHeader("content-type", content_type);
                 if (content_type === "text/javascript") {
@@ -187,7 +183,11 @@ function browser_repl_constructor(
 // Prepare the message's source code for evaluation.
 
         const webl_url = "http://" + host + ":" + webl_server_port;
-        return capabilities.transform(message).then(
+        return Promise.resolve(
+            message
+        ).then(
+            capabilities.source
+        ).then(
             function (source) {
                 const {script, imports} = scriptify_module(source);
                 return Promise.all([
