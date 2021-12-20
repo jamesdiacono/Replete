@@ -10,9 +10,6 @@ function inspect(value) {
 // The 'inspect' function formats the 'value' as a nice readable string. It is
 // useful for debugging.
 
-    if (typeof value === "string") {
-        return value;
-    }
     function is_primitive(value) {
         return (
             typeof value === "string"
@@ -60,7 +57,16 @@ function inspect(value) {
         if (seen.has(value)) {
             return write("[Circular]");
         }
-        seen.set(value, true);
+        try {
+            seen.set(value, true);
+        } catch (ignore) {
+
+// The value must be some kind of freaky primitive, like Symbol or BigInt.
+
+            return write(
+                "[" + value.constructor.name + ": " + String(value) + "]"
+            );
+        }
         function print_member(key, value, compact, last) {
 
 // The 'print_member' function prints out an element of an array, or property of
@@ -190,7 +196,17 @@ const padawan_create_script_template = `
                 message.secret = {secret};
                 return master_window.postMessage(message, "*");
             },
-            inspect: ${inspect.toString()},
+            inspect(value) {
+
+// If the value happens to be a string, it is passed through unchanged. This
+// improves readability if the value is a report spanning multiple lines, and
+// intelligibility if the value is already JSON encoded.
+
+                if (typeof value === "string") {
+                    return value;
+                }
+                return (${inspect.toString()})(value);
+            },
             reason: ${reason.toString()}
         };
     }(window.opener ?? window.parent));
@@ -376,7 +392,7 @@ function webl_constructor() {
 //              The 'imports' parameter is an array of module specifiers which
 //              are to be imported prior to the scripts evaluation. A
 //              corresponding array of module objects is made available to the
-//              script via the "$import" variable.
+//              script via the "$imports" variable.
 
 //              It returns a Promise which resolves to a report object. If the
 //              evaluation was successful, the report contains an 'evaluation'
@@ -482,7 +498,7 @@ function webl_constructor() {
                     {
                         eval_id: id,
                         import_expressions: imports.map(
-                            function generate_import_expression(specifier) {
+                            function (specifier) {
                                 return "import(\"" + specifier + "\")";
                             }
                         ).join(
@@ -498,7 +514,6 @@ function webl_constructor() {
                 padawans[name].destroy();
                 delete padawans[name];
                 delete ready_callbacks[name];
-                delete eval_callbacks[name];
                 delete log_callbacks[name];
                 delete exception_callbacks[name];
             }

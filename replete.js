@@ -126,14 +126,12 @@ const capabilities = Object.freeze({
     },
     mime(locator) {
 
-// By default, only JavaScript files are served to the browser. If you wish to
-// serve other types of files, such as images, just return a suitable mime
-// type.
+// By default, only JavaScript files are served to the REPLs. If you wish to
+// serve other types of files, such as images, just return a suitable mime type.
 
         if (locator.endsWith(".js")) {
             return "text/javascript";
         }
-        throw new Error("Unknown extension: " + locator);
     },
     log(string) {
         process.stdout.write(string);
@@ -166,20 +164,20 @@ function on_message(message) {
         deno: deno_repl
     };
     return repls[message.platform].send(message).then(
-        function (value) {
+        function (reply) {
+
+// The reply is either a single evaluation, or an array of evaluations produced
+// in parallel. Each evaluation is written to STDOUT.
+
             return (
-                Array.isArray(value)
-
-// The value is an array containing wun or more evaluations. Log each of them
-// separately.
-
-                ? value.forEach((value) => console.log(value))
-
-// The value is a module object.
-
-                : console.log(value)
+                Array.isArray(reply)
+                ? reply.forEach((evaluation) => console.log(evaluation))
+                : console.log(reply)
             );
         },
+
+// Exceptions are written to STDERR.
+
         console.error
     );
 }

@@ -43,13 +43,12 @@ function make_identifiers_object_literal(top_names, imports) {
 
 const inner_template = `
 
-// Opt-in to strict mode. This will also apply to the script passed to 'eval',
-// below. We enforce strict mode because the script originates from a module,
-// and modules are always run in strict mode.
+// Opt in to strict mode from here on in. We enforce strict mode because the
+// script originates from a module, and modules are always run in strict mode.
 
     "use strict";
 
-// Every identifier, including those for previous evaluations, are declared as
+// Every identifier, including those from previous evaluations, are declared as
 // local variables. This means that scripts are free to shadow global variables,
 // without risk of clobbering the state.
 
@@ -63,8 +62,8 @@ const inner_template = `
 
     $evaluation = eval({payload_script_json});
 
-// Gather the variables back into the scope, retained for the benefit of future
-// evaluations.
+// Gather the variables back into the scope, retaining their values for the
+// benefit of future evaluations.
 
     Object.assign($scope, {"""});
 
@@ -93,21 +92,19 @@ const outer_template = `
 //  b) we must inspect the $scope object to know which identifiers it contains.
 
     eval(
-        {inner_template_json}.replace(
-            /"""/g,
-            function replacer() {
-                return Object.keys($scope).join(", ");
-            }
-        )
+        {inner_template_json}.replace(/"""/g, function replacer() {
+            return Object.keys($scope).join(", ");
+        })
     );
 `;
 
-function replize_script(script, imports) {
+function replize_script(script, imports = []) {
 
-// The 'replize_script' function returns a script for evaluation in a REPL
-// context. The 'script' parameter is a string containing JavaScript source
-// code, without any import or export statements. The 'imports' parameter is an
-// array like that returned by the 'scriptify_module' function.
+// The 'replize_script' function transforms a script, making it suitable for
+// evaluation in a REPL. The 'script' parameter is a string containing
+// JavaScript source code, without any import or export statements. The
+// 'imports' parameter is an array like that returned by the 'scriptify_module'
+// function.
 
 // The resulting script expects a $imports variable to be available, which
 // should be an array containing the imported module objects.
@@ -132,11 +129,11 @@ function replize_script(script, imports) {
     const handlers = {
         VariableDeclaration(variable_node) {
 
-// Variable declarations (var, let, const and function statements) are rewritten
-// as assignments to local variables. This avoids collisions when repeatedly
+// Variable declarations (var, let and const statements) are rewritten as
+// assignments to local variables. This avoids exceptions when repeatedly
 // evaluating similar declarations in the same context.
 
-// Discard the var, let or const. This will turn the statement into a
+// Discard the var, let or const keyword. This turns the statement into a
 // comma-separated list of assignments.
 
             alterations.push([
@@ -197,21 +194,22 @@ function replize_script(script, imports) {
             });
         },
         FunctionDeclaration(node) {
-
-// To properly persist functions declarations in the simulated lexical scope we
-// create with 'eval', we must assign its value to the scope explicitly. Failure
-// to do so leaves the identifier unchanged.
-
             top_names.push(node.id.name);
 
-// Declaring the function is not enough! We must have an assignment operation
-// which overwrites the local variable with the same name. This is tricky,
-// because treating the function declaration as an expression and assigning it
-// to the variable will prevent the function from being hoisted, which can break
-// poorly organised code.
+// Function statements can be reevaluated without issue, but the value in the
+// $scope object will not be overwritten without an explicit assignment
+// statement. This is tricky, because treating the function declaration as an
+// expression and assigning it to the variable will prevent the function from
+// being hoisted, which can cause an exception if a function is referenced
+// before it is declared.
 
-// Our strategy is to tweak the name of the function being declared, and insert
-// an assignment statement at the start of the script.
+// Our strategy is to leave the function as a statement, so it is still hoisted
+// to the start of the script. However, the hoisted function is subtly renamed.
+// We then insert an assignment statement at the start of the script (following
+// the hoisted declaration) to
+
+//      a) give the function back its original name, and
+//      b) persist the function in the $scope.
 
             const hoisted_name = "$" + node.id.name;
             alterations.push([node.id, hoisted_name]);
@@ -225,11 +223,10 @@ function replize_script(script, imports) {
         },
         ClassDeclaration(node) {
 
-// Class declarations are similar to function declarations, except they are not
-// hoisted. This requires that we use a totally different strategy.
+// Class declarations are similar to function declarations, but they are not
+// hoisted. This requires a totally different strategy.
 
             top_names.push(node.id.name);
-
 
 // We turn the statement into an expression, which is assigned to the local
 // variable.
@@ -243,6 +240,10 @@ function replize_script(script, imports) {
             ]);
         }
     };
+
+// Examine each top-level statement in the script, passing it to the relevant
+// handler for transformation.
+
     tree.body.forEach(
         function (node) {
             const handler = handlers[node.type];
@@ -259,14 +260,12 @@ function replize_script(script, imports) {
         "{payload_script_json}",
 
 // The 'replace' method has a nasty gotcha: it recognises several special
-// patterns which, when present strings passed as the second parameter, make it
-// act clever. We disable this "feature" by passing a replacer function as the
-// second parameter.
+// patterns which, when present in strings passed as the second parameter, make
+// it behave in surprising ways. We gain immunity from this feature by passing a
+// replacer function as the second parameter.
 
         function replacer() {
-            return JSON.stringify(
-                alter_string(script, alterations)
-            );
+            return JSON.stringify(alter_string(script, alterations));
         }
     );
     return outer_template.replace(
@@ -286,31 +285,31 @@ function replize_script(script, imports) {
 //debug     "replize_script vm.runInContext",
 //debug     function (verdict) {
 //debug         const script = `
-//debug const x = "x";
-//debug     let y = "y";
-//debug z();
-//debug function z() {
-//debug     return "z";
-//debug }
-//debug let uninitialised;
-//debug const special_string_replacement_pattern = "$'";
-//debug   const {
-//debug     a,
-//debug     b
-//debug } = {
-//debug     a: "a",
-//debug     b: "b"
-//debug };
-//debug let [c, d] = [a, b];
-//debug (function () {
-//debug     const c = "not c";
-//debug }());
-//debug `;
+//debug             const x = "x";
+//debug                 let y = "y";
+//debug             z();
+//debug             function z() {
+//debug                 return "z";
+//debug             }
+//debug             let uninitialised;
+//debug             const special_string_replacement_pattern = "$'";
+//debug               const {
+//debug                 a,
+//debug                 b
+//debug             } = {
+//debug                 a: "a",
+//debug                 b: "b"
+//debug             };
+//debug             let [c, d] = [a, b];
+//debug             (function () {
+//debug                 const c = "not c";
+//debug             }());
+//debug         `;
 //debug         const gather = `
-//debug (function () {
-//debug     return [x, y, z(), a, b, c, d];
-//debug }());
-//debug `;
+//debug             (function () {
+//debug                 return [x, y, z(), a, b, c, d];
+//debug             }());
+//debug         `;
 //debug         const context = vm.createContext({});
 //debug         const results = [
 //debug             script,
@@ -318,7 +317,7 @@ function replize_script(script, imports) {
 //debug             ""
 //debug         ].map(function (script) {
 //debug             return vm.runInContext(
-//debug                 replize_script(script + "\n" + gather, []),
+//debug                 replize_script(script + "\n" + gather),
 //debug                 context
 //debug             );
 //debug         });
@@ -332,9 +331,11 @@ function replize_script(script, imports) {
 //debug     "replize_script strict mode",
 //debug     function (verdict) {
 //debug         try {
-//debug             vm.runInNewContext(
-//debug                 replize_script("(function () { x = true; }());", [])
-//debug             );
+//debug             vm.runInNewContext(replize_script(`
+//debug                 (function () {
+//debug                     x = true;
+//debug                 }());
+//debug             `));
 //debug             return verdict(false);
 //debug         } catch (ignore) {
 //debug             return verdict(true);

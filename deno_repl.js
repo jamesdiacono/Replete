@@ -16,7 +16,7 @@ function deno_repl_constructor(
         make_deno_cmdl(
             path.join(path_to_replete, "cmdl", "deno_padawan.js"),
             function on_stdout(buffer) {
-                return capabilities.log(buffer.toString());
+                return capabilities.out(buffer.toString());
             },
             function on_stderr(buffer) {
                 return capabilities.err(buffer.toString());

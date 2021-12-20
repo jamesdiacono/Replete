@@ -100,11 +100,11 @@ The __mime__ capability predicts the MIME type of the Buffer produced by the `re
     capabilities.mime("/yummy/spaghetti.jpg");     // "image/jpeg"
     capabilities.mime("/yummy/secret.key");        // undefined
 
-### capabilities.log(_string_)
-The __log__ capability is called with a string representation of any arguments passed to `console.log` or bytes written to STDOUT.
+### capabilities.out(_string_)
+The __out__ capability is called with a string representation of any arguments passed to `console.log` or bytes written to STDOUT.
 
 ### capabilities.err(_string_)
-The __err__ capability is called with a string representation of any exceptions which occur outside of evaluation, or of any bytes are written to STDERR.
+The __err__ capability is called with a string representation of any exceptions which occur outside of evaluation, or of any bytes written to STDERR.
 
 ## Dependencies
 Replete requires the Acorn JavaScript parser (https://github.com/acornjs/acorn). The Node.js REPL requires Node.js v17 or higher.

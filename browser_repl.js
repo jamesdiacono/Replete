@@ -14,7 +14,7 @@ function browser_repl_constructor(
     path_to_replete,
     webl_server_port,
     launch = function (url) {
-        return capabilities.log("Waiting for WEBL: " + url + "\n");
+        return capabilities.out("Waiting for WEBL: " + url + "\n");
     },
     host = "localhost",
     humanoid = false
@@ -121,7 +121,7 @@ function browser_repl_constructor(
         );
     }
     function on_client_found(client) {
-        capabilities.log("WEBL found.\n");
+        capabilities.out("WEBL found.\n");
         clearTimeout(launch_timer);
 
 // Create a single padawan on each connecting client. The padawan is rendered as
@@ -129,7 +129,7 @@ function browser_repl_constructor(
 
         const padawan = client.padawan({
             on_log(...args) {
-                return capabilities.log(args.join(" ") + "\n");
+                return capabilities.out(args.join(" ") + "\n");
             },
             on_exception: capabilities.err,
             type: "iframe",
@@ -143,7 +143,7 @@ function browser_repl_constructor(
         return padawan.create().catch(on_exception);
     }
     function on_client_lost(client) {
-        capabilities.log("WEBL lost.\n");
+        capabilities.out("WEBL lost.\n");
 
 // Forget the client and its padawans.
 
