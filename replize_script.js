@@ -224,7 +224,7 @@ function replize_script(script, imports = []) {
         ClassDeclaration(node) {
 
 // Class declarations are similar to function declarations, but they are not
-// hoisted. This requires a totally different strategy.
+// hoisted and can not be repeated. This requires a totally different strategy.
 
             top_names.push(node.id.name);
 
@@ -237,6 +237,13 @@ function replize_script(script, imports = []) {
                     end: node.start
                 },
                 node.id.name + " = "
+            ]);
+            alterations.push([
+                {
+                    start: node.end,
+                    end: node.end
+                },
+                ";"
             ]);
         }
     };
