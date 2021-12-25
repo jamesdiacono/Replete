@@ -114,12 +114,9 @@ const capabilities = Object.freeze({
     read(locator) {
 
 // So that we do not inadvertently expose sensitive files to the network, we
-// refuse to read any files which are hidden or not beneath the root directory.
+// refuse to read any files which are not beneath the root directory.
 
-        if (
-            locator.startsWith(".") ||
-            !locator.startsWith(root_directory + "/")
-        ) {
+        if (!locator.startsWith(root_directory + "/")) {
             return Promise.reject(new Error("Forbidden: " + locator));
         }
         return fs.promises.readFile(locator);
@@ -141,8 +138,8 @@ const capabilities = Object.freeze({
     }
 });
 
-// The REPLs requires access to Replete's source files. They are situated within
-// a directory adjacent to this script file.
+// The REPLs need to read to Replete's source files. They are situated in the
+// same directory as this file.
 
 const path_to_replete = path.dirname(process.argv[1]);
 

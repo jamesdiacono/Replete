@@ -9,7 +9,7 @@ When integrated with a text editor, Replete becomes part of your development env
 
 Replete encourages the development of modules in isolation, rather than in the context of a running application. Modules written in this way tend to be more independent and hence more reusable, more testable and hence more robust.
 
-Replete is in the public domain. [Watch the demonstration](https://youtu.be/ZXXcn7jLNdk?t=1389).
+Replete is in the Public Domain. [Watch the demonstration](https://youtu.be/ZXXcn7jLNdk?t=1389).
 
 ## The files
 - _replete.js_: A Node.js program which starts Replete. You should read this file.
@@ -39,7 +39,7 @@ Replete is in the public domain. [Watch the demonstration](https://youtu.be/ZXXc
 ## The message
 __Messages__ are sent to Replete, from a text editor or similar. A message is an object containing the following properties:
 
-- __source__: The JavaScript source code to be evaluated. The source may contain import and export statements.
+- __source__: The source code to be evaluated. The source may contain imports and exports.
 - __locator__: The locator of the module which contains the source. More on locators below.
 
 A message may contain additional properties, although these are ignored by Replete.
