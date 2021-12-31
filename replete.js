@@ -130,7 +130,7 @@ const capabilities = Object.freeze({
             return "text/javascript";
         }
     },
-    log(string) {
+    out(string) {
         process.stdout.write(string);
     },
     err(string) {
