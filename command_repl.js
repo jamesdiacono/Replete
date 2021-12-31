@@ -67,8 +67,8 @@ function command_repl_constructor(capabilities, cmdl) {
 
 //      send(message)
 //          Sends source code to the CMDL for evaluation. It returns a Promise
-//          which resolves to the evaluated value. The Promise rejects if an
-//          exception occurs during evaluation.
+//          which resolves to an array containing just the evaluated value. The
+//          Promise rejects if an exception occurs during evaluation.
 
 // The command REPL uses an HTTP server to serve modules to the CMDL, which will
 // import them via the dynamic 'import' function.
@@ -164,7 +164,7 @@ function command_repl_constructor(capabilities, cmdl) {
         ).then(
             function examine_report(report) {
                 if (report.exception === undefined) {
-                    return report.evaluation;
+                    return [report.evaluation];
                 }
                 throw report.exception;
             }

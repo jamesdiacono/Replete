@@ -93,7 +93,7 @@ It is vital that this function denies access to sensitive files. Otherwise it ma
     -> Rejected!
 
 ### capabilities.mime(_locator_)
-The __mime__ capability predicts the MIME type of the Buffer produced by the `read` capability when it called with the _locator_. It returns a string, or `undefined` if access to the file should be denied.
+The __mime__ capability predicts the MIME type of the Buffer produced by the `read` capability when it is called with the _locator_. It returns a string, or `undefined` if access to the file should be denied.
 
     capabilities.mime("/yummy/apple.js");          // "text/javascript"
     capabilities.mime("/yummy/cinnamon.coffee");   // "text/javascript"

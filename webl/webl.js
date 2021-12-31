@@ -1,9 +1,9 @@
-/*jslint browser */
-
 // A WEBL is master to many padawans. A padawan is an isolated execution context
 // with its own global object. It can be asked to evaluate arbitrary JavaScript
 // source code, and it reports any logging or exceptions. A padawan is sandboxed
 // such that it can not interfere with its master or other padawans.
+
+/*jslint browser */
 
 function inspect(value) {
 

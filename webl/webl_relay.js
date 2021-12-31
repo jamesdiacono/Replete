@@ -1,6 +1,3 @@
-/*jslint browser */
-/*global self, WebSocket */
-
 // This Web Worker maintains a WebSocket connection between the client and the
 // server, attempting to reconnect indefinitely if it is severed.
 
@@ -16,6 +13,9 @@
 // When the status of the connection changes, this worker sends a boolean value.
 // Any other value is a message from the server.
 
+/*jslint browser */
+/*global self, WebSocket */
+
 let socket;
 function connect_to_server(url) {
     socket = new WebSocket(url);
@@ -30,7 +30,7 @@ function connect_to_server(url) {
 // Inform the master that the connection is closed. Then attempt to restore it.
 
         self.postMessage(false);
-        return setTimeout(connect_to_server, 1000, url);
+        return setTimeout(connect_to_server, 250, url);
     };
     socket.onmessage = function (event) {
         self.postMessage(JSON.parse(event.data));

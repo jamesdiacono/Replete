@@ -1,6 +1,6 @@
-/*jslint node */
-
 // This REPL evaluates JavaScript source code in a browser environment.
+
+/*jslint node */
 
 import path from "path";
 import alter_string from "./alter_string.js";

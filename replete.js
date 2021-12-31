@@ -1,5 +1,3 @@
-/*jslint node */
-
 // This is an example of a REPL built using Replete. It is a very minimal
 // configuration, and may be considered a starting point for building more
 // interesting REPLs. To start it, run
@@ -71,6 +69,8 @@
 //      > {"source":"console.log(0 / 0, 1 / 0)"}
 //      NaN Infinity
 //      undefined
+
+/*jslint node */
 
 import path from "path";
 import fs from "fs";
@@ -161,16 +161,14 @@ function on_message(message) {
         deno: deno_repl
     };
     return repls[message.platform].send(message).then(
-        function (reply) {
+        function (evaluations) {
 
-// The reply is either a single evaluation, or an array of evaluations produced
-// in parallel. Each evaluation is written to STDOUT.
+// The reply is an array of evaluated values, produced in parallel. Each
+// evaluation is written to STDOUT.
 
-            return (
-                Array.isArray(reply)
-                ? reply.forEach((evaluation) => console.log(evaluation))
-                : console.log(reply)
-            );
+            return evaluations.forEach(function (evaluation) {
+                return console.log(evaluation);
+            });
         },
 
 // Exceptions are written to STDERR.

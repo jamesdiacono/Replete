@@ -1,6 +1,6 @@
-/*jslint node, bitwise */
-
 // A minimal WebSocket server implementation for Node.js.
+
+/*jslint node, bitwise */
 
 import crypto from "crypto";
 
@@ -9,30 +9,30 @@ function make_frame(opcode, payload) {
 // We set the "fin" bit to true, meaning that this is the only frame in the
 // message.
 
-    const zeroth_bit = Buffer.from([0b10000000 | opcode]);
+    const zeroth_byte = Buffer.from([0b10000000 | opcode]);
 
 // The payload length field expands as required.
 
-    let length_bits;
+    let length_bytes;
     if (payload.length < 126) {
-        length_bits = Buffer.from([payload.length]);
+        length_bytes = Buffer.from([payload.length]);
     } else if (payload.length < 2 ** 16) {
-        length_bits = Buffer.alloc(3);
-        length_bits.writeInt8(126, 0);
-        length_bits.writeUInt16BE(payload.length, 1);
+        length_bytes = Buffer.alloc(3);
+        length_bytes.writeInt8(126, 0);
+        length_bytes.writeUInt16BE(payload.length, 1);
     } else {
-        length_bits = Buffer.alloc(9);
-        length_bits.writeInt8(127, 0);
+        length_bytes = Buffer.alloc(9);
+        length_bytes.writeInt8(127, 0);
 
 // The spec allows for an exabyte of payload, which seems excessive for a
 // browser-based messaging protocol. This implementation produces a well-formed
 // length field for payloads up to 9 petabytes, which ought to be enough for
 // anybody.
 
-        length_bits.writeUInt32BE(Math.floor(payload.length / (2 ** 32)), 1);
-        length_bits.writeUInt32BE(payload.length % (2 ** 32), 5);
+        length_bytes.writeUInt32BE(Math.floor(payload.length / (2 ** 32)), 1);
+        length_bytes.writeUInt32BE(payload.length % (2 ** 32), 5);
     }
-    return Buffer.concat([zeroth_bit, length_bits, payload]);
+    return Buffer.concat([zeroth_byte, length_bytes, payload]);
 }
 
 function websocketify(

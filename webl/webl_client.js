@@ -1,8 +1,8 @@
-/*jslint browser */
-
 // This module is part of the WEBL suite. It is served to the browser by the
 // WEBL server. When it is run, a WEBL is created and hooked up to the server.
 // The WEBL may then be operated remotely.
+
+/*jslint browser */
 
 import make_webl from "./webl.js";
 
@@ -117,6 +117,13 @@ worker.onmessage = function (event) {
 // The connection has been opened or closed.
 
         if (event.data) {
+            if (webl !== undefined) {
+
+// The connection has been repaired. Reload the page to clear the module cache.
+// The client will then reconnect.
+
+                return window.location.reload();
+            }
             webl = make_webl();
             window.onbeforeunload = webl.destroy;
             document.title = "WEBL";

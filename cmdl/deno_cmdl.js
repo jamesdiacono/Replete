@@ -1,8 +1,8 @@
-/*jslint node */
-
 // A Deno CMDL controls a single Deno padawan. It provides an interface for
 // evaluating JavaScript source code within a padawan. Note that source code is
 // evaluated in sloppy mode.
+
+/*jslint node */
 
 import child_process from "child_process";
 import make_cmdl from "./cmdl.js";

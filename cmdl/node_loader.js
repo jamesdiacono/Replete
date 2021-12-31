@@ -1,7 +1,7 @@
-/*jslint node */
-
 // This file is a Node.js "loader" module, which allows the Node.js padawan to
 // import modules via HTTP.
+
+/*jslint node */
 
 import http from "http";
 import https from "https";

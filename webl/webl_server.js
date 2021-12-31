@@ -1,3 +1,7 @@
+// A WEBL server runs on Node.js, and serves the WEBL client to the browser. A
+// persistent connection is maintained between the two. The server can be
+// started, stopped or asked to make new padawans.
+
 /*jslint node */
 
 import path from "path";
@@ -16,10 +20,6 @@ function webl_server_constructor(
     },
     humanoid = false
 ) {
-
-// A WEBL server runs on Node.js, and serves the WEBL client to the browser. A
-// persistent connection is maintained between the two. The server can be
-// started, stopped or asked to make new padawans.
 
 // The 'location_of_the_webl_base' parameter is the absolute path to the
 // directory containing the WEBL's source files on disk. Without it, the source

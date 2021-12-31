@@ -1,3 +1,47 @@
+// In a REPL, source code is evaluated over and over again in the same scope.
+// The first time
+
+//      let greeting = "Hello";
+
+// is evaluated there is no problem. However, subsequent evaluations will throw
+// an exception because the 'greeting' identifier is already declared, and an
+// identifier may not be declared twice.
+
+// Another expectation we have of the REPL is that the value of every variable
+// is preserved for future evaluations. If we now ran
+
+//      greeting + ", World!";
+
+// we would expect to get "Hello, World!", not "undefined, World!" or an
+// exception. We should be able to modify the 'greeting' variable like
+
+//      greeting = "Goodbye";
+
+// and overwrite the old value. Likewise, we should be able to redeclare
+// functions.
+
+// Finally, we expect that the source is evaluated in strict mode (rather than
+// sloppy mode) because that is safer.
+
+// The Replete approach is to transform the source code before it is evaluated.
+// We declare a global variable, '$scope', which is an object holding the value
+// of every declared identifier.
+
+//      $scope.greeting;     // "Goodbye"
+
+// We replace declarations with assignments. Essentially,
+
+//      let greeting = "Hello";
+
+// becomes
+
+//      "use strict";
+//      let {greeting} = $scope;
+//      greeting = "Hello";
+//      $scope.greeting = greeting;
+
+// although the reality is somewhat more convoluted.
+
 import {parse} from "acorn";
 import alter_string from "./alter_string.js";
 
