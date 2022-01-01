@@ -116,7 +116,8 @@ function browser_repl_constructor(
 // Otherwise serve the compiled file verbatim.
 
                 return res.end(buffer);
-            },
+            }
+        ).catch(
             fail
         );
     }

@@ -117,13 +117,6 @@ worker.onmessage = function (event) {
 // The connection has been opened or closed.
 
         if (event.data) {
-            if (webl !== undefined) {
-
-// The connection has been repaired. Reload the page to clear the module cache.
-// The client will then reconnect.
-
-                return window.location.reload();
-            }
             webl = make_webl();
             window.onbeforeunload = webl.destroy;
             document.title = "WEBL";

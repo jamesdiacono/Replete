@@ -104,7 +104,8 @@ function command_repl_constructor(capabilities, cmdl) {
                         )
                     );
                 });
-            },
+            }
+        ).catch(
             fail
         );
     });

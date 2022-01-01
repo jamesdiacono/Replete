@@ -17,8 +17,8 @@
 //             +----------------+--------^----------------+
 //                              |        |
 //                              |        |
-//       Command messages       |        |  Status messages
-//  {source, locator, platform} |        |  {type, string}
+//                     Command  |        |  Result
+//                    messages  |        |  messages
 //                              |        |
 //                              |        |
 //          +-------------------v--------+--------------------+
@@ -38,38 +38,45 @@
 //          The JavaScript source code to be evaluated, as a string.
 
 //      locator
-//          The locator string of the module being evaluated. This is required
-//          if the source contains any import statements, but optional
+//          The absolute path on disk of the module being evaluated. This is
+//          required if the source contains any import statements, but optional
 //          otherwise.
 
 //      platform
 //          Either "browser", "node" or "deno". This property determines which
 //          REPL will evaluate the source.
 
-// The process sends "status" messages with the following properties:
+// The process sends "result" messages, which come in four varieties. Depending
+// on its variety, a result message has wun of the following properties. The
+// value of the property is a string representation of a value.
 
-//      type
-//          Wun of "evaluation", "exception", "out" or "err". A "evaluation" or
-//          "exception" message is sent with the result of each evaluation. The
-//          "out" and "err" messages result from indirect output and exceptions.
+//      evaluation
+//          The evaluated value, if evaluation was completed successfully.
 
-//      string
-//          A textual representation of the value or exception.
+//      exception
+//          The exception, if evaluation failed.
 
-// Here are some examples of commands and the status messages they might induce.
+//      out
+//          Any arguments passed to console.log, or bytes written to STDOUT.
+
+//      err
+//          An exception which occurred outside of evaluation, or bytes written
+//          to STDERR.
+
+// Here are some examples of commands and the results they might induce.
 
 //      COMMAND {"platform":"browser", "source":"navigator.vendor"}
-//      STATUS  {"type": "evaluation", "string": "Google Inc."}
+//      RESULT  {"evaluation": "Google Inc."}
 
 //      COMMAND {"platform":"node", "source":"process.version"}
-//      STATUS  {"type": "evaluation", "string": "v14.4.0"}
+//      RESULT  {"evaluation": "v14.4.0"}
 
 //      COMMAND {"platform":"browser", "source":"process.version"}
-//      STATUS  {"type": "exception", "string": "ReferenceError: process is..."}
+//      RESULT  {"exception": "ReferenceError: process is not defined..."}
 
-//      COMMAND {"source":"console.log(0 / 0, 1 / 0)"}
-//      STATUS  {"type": "out", "string": "NaN Infinity"}
-//      STATUS  {"type": "evaluation", "string": "undefined"}
+//      COMMAND {"platform": "deno", "source":"console.log(0 / 0, 1 / 0)"}
+//      RESULT  {"out": "NaN Infinity\n"}
+//      RESULT  {"evaluation": "undefined"}
 
 /*jslint node */
 
@@ -82,14 +89,6 @@ import make_deno_repl from "./deno_repl.js";
 import make_browser_repl from "./browser_repl.js";
 
 const root_directory = process.cwd();
-
-function send_status(type, string) {
-
-// The 'send_status' function writes a single status message to STDOUT, followed
-// by a newline.
-
-    console.log(JSON.stringify({type, string}));
-}
 
 // These are the capabilities given to each platform's REPL. See README.md for a
 // description of each.
@@ -141,15 +140,15 @@ const capabilities = Object.freeze({
         }
     },
     out(string) {
-        send_status("out", string);
+        console.log(JSON.stringify({out: string}));
     },
     err(string) {
-        send_status("err", string);
+        console.log(JSON.stringify({err: string}));
     }
 });
 
-// The REPLs need to read to Replete's source files. They are situated in the
-// same directory as this file.
+// The REPLs require read access to Replete's source files. They are situated in
+// the same directory as this file.
 
 const path_to_replete = path.dirname(process.argv[1]);
 
@@ -163,7 +162,7 @@ const browser_repl = make_browser_repl(capabilities, path_to_replete, 35897);
 function on_command(command) {
 
 // The 'on_command' function relays a 'command' message to the relevant REPL.
-// The REPL's response is relayed as a status message.
+// The REPL's response is relayed as a result message.
 
     const repls = {
         browser: browser_repl,
@@ -173,18 +172,18 @@ function on_command(command) {
     return repls[command.platform].send(command).then(
         function (evaluations) {
 
-// The reply is an array of evaluated values, produced in parallel. Each
-// evaluation is written to STDOUT.
+// On success, the REPL replies with an array of evaluated values produced in
+// parallel. Each evaluation is sent back as a separate message.
 
             return evaluations.forEach(function (evaluation) {
-                send_status("evaluation", evaluation);
+                console.log(JSON.stringify({evaluation}));
             });
         },
-        function (reason) {
-            if (typeof reason !== "string") {
-                reason = util.inspect(reason);
+        function (exception) {
+            if (typeof exception !== "string") {
+                exception = util.inspect(exception);
             }
-            send_status("exception", reason);
+            console.log(JSON.stringify({exception}));
         }
     );
 }
