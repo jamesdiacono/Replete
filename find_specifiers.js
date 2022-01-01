@@ -44,12 +44,4 @@ function find_specifiers(source) {
     );
 }
 
-//debug const source = `
-//debug import green, {red, yellow} from "./colours.js";
-//debug export * from "./aggregate.js";
-//debug `;
-//debug console.log(find_specifiers(source).map(function ({range}) {
-//debug     return source.slice(range.start, range.end);
-//debug }));
-
 export default Object.freeze(find_specifiers);

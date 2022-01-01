@@ -7,8 +7,6 @@
 import child_process from "child_process";
 import make_cmdl from "./cmdl.js";
 
-//debug import deno_padawan_path from "./deno_padawan.js@path";
-
 function deno_cmdl_constructor(
     path_to_padawan,
     on_stdout,
@@ -57,29 +55,5 @@ function deno_cmdl_constructor(
         return Promise.resolve(subprocess);
     });
 }
-
-//debug const cmdl = deno_cmdl_constructor(
-//debug     deno_padawan_path,
-//debug     function on_stdout(chunk) {
-//debug         return process.stdout.write(chunk);
-//debug     },
-//debug     function on_stderr(chunk) {
-//debug         return process.stderr.write(chunk);
-//debug     },
-//debug     7334
-//debug );
-//debug cmdl.create().then(function () {
-//debug     return cmdl.eval(
-//debug         //`
-//debug         //    (function isStrictMode() {
-//debug         //        return this === undefined;
-//debug         //    }());
-//debug         //`,
-//debug         `$imports[0].basename("/a/b/c.d")`,
-//debug         ["https://deno.land/std@0.117.0/path/mod.ts"]
-//debug     ).then(
-//debug         console.log
-//debug     );
-//debug }).then(cmdl.destroy);
 
 export default Object.freeze(deno_cmdl_constructor);

@@ -24,12 +24,4 @@ function alter_string(string, alterations) {
     );
 }
 
-//debug console.log(alter_string(
-//debug     "..234...8.",
-//debug     [
-//debug         [{start: 2, end: 5}, "twothreefour"],
-//debug         [{start: 8, end: 9}, "eight"]
-//debug     ]
-//debug ));
-
 export default Object.freeze(alter_string);

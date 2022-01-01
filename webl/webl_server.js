@@ -70,7 +70,6 @@ function webl_server_constructor(
 //              it returns a Promise which resolves wunce the padawan has ceased
 //              to exist.
 
-
     let connections = [];
     let clients = new WeakMap();
     let on_open_callbacks = [];

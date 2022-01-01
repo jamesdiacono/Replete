@@ -196,17 +196,7 @@ const padawan_create_script_template = `
                 message.secret = {secret};
                 return master_window.postMessage(message, "*");
             },
-            inspect(value) {
-
-// If the value happens to be a string, it is passed through unchanged. This
-// improves readability if the value is a report spanning multiple lines, and
-// intelligibility if the value is already JSON encoded.
-
-                if (typeof value === "string") {
-                    return value;
-                }
-                return (${inspect.toString()})(value);
-            },
+            inspect: ${inspect.toString()},
             reason: ${reason.toString()}
         };
     }(window.opener ?? window.parent));
@@ -219,7 +209,17 @@ const padawan_create_script_template = `
             $webl.send({
                 name: "log",
                 padawan: "{name}",
-                values: args.map($webl.inspect)
+                values: args.map(function (value) {
+                    return (
+
+// If the value happens to be a string, it is passed through unchanged. This
+// improves the readability of strings which span multiple lines.
+
+                        typeof value === "string"
+                        ? value
+                        : $webl.inspect(value)
+                    );
+                })
             });
             return original_log(...args);
         };
@@ -540,30 +540,5 @@ function webl_constructor() {
 }
 
 // Below is a demonstration showing how the WEBL can be used within the browser.
-
-//debug const webl = webl_constructor();
-//debug const padawan = webl.padawan({
-//debug     on_log: console.log,
-//debug     on_exception: console.error,
-//debug     name: "Foo #0",
-//debug     type: "iframe",
-//debug     iframe_style_object: {
-//debug         width: "200px",
-//debug         height: "200px"
-//debug     }
-//debug });
-//debug padawan.create().then(
-//debug     function on_created() {
-//debug         return padawan.eval(`
-//debug             const btn = document.createElement("button");
-//debug             btn.innerText = "Foo";
-//debug             document.body.appendChild(btn);
-//debug         `, []);
-//debug     }
-//debug ).then(
-//debug     function on_evaluated() {
-//debug         return setTimeout(webl.destroy, 10000);
-//debug     }
-//debug );
 
 export default Object.freeze(webl_constructor);

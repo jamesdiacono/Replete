@@ -1,11 +1,6 @@
 import {parse} from "acorn";
 import alter_string from "./alter_string.js";
 
-//debug import assert from "@pkg/js/assert.js";
-//debug import valid_clone from "@pkg/js/valid_clone.js";
-//debug import jscheck from "@pkg/js/jscheck.js";
-//debug const specify = jscheck();
-
 function scriptify_module(source) {
 
 // The 'eval' function can not handle import or export statements. The
@@ -171,93 +166,5 @@ function scriptify_module(source) {
         exports
     };
 }
-
-//debug specify.claim(
-//debug     "scriptify_module default",
-//debug     function (verdict) {
-//debug         assert(
-//debug             scriptify_module(
-//debug                 "import x from \"./x.js\";\n" +
-//debug                 "x();\n" +
-//debug                 "export default !x;\n"
-//debug             ),
-//debug             valid_clone({
-//debug                 script: (
-//debug                     "\n" +
-//debug                     "x();\n" +
-//debug                     "const $default = !x;\n"
-//debug                 ),
-//debug                 imports: [{
-//debug                     specifier: "./x.js",
-//debug                     default: "x"
-//debug                 }],
-//debug                 exports: {default: "$default"}
-//debug             })
-//debug         );
-//debug         return verdict(true);
-//debug     }
-//debug );
-//debug specify.claim(
-//debug     "scriptify_module named",
-//debug     function (verdict) {
-//debug         assert(
-//debug             scriptify_module(
-//debug                 "import {x} from \"./y.js\";\n" +
-//debug                 "x();\n" +
-//debug                 "export {x};\n"
-//debug             ),
-//debug             valid_clone({
-//debug                 script: "\nx();\n\n",
-//debug                 imports: [{
-//debug                     specifier: "./y.js",
-//debug                     names: {x: "x"}
-//debug                 }],
-//debug                 exports: {x: "x"}
-//debug             })
-//debug         );
-//debug         return verdict(true);
-//debug     }
-//debug );
-//debug specify.claim(
-//debug     "scriptify_module The Bad Parts",
-//debug     function (verdict) {
-//debug         assert(
-//debug             scriptify_module(
-//debug                 "import x, {a as b} from \"./y.js\";\n" +
-//debug                 "import z, * as d from \"./z.js\";\n" +
-//debug                 "z(d);\n" +
-//debug                 "export default b(x);\n" +
-//debug                 "export * from \"./w.js\";\n" +
-//debug                 "export {b as c};\n"
-//debug             ),
-//debug             valid_clone({
-//debug                 script: "\n\nz(d);\nconst $default = b(x);\n\n\n",
-//debug                 imports: [
-//debug                     {
-//debug                         specifier: "./y.js",
-//debug                         default: "x",
-//debug                         names: {a: "b"}
-//debug                     },
-//debug                     {
-//debug                         specifier: "./z.js",
-//debug                         default: "z",
-//debug                         names: "d"
-//debug                     },
-//debug                     {
-//debug                         specifier: "./w.js",
-//debug                         names: "$import_2"
-//debug                     }
-//debug                 ],
-//debug                 exports: {
-//debug                     default: "$default",
-//debug                     c: "b",
-//debug                     "*": [2]
-//debug                 }
-//debug             })
-//debug         );
-//debug         return verdict(true);
-//debug     }
-//debug );
-//debug specify.check({on_report: console.log, nr_trials: 1});
 
 export default Object.freeze(scriptify_module);

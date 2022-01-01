@@ -45,11 +45,6 @@
 import {parse} from "acorn";
 import alter_string from "./alter_string.js";
 
-//debug import vm from "vm";
-//debug import valid from "@pkg/js/jsvalid.js";
-//debug import jscheck from "@pkg/js/jscheck.js";
-//debug const specify = jscheck();
-
 function make_identifiers_object_literal(top_names, imports) {
     const members = [];
 
@@ -331,68 +326,5 @@ function replize_script(script, imports = []) {
         }
     );
 }
-
-//debug specify.claim(
-//debug     "replize_script vm.runInContext",
-//debug     function (verdict) {
-//debug         const script = `
-//debug             const x = "x";
-//debug                 let y = "y";
-//debug             z();
-//debug             function z() {
-//debug                 return "z";
-//debug             }
-//debug             let uninitialised;
-//debug             const special_string_replacement_pattern = "$'";
-//debug               const {
-//debug                 a,
-//debug                 b
-//debug             } = {
-//debug                 a: "a",
-//debug                 b: "b"
-//debug             };
-//debug             let [c, d] = [a, b];
-//debug             (function () {
-//debug                 const c = "not c";
-//debug             }());
-//debug         `;
-//debug         const gather = `
-//debug             (function () {
-//debug                 return [x, y, z(), a, b, c, d];
-//debug             }());
-//debug         `;
-//debug         const context = vm.createContext({});
-//debug         const results = [
-//debug             script,
-//debug             script,
-//debug             ""
-//debug         ].map(function (script) {
-//debug             return vm.runInContext(
-//debug                 replize_script(script + "\n" + gather),
-//debug                 context
-//debug             );
-//debug         });
-//debug         const report = valid.array(
-//debug             valid.array(["x", "y", "z", "a", "b", "a", "b"])
-//debug         )(results);
-//debug         return verdict(report.violations.length === 0);
-//debug     }
-//debug );
-//debug specify.claim(
-//debug     "replize_script strict mode",
-//debug     function (verdict) {
-//debug         try {
-//debug             vm.runInNewContext(replize_script(`
-//debug                 (function () {
-//debug                     x = true;
-//debug                 }());
-//debug             `));
-//debug             return verdict(false);
-//debug         } catch (ignore) {
-//debug             return verdict(true);
-//debug         }
-//debug     }
-//debug );
-//debug specify.check({on_report: console.log, nr_trials: 1});
 
 export default Object.freeze(replize_script);

@@ -7,8 +7,6 @@
 import child_process from "child_process";
 import make_cmdl from "./cmdl.js";
 
-//debug import node_padawan_path from "./node_padawan.js@path";
-
 function node_cmdl_constructor(
     path_to_padawan,
     on_stdout,
@@ -49,29 +47,5 @@ function node_cmdl_constructor(
         return Promise.resolve(subprocess);
     });
 }
-
-//debug const cmdl = node_cmdl_constructor(
-//debug     node_padawan_path,
-//debug     function on_stdout(chunk) {
-//debug         return process.stdout.write(chunk);
-//debug     },
-//debug     function on_stderr(chunk) {
-//debug         return process.stderr.write(chunk);
-//debug     },
-//debug     7333
-//debug );
-//debug cmdl.create().then(function () {
-//debug     return cmdl.eval(
-//debug         `
-//debug             (function isStrictMode() {
-//debug                 return this === undefined;
-//debug             }());
-//debug         `,
-//debug         // "$imports[0].default.tmpdir();",
-//debug         ["os"]
-//debug     ).then(
-//debug         console.log
-//debug     );
-//debug }).then(cmdl.destroy);
 
 export default Object.freeze(node_cmdl_constructor);

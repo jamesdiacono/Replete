@@ -34,7 +34,14 @@ function evaluate(script, import_specifiers) {
         };
     }).catch(function (exception) {
         return {
-            exception: exception.stack
+            exception: (
+                (
+                    exception
+                    && typeof exception.stack === "string"
+                )
+                ? exception.stack
+                : "Exception: " + util.inspect(exception)
+            )
         };
     });
 }
