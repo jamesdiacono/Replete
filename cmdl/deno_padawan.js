@@ -11,11 +11,6 @@
 // exceptions or unhandled promise rejections. This is because Deno does not
 // provide global handlers for errors.
 
-// We create an "indirect" eval function. When called, the code is evaluated in
-// the global scope, meaning that it does not have access to the local scope.
-
-const indirect_eval = eval;
-
 function evaluate(script, import_specifiers) {
 
 // The 'evaluate' function evaluates the 'script', after resolving any imported
@@ -30,9 +25,13 @@ function evaluate(script, import_specifiers) {
 // The script is evaluated in the global scope, so it does not have access to
 // any local variables. The imported modules are provided by a global variable.
 
-        globalThis.$imports = modules;
+        window.$imports = modules;
         return {
-            evaluation: Deno.inspect(indirect_eval(script))
+
+// The script is evaluated using an "indirect" eval, meaning it does not have
+// access to the local scope.
+
+            evaluation: Deno.inspect(window.eval(script))
         };
     }).catch(function (exception) {
         return {

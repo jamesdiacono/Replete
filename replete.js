@@ -2,9 +2,26 @@
 // configuration, and may be considered a starting point for building more
 // interesting REPLs. To start it, run
 
-//      $ node --experimental-import-meta-resolve /path/to/replete.js
+//      $ node --experimental-import-meta-resolve /path/to/replete.js [ports...]
 
-// from a directory which contains your source code.
+// from a directory which contains your source code. The three [ports...]
+// indicate the:
+
+//      WEBL server port
+//          Specifying a port number for the WEBL server means that existing
+//          WEBL clients can survive a restart of Replete, which is convenient.
+//          If this port number is zero or not specified, a free port is chosen
+//          automatically.
+
+//      Node.js debugger port
+//          A Node.js debugger will attempt to listen on the port, unless the
+//          port number is zero or not specified. This makes it possible to
+//          monitor your evaluations using a fully featured debugger. To attach
+//          a debugger, open Google Chrome and navigate to chrome://inspect.
+
+//      Deno debugger port
+//          Same as for the Node.js debugger, but for Deno. Both use the V8
+//          Inspector Protocol.
 
 // The process communicates via STDIN and STDOUT. Messages are sent in both
 // directions, each message occupying a single line. A message is a JSON-encoded
@@ -88,6 +105,14 @@ import make_node_repl from "./node_repl.js";
 import make_deno_repl from "./deno_repl.js";
 import make_browser_repl from "./browser_repl.js";
 
+function parse_port(string) {
+
+// The 'parse_port' function parses a port number from a 'string'. It returns
+// undefined if 'string' does not contain a valid port number.
+
+    return Number.parseInt(string, 10) || undefined;
+}
+
 const root_directory = process.cwd();
 
 // These are the capabilities given to each platform's REPL. See README.md for a
@@ -155,9 +180,21 @@ const path_to_replete = path.dirname(process.argv[1]);
 // A separate REPL is created for each platform. No context is shared between
 // them.
 
-const node_repl = make_node_repl(capabilities, path_to_replete, 7375);
-const deno_repl = make_deno_repl(capabilities, path_to_replete, 7376);
-const browser_repl = make_browser_repl(capabilities, path_to_replete, 35897);
+const browser_repl = make_browser_repl(
+    capabilities,
+    path_to_replete,
+    parse_port(process.argv[2])
+);
+const node_repl = make_node_repl(
+    capabilities,
+    path_to_replete,
+    parse_port(process.argv[3])
+);
+const deno_repl = make_deno_repl(
+    capabilities,
+    path_to_replete,
+    parse_port(process.argv[4])
+);
 
 function on_command(command) {
 
@@ -190,9 +227,9 @@ function on_command(command) {
 
 // Start the REPLs.
 
+browser_repl.start().catch(console.error);
 node_repl.start().catch(console.error);
 deno_repl.start().catch(console.error);
-browser_repl.start().catch(console.error);
 
 // Begin reading command messages from STDIN, line by line.
 
