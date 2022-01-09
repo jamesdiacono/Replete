@@ -9,7 +9,7 @@ function node_repl_constructor(
     capabilities,
     path_to_replete,
     debugger_port,
-    node_command
+    which_node
 ) {
     return make_command_repl(
         capabilities,
@@ -23,7 +23,7 @@ function node_repl_constructor(
             },
             debugger_port,
             path.join(path_to_replete, "cmdl", "node_loader.js"),
-            node_command
+            which_node
         )
     );
 }

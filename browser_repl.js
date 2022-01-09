@@ -12,11 +12,8 @@ import make_webl_server from "./webl/webl_server.js";
 function browser_repl_constructor(
     capabilities,
     path_to_replete,
-    webl_server_port,
-    launch = function (url) {
-        return capabilities.out("Waiting for WEBL: " + url + "\n");
-    },
-    host = "localhost",
+    port,
+    hostname = "localhost",
     humanoid = false
 ) {
 
@@ -29,17 +26,12 @@ function browser_repl_constructor(
 //          The absolute path to the directory containing Replete's source files
 //          on disk.
 
-//      webl_server_port
+//      port
 //          The port number of the WEBL server. If undefined, an unallocated
 //          port will be chosen automatically.
 
-//      launch(url)
-//          A function which is called with the URL of the WEBL client. It
-//          should launch the WEBL client in a browser. The 'launch' function
-//          is called only if a running WEBL client could not be found.
-
-//      host
-//          The host of the WEBL and file servers.
+//      hostname
+//          The hostname of the WEBL server.
 
 //      humanoid
 //          A boolean indicating whether to use C3PO as a favicon, rather than
@@ -63,7 +55,6 @@ function browser_repl_constructor(
 
 // Configure the WEBL and its file server.
 
-    let launch_timer;
     let clients_and_padawans = new Map();
     function on_file_request(req, res) {
 
@@ -123,7 +114,6 @@ function browser_repl_constructor(
     }
     function on_client_found(client) {
         capabilities.out("WEBL found.\n");
-        clearTimeout(launch_timer);
 
 // Create a single padawan on each connecting client. The padawan is rendered as
 // an iframe which fills the WEBL client's viewport.
@@ -159,23 +149,10 @@ function browser_repl_constructor(
         humanoid
     );
     function start() {
-        return webl_server.start(webl_server_port, host).then(function (port) {
-            webl_server_port = port;
-
-// Wunce the WEBL server is started, we wait for a client to connect. If none
-// have connected within the time limit, the 'launch' function is called with
-// the client's URL.
-
-            launch_timer = setTimeout(
-                function on_timeout() {
-                    return launch("http://" + host + ":" + port);
-                },
-
-// WebSocket reconnection attempts tend to be throttled by the browser after a
-// while. A larger waiting period makes it less likely that an extraneous WEBL
-// client will be launched.
-
-                5000
+        return webl_server.start(port, hostname).then(function (actual_port) {
+            port = actual_port;
+            capabilities.out(
+                "Waiting for WEBL: http://" + hostname + ":" + port + "\n"
             );
         });
     }
@@ -183,7 +160,7 @@ function browser_repl_constructor(
 
 // Prepare the message's source code for evaluation.
 
-        const webl_url = "http://" + host + ":" + webl_server_port;
+        const webl_url = "http://" + hostname + ":" + port;
         return Promise.resolve(
             message
         ).then(

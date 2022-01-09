@@ -12,7 +12,7 @@ function deno_cmdl_constructor(
     on_stdout,
     on_stderr,
     debugger_port,
-    deno_command = "/usr/local/bin/deno"
+    which_deno
 ) {
 
 // The 'path_to_padawan' parameter is the absolute path to the entrypoint of the
@@ -41,7 +41,7 @@ function deno_cmdl_constructor(
         }
         args.push(path_to_padawan, String(tcp_port));
         const subprocess = child_process.spawn(
-            deno_command,
+            which_deno,
             args,
             {
                 env: Object.assign(

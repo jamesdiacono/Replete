@@ -13,7 +13,7 @@ function node_cmdl_constructor(
     on_stderr,
     debugger_port,
     path_to_loader,
-    node_command = process.argv[0]
+    which_node
 ) {
 
 // The 'path_to_padawan' parameter is the absolute path to the entrypoint of the
@@ -38,7 +38,7 @@ function node_cmdl_constructor(
         }
         args.push(path_to_padawan, String(tcp_port));
         const subprocess = child_process.spawn(
-            node_command,
+            which_node,
             args,
             {env: process.env}
         );

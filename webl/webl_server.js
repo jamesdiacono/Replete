@@ -37,12 +37,12 @@ function webl_server_constructor(
 // The other two parameters are covered below. The constructor returns an object
 // containing two functions:
 
-//  start(port, host)
-//      The 'start' method starts the server on the specified 'port' and 'host',
-//      returning a Promise which resolves to the chosen port number wunce the
-//      server is ready. The 'port' parameter determines the port of the web
-//      server. If a port is not specified, wun is chosen automatically. The
-//      'host' parameter defaults to "localhost" if it is undefined.
+//  start(port, hostname)
+//      The 'start' method starts the server on the specified 'port' and
+//      'hostname', returning a Promise which resolves to the chosen port number
+//      wunce the server is ready. The 'port' parameter determines the port of
+//      the web server. If a port is not specified, wun is chosen automatically.
+//      The 'hostname' parameter defaults to "localhost" if it is undefined.
 
 //  stop()
 //      The 'stop' method closes down the server. It returns a Promise which
@@ -231,10 +231,10 @@ function webl_server_constructor(
             return on_client_lost(client);
         }
     );
-    function start(port, host = "localhost") {
+    function start(port, hostname = "localhost") {
         return new Promise(function (resolve, reject) {
             server.once("error", reject);
-            server.listen(port, host, function on_ready() {
+            server.listen(port, hostname, function on_ready() {
                 return resolve(server.address().port);
             });
         });

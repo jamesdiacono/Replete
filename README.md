@@ -12,7 +12,7 @@ Replete encourages the development of modules in isolation, rather than in the c
 Replete is in the Public Domain. [Watch the demonstration](https://youtu.be/ZXXcn7jLNdk?t=1389).
 
 ## The files
-- _replete.js_: A Node.js program which starts Replete. You should read this file.
+- _replete.js_: A Node.js program. Read this file for instructions on its use.
 
 - _browser_repl.js_: A Node.js module exporting the constructor for a REPL which evaluates messages in a browser environment.
 
@@ -24,7 +24,7 @@ Replete is in the Public Domain. [Watch the demonstration](https://youtu.be/ZXXc
 
 - _scriptify_module.js_: A module exporting a function which deconstructs the source code of a JavaScript module into a script, its imports and its exports.
 
-- _replize_script.js_: In a REPL, source code is evaluated over and over again in the same execution context. However, some JavaScript statements throw an exception when evaluated multiple times. For example, two `let` declarations using the same name can not be evaluated twice in the same context. This module exports the `replize_script` function, which transforms a script to make it safe for reevaluation.
+- _replize_script.js_: A module exporting a function which transforms a script, making it safe for reevaluation.
 
 - _find_specifiers.js_: A module exporting a source analysis function, used for code transformations.
 
@@ -83,7 +83,7 @@ If absolute paths were used as locators, the `locate` capability might behave li
 ### capabilities.read(_locator_)
 The __read__ capability reads the contents of a file on disk. It is passed the  _locator_ of the file, and returns a Promise which resolves to a Buffer.
 
-It is vital that this function denies access to sensitive files. Otherwise it may be possible for anybody with network access to the WEBL server to read arbitrary files off the disk.
+It is vital that this function denies access to sensitive files. Otherwise it may be possible for anybody with network access to the browser REPL to read arbitrary files off the disk.
 
     capabilities.read("/yummy/apple.js");
     -> A Buffer containing JavaScript.

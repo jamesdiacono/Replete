@@ -2,26 +2,40 @@
 // configuration, and may be considered a starting point for building more
 // interesting REPLs. To start it, run
 
-//      $ node --experimental-import-meta-resolve /path/to/replete.js [ports...]
+//      $ node --experimental-import-meta-resolve /path/to/replete.js [options]
 
-// from a directory which contains your source code. The three [ports...]
-// indicate the:
+// from a directory which contains your source code. The following options are
+// supported.
 
-//      WEBL server port
-//          Specifying a port number for the WEBL server means that existing
-//          WEBL clients can survive a restart of Replete, which is convenient.
-//          If this port number is zero or not specified, a free port is chosen
-//          automatically.
+//      --browser_port <port>
+//          The port number of the browser REPL. If this option is omitted, an
+//          unallocated port is chosen automatically. Providing a static port
+//          allows any connected tabs to survive a restart of Replete.
 
-//      Node.js debugger port
-//          A Node.js debugger will attempt to listen on the port, unless the
-//          port number is zero or not specified. This makes it possible to
-//          monitor your evaluations using a fully featured debugger. To attach
-//          a debugger, open Google Chrome and navigate to chrome://inspect.
+//      --browser_hostname <hostname>
+//          The hostname of the browser REPL. When this option is omitted, the
+//          browser REPL listens only on localhost. This option may be used to
+//          expose the browser REPL to the network.
 
-//      Deno debugger port
-//          Same as for the Node.js debugger, but for Deno. Both use the V8
-//          Inspector Protocol.
+//      --node_debugger_port <port>
+//          A Node.js debugger will attempt to listen on the specified port.
+//          This makes it possible to monitor your evaluations using a fully
+//          featured debugger. To attach a debugger, open Google Chrome and
+//          navigate to chrome://inspect.
+
+//      --which_node <path>
+//          The path to the Node.js binary ('node') used for evaluation, which
+//          takes place in a child process. Only Node.js versions 17 and higher
+//          are supported. If this option is omitted, the path is inherited from
+//          the parent process.
+
+//      --deno_debugger_port <port>
+//          Like the --node_debugger_port option, but for Deno. Both runtimes
+//          use the V8 Inspector Protocol.
+
+//      --which_deno <path>
+//          The path to the Deno binary ('deno'). If this option is omitted,
+//          the 'deno' command must be in the PATH.
 
 // The process communicates via STDIN and STDOUT. Messages are sent in both
 // directions, each message occupying a single line. A message is a JSON-encoded
@@ -105,19 +119,10 @@ import make_node_repl from "./node_repl.js";
 import make_deno_repl from "./deno_repl.js";
 import make_browser_repl from "./browser_repl.js";
 
-function parse_port(string) {
-
-// The 'parse_port' function parses a port number from a 'string'. It returns
-// undefined if 'string' does not contain a valid port number.
-
-    return Number.parseInt(string, 10) || undefined;
-}
-
-const root_directory = process.cwd();
-
 // These are the capabilities given to each platform's REPL. See README.md for a
 // description of each.
 
+const root_directory = process.cwd();
 const capabilities = Object.freeze({
     source(message) {
         return Promise.resolve(message.source);
@@ -172,6 +177,23 @@ const capabilities = Object.freeze({
     }
 });
 
+// Parse the command line arguments into an options object.
+
+let options = Object.create(null);
+let option_name;
+process.argv.slice(2).forEach(function (argument) {
+    const matches_name = argument.match(/^--(\w+)$/);
+    if (matches_name) {
+        option_name = matches_name[1];
+    } else {
+        options[option_name] = (
+            option_name.endsWith("port")
+            ? Number.parseInt(argument, 10)
+            : argument
+        );
+    }
+});
+
 // The REPLs require read access to Replete's source files. They are situated in
 // the same directory as this file.
 
@@ -183,17 +205,20 @@ const path_to_replete = path.dirname(process.argv[1]);
 const browser_repl = make_browser_repl(
     capabilities,
     path_to_replete,
-    parse_port(process.argv[2])
+    options.browser_port,
+    options.browser_hostname
 );
 const node_repl = make_node_repl(
     capabilities,
     path_to_replete,
-    parse_port(process.argv[3])
+    options.node_debugger_port,
+    options.which_node ?? process.argv[0]
 );
 const deno_repl = make_deno_repl(
     capabilities,
     path_to_replete,
-    parse_port(process.argv[4])
+    options.deno_debugger_port,
+    options.which_deno ?? "deno"
 );
 
 function on_command(command) {
@@ -227,9 +252,12 @@ function on_command(command) {
 
 // Start the REPLs.
 
-browser_repl.start().catch(console.error);
-node_repl.start().catch(console.error);
-deno_repl.start().catch(console.error);
+function on_fail(exception) {
+    console.log(JSON.stringify({err: exception.stack + "\n"}));
+}
+browser_repl.start().catch(on_fail);
+node_repl.start().catch(on_fail);
+deno_repl.start().catch(on_fail);
 
 // Begin reading command messages from STDIN, line by line.
 

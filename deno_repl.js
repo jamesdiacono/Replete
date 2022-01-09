@@ -9,7 +9,7 @@ function deno_repl_constructor(
     capabilities,
     path_to_replete,
     debugger_port,
-    deno_command
+    which_deno
 ) {
     return make_command_repl(
         capabilities,
@@ -22,7 +22,7 @@ function deno_repl_constructor(
                 return capabilities.err(buffer.toString());
             },
             debugger_port,
-            deno_command
+            which_deno
         )
     );
 }
