@@ -294,16 +294,19 @@ const padawan_eval_script_template = `
 function make_iframe_padawan(
     name,
     secret,
-    style_object = {display: "none"}
-) {
-    const iframe = document.createElement("iframe");
-    Object.assign(iframe.style, style_object);
+    style_object = {display: "none"},
 
 // Omitting the "allow-same-origin" permission places the iframe in a different
 // origin from that of its master. This means that communication is only
 // possible via 'window.postMessage'.
 
-    iframe.sandbox = "allow-scripts";
+    sandbox = "allow-scripts"
+) {
+    const iframe = document.createElement("iframe");
+    Object.assign(iframe.style, style_object);
+    if (sandbox !== false) {
+        iframe.sandbox = sandbox;
+    }
     iframe.srcdoc = (
         "<script>\n"
         + fill(padawan_create_script_template, {name, secret})
@@ -361,20 +364,32 @@ function webl_constructor() {
 //              A function which is called with the stringified arguments of any
 //              calls to console.log. The arguments are stringified by the
 //              'inspect' function.
+
 //          "on_exception"
 //              A function which is called with a string representation of any
 //              exceptions or Promise rejections encountered outside of
 //              evaluation.
+
 //          "name"
 //              The name of the padawan, unique to this WEBL.
+
 //          "type"
 //              Determines the means of containerisation, and should be either
 //              the string "popup" or "iframe".
+
 //          "popup_window_features"
 //              The string passed as the third argument to window.open, for
 //              popups.
+
 //          "iframe_style_object"
 //              An object containing styles to use for iframes.
+
+//          "iframe_sandbox"
+//              Controls iframes' "sandbox" attribute. If this property is
+//              undefined, minimal capabilities are provided. If this property
+//              is false, the iframe is not sandboxed at all. Otherwise this
+//              property should be the string value of the "sandbox"
+//              attribute.
 
 //      The returned object contains three functions:
 
@@ -451,7 +466,8 @@ function webl_constructor() {
             name,
             type,
             popup_window_features,
-            iframe_style_object
+            iframe_style_object,
+            iframe_sandbox
         } = spec;
         log_callbacks[name] = function (strings) {
             return on_log(...strings);
@@ -475,7 +491,8 @@ function webl_constructor() {
                 : make_iframe_padawan(
                     name,
                     secret,
-                    iframe_style_object
+                    iframe_style_object,
+                    iframe_sandbox
                 )
             );
             return new Promise(function (resolve) {

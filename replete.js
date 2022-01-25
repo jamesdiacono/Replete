@@ -35,7 +35,7 @@
 
 //      --which_deno <path>
 //          The path to the Deno binary ('deno'). If this option is omitted,
-//          the 'deno' command must be in the PATH.
+//          the 'deno' command must be available.
 
 // The process communicates via STDIN and STDOUT. Messages are sent in both
 // directions, each message occupying a single line. A message is a JSON-encoded
@@ -159,6 +159,13 @@ const capabilities = Object.freeze({
             return Promise.reject(new Error("Forbidden: " + locator));
         }
         return fs.promises.readFile(locator);
+    },
+    watch(locator) {
+        return new Promise(function (resolve, reject) {
+            const watcher = fs.watch(locator, resolve);
+            watcher.on("error", reject);
+            watcher.on("change", watcher.close);
+        });
     },
     mime(locator) {
 

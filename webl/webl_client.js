@@ -76,7 +76,22 @@ const message_handlers = {
                 }
             });
         }
-        return padawan.eval(script, imports).then(
+        return padawan.eval(
+            script,
+            imports.map(function qualify(specifier) {
+
+// Generally, padawans have a different origin to the client. This means that it
+// is unsafe for the padawan to call import() with an absolute path, as it will
+// be resolved against an unexpected origin. In such cases, the specifier is
+// resolved to a fully-qualified URL, using the client's origin.
+
+                return (
+                    specifier.startsWith("/")
+                    ? window.location.origin + specifier
+                    : specifier
+                );
+            })
+        ).then(
             function on_success(report) {
                 return worker.postMessage({
                     type: "response",

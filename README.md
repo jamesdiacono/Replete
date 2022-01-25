@@ -20,13 +20,9 @@ Replete is in the Public Domain. [Watch the demonstration](https://youtu.be/ZXXc
 
 - _deno_repl.js_: A Node.js module exporting the constructor for a REPL which evaluates messages in a Deno environment.
 
-- _command_repl.js_: A Node.js module providing generic functionality for the Node.js and Deno REPLs.
+- _repl.js_: A Node.js module exporting the constructor for a generic REPL. This is the heart of Replete.
 
 - _scriptify_module.js_: A module exporting a function which deconstructs the source code of a JavaScript module into a script, its imports and its exports.
-
-- _replize_script.js_: A module exporting a function which transforms a script, making it safe for reevaluation.
-
-- _find_specifiers.js_: A module exporting a source analysis function, used for code transformations.
 
 - _alter_string.js_: A module exporting a string manipulation function, used for code transformations.
 
@@ -45,7 +41,7 @@ __Messages__ are sent to Replete, from a text editor or similar. A message is an
 A message may contain additional properties, although these are ignored by Replete.
 
 ## The capabilities
-You must supply Replete with several __capability__ functions. These provide a rich opportunity to customise Replete. The _capabilities_ parameter passed to several of Replete's constructors should be an object with the following methods:
+You must supply Replete with several __capability__ functions. These provide a rich opportunity to customise Replete. A set of example capabilities are defined in replete.js. The _capabilities_ parameter passed to Replete's constructors should be an object containing the following methods:
 
 ### capabilities.source(_message_)
 The __source__ capability extracts the source from a _message_ object, before it is evaluated. The returned Promise resolves to a string containing JavaScript source code.
@@ -91,6 +87,9 @@ It is vital that this function denies access to sensitive files. Otherwise it ma
     -> A Buffer containing JavaScript, transpiled from CoffeeScript.
     capabilities.read("/etc/passwd");
     -> Rejected!
+
+### capabilities.watch(_locator_)
+The __watch__ capability detects when a file on disk is modified. It is passed the _locator_ of the file, and returns a Promise which resolves when the file next changes. This does not trigger any visible action. It simply informs Replete that it should drop the file from its cache.
 
 ### capabilities.mime(_locator_)
 The __mime__ capability predicts the MIME type of the Buffer produced by the `read` capability when it is called with the _locator_. It returns a string, or `undefined` if access to the file should be denied.

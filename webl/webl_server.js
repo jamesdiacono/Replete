@@ -118,7 +118,8 @@ function webl_server_constructor(
                         name,
                         type: spec.type,
                         popup_window_features: spec.popup_window_features,
-                        iframe_style_object: spec.iframe_style_object
+                        iframe_style_object: spec.iframe_style_object,
+                        iframe_sandbox: spec.iframe_sandbox
                     }
                 );
             }
