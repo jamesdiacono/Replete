@@ -164,11 +164,11 @@ function reason(exception) {
 function fill(template, substitutions) {
 
 // The 'fill' function prepares a script template for execution. As an example,
-// all instances of "{the_force}" found in the 'template' will be replaced with
+// all instances of <the_force> found in the 'template' will be replaced with
 // 'substitutions.the_force'. The extra level of indentation we add to our
 // templates is removed also.
 
-    return template.replace(/\{([^{}]*)\}/g, function (original, filling) {
+    return template.replace(/<([^<>]*)>/g, function (original, filling) {
         return substitutions[filling] ?? original;
     }).replace(/^\u0020{4}/gm, "");
 }
@@ -181,8 +181,6 @@ function fill(template, substitutions) {
 // 'eval'.
 
 const padawan_create_script_template = `
-    /*jslint browser, eval */
-    /*global name, secret */
 
 // The '$webl' object contains a couple of functions used internally by the
 // padawan to communicate with its master.
@@ -193,7 +191,7 @@ const padawan_create_script_template = `
 
 // Authenticate the message.
 
-                message.secret = {secret};
+                message.secret = <secret>;
                 return master_window.postMessage(message, "*");
             },
             inspect: ${inspect.toString()},
@@ -208,7 +206,7 @@ const padawan_create_script_template = `
         window.console.log = function (...args) {
             $webl.send({
                 name: "log",
-                padawan: "{name}",
+                padawan: "<name>",
                 values: args.map(function (value) {
                     return (
 
@@ -230,7 +228,7 @@ const padawan_create_script_template = `
     window.onunhandledrejection = function (event) {
         return $webl.send({
             name: "exception",
-            padawan: "{name}",
+            padawan: "<name>",
             reason: $webl.reason(event.reason)
         });
     };
@@ -254,7 +252,7 @@ const padawan_create_script_template = `
 
     $webl.send({
         name: "ready",
-        padawan: "{name}"
+        padawan: "<name>"
     });
 `;
 
@@ -271,19 +269,19 @@ const padawan_create_script_template = `
 
 const padawan_eval_script_template = `
     Promise.all([
-        {import_expressions}
+        <import_expressions>
     ]).then(function ($imports) {
         return $webl.send({
             name: "evaluation",
-            eval_id: "{eval_id}",
+            eval_id: "<eval_id>",
             value: {
-                evaluation: $webl.inspect(eval({payload_script_json}))
+                evaluation: $webl.inspect(eval(<payload_script_json>))
             }
         });
     }).catch(function (exception) {
         return $webl.send({
             name: "evaluation",
-            eval_id: "{eval_id}",
+            eval_id: "<eval_id>",
             value: {
                 exception: $webl.reason(exception)
             }

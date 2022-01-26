@@ -11,37 +11,21 @@ Replete encourages the development of modules in isolation, rather than in the c
 
 Replete is in the Public Domain. [Watch the demonstration](https://youtu.be/ZXXcn7jLNdk?t=1389).
 
-## The files
-- _replete.js_: A Node.js program. Read this file for instructions on its use.
-
-- _browser_repl.js_: A Node.js module exporting the constructor for a REPL which evaluates messages in a browser environment.
-
-- _node_repl.js_: A Node.js module exporting the constructor for a REPL which evaluates messages in a Node.js environment.
-
-- _deno_repl.js_: A Node.js module exporting the constructor for a REPL which evaluates messages in a Deno environment.
-
-- _repl.js_: A Node.js module exporting the constructor for a generic REPL. This is the heart of Replete.
-
-- _scriptify_module.js_: A module exporting a function which deconstructs the source code of a JavaScript module into a script, its imports and its exports.
-
-- _alter_string.js_: A module exporting a string manipulation function, used for code transformations.
-
-- _webl/_: A directory containing source code for the WEBL, which is used by the browser REPL. The WEBL is a standalone tool for evaluating source code in the browser. See webl/README.md.
-
-- _cmdl/_: A directory containing the source code for the CMDL, which is like the WEBL but for command-line runtimes. See cmdl/README.md.
-
-- _package.json_: The Node.js package manifest. It specifies the Acorn dependency, and compels Node to interpret Replete's JavaScript files as modules.
-
 ## The message
 __Messages__ are sent to Replete, from a text editor or similar. A message is an object containing the following properties:
 
-- __source__: The source code to be evaluated. The source may contain imports and exports.
-- __locator__: The locator of the module which contains the source. More on locators below.
+- __source__: The source code to be evaluated. The source may contain import and export statements.
+- __locator__: The locator of the module which contains the source. It is used to resolve the source's imports. More on locators below.
+- __scope__: The name of the scope, which can be any string. If undefined, the default scope `""` is chosen. The scope is created if it does not exist.
+
+A __scope__ holds the value of every variable or function declared during evaluation, allowing them to be used in future evaluations. Distinct scopes provide a degree of isolation, however the same global object is shared by all scopes.
 
 A message may contain additional properties, although these are ignored by Replete.
 
 ## The capabilities
-You must supply Replete with several __capability__ functions. These provide a rich opportunity to customise Replete. A set of example capabilities are defined in replete.js. The _capabilities_ parameter passed to Replete's constructors should be an object containing the following methods:
+You must supply Replete with several __capability__ functions. These provide a rich opportunity to customise Replete. A set of example capabilities are defined in the replete.js file.
+
+The _capabilities_ parameter passed to Replete's constructors should be an object containing the following methods:
 
 ### capabilities.source(_message_)
 The __source__ capability extracts the source from a _message_ object, before it is evaluated. The returned Promise resolves to a string containing JavaScript source code.
@@ -104,6 +88,27 @@ The __out__ capability is called with a string representation of any arguments p
 
 ### capabilities.err(_string_)
 The __err__ capability is called with a string representation of any exceptions which occur outside of evaluation, or of any bytes written to STDERR.
+
+## The files
+- _replete.js_: A Node.js program. Read this file for instructions on its use.
+
+- _browser_repl.js_: A Node.js module exporting the constructor for a REPL which evaluates messages in a browser environment.
+
+- _node_repl.js_: A Node.js module exporting the constructor for a REPL which evaluates messages in a Node.js environment.
+
+- _deno_repl.js_: A Node.js module exporting the constructor for a REPL which evaluates messages in a Deno environment.
+
+- _repl.js_: A Node.js module exporting the constructor for a generic REPL. This is the heart of Replete.
+
+- _scriptify_module.js_: A module exporting a function which deconstructs the source code of a JavaScript module into a script, its imports and its exports.
+
+- _alter_string.js_: A module exporting a string manipulation function, used for code transformations.
+
+- _webl/_: A directory containing source code for the WEBL, which is used by the browser REPL. The WEBL is a standalone tool for evaluating source code in the browser. See webl/README.md.
+
+- _cmdl/_: A directory containing the source code for the CMDL, which is like the WEBL but for command-line runtimes. See cmdl/README.md.
+
+- _package.json_: The Node.js package manifest. It specifies the Acorn dependency, and compels Node to interpret Replete's JavaScript files as modules.
 
 ## Dependencies
 Replete requires the Acorn JavaScript parser (https://github.com/acornjs/acorn). The Node.js REPL requires Node.js v17 or higher.

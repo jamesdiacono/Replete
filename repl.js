@@ -119,6 +119,27 @@
 
 // although the reality is somewhat more convoluted.
 
+// +------------+
+// | Separation |
+// +------------+
+
+// It is usually desirable to maintain a separate scope per file. This means
+// that identifiers declared in wun module can not interfere with the
+// evaluation of another:
+
+//  module_a.js:
+//      const console = false;
+
+//  module_b.js:
+//      console.log("Hello, World!");
+
+// In Replete, many $scope objects can coexist within the wun padawan. For each
+// evaluation, a scope is chosen by name.
+
+// Whilst declarations are kept separate, it should be noted that each scope
+// shares the same global object. If total isolation is desired, multiple
+// REPLs (each with a single scope) can be used instead.
+
 // +---------+
 // | Modules |
 // +---------+
@@ -233,6 +254,17 @@ import crypto from "crypto";
 import alter_string from "./alter_string.js";
 import scriptify_module from "./scriptify_module.js";
 
+function fill(template, substitutions) {
+
+// The 'fill' function prepares a script template for execution. As an example,
+// all instances of <the_force> found in the 'template' will be replaced with
+// 'substitutions.the_force'.
+
+    return template.replace(/<([^<>]*)>/g, function (original, filling) {
+        return substitutions[filling] ?? original;
+    });
+}
+
 function make_identifiers_object_literal(top_names, imports) {
     const members = [];
 
@@ -279,15 +311,15 @@ const inner_template = `
 // local variables. This means that scripts are free to shadow global variables,
 // without risk of clobbering the state.
 
-// The "triple quote" below is replaced with the CSV of identifiers. The reason
-// we use such a weird token is that a triple quote can not possibly appear in
-// the JSON encoded payload script injected previously.
+// The "triple quote" below is replaced with a bunch of identifiers separated by
+// commas. The reason we use such a weird token is that a triple quote can not
+// possibly appear in the JSON encoded payload script injected previously.
 
     let {"""} = $scope;
 
 // Evaluate the script, retaining the evaluated value.
 
-    $evaluation = eval({payload_script_json});
+    $evaluation = eval(<payload_script_string>);
 
 // Gather the variables back into the scope, retaining their values for the
 // benefit of future evaluations.
@@ -301,37 +333,65 @@ const inner_template = `
 
 const outer_template = `
 
-// Ensure the global scope object is available. It persists the state of the
-// identifiers across evaluations. We are assuming sloppy mode, where 'this' is
-// bound to the global object.
+// Ensure the global $scopes variable is available. It contains the scope
+// objects, which persist the state of the identifiers across evaluations. We
+// are assuming sloppy mode, where 'this' is bound to the global object.
 
-    this.$scope = this.$scope || {
-        $default: undefined,
-        $evaluation: undefined
-    };
+    if (this.$scopes === undefined) {
+        this.$scopes = Object.create(null);
+    }
+    if ($scopes[<scope_name_string>] === undefined) {
+        $scopes[<scope_name_string>] = {
+            $default: undefined,
+            $evaluation: undefined
+        };
+    }
+
+// Overwrite the global $scope variable with the named scope.
+
+    this.$scope = $scopes[<scope_name_string>];
 
 // Populate the scope with the script's declared identifiers.
 
-    Object.assign($scope, {identifiers_object_literal});
+    Object.assign($scope, <identifiers_object_literal>);
 
 // A nested 'eval' is necessary because
 //  a) variables can not be declared dynamically, and
 //  b) we must inspect the $scope object to know which identifiers it contains.
 
     eval(
-        {inner_template_json}.replace(/"""/g, function replacer() {
-            return Object.keys($scope).join(", ");
-        })
+        <inner_template_string>.replace(
+            /"""/g,
+
+// The 'replace' method has a nasty gotcha: it recognises several special
+// patterns which, when present in strings passed as the second parameter, make
+// it behave in surprising ways. We gain immunity from this feature by passing a
+// function as the second parameter.
+
+            function replacer() {
+                return Object.keys($scope).join(", ");
+            }
+        )
     );
 `;
 
-function replize_script(script, imports = []) {
+function replize_script(script, imports = [], scope = "") {
 
 // The 'replize_script' function transforms a script, making it suitable for
-// evaluation in a REPL. The 'script' parameter is a string containing
-// JavaScript source code, without any import or export statements. The
-// 'imports' parameter is an array like that returned by the 'scriptify_module'
-// function.
+// evaluation in a REPL. It takes the following parameters:
+
+//      script
+//          A string containing JavaScript source code, without any import or
+//          export statements.
+
+//      imports
+//          An array containing information about the importations used by
+//          the 'script'. Its structure is identical to that returned by
+//          the 'scriptify_module' function.
+
+//      scope
+//          The name of the scope to use for evaluation. If the scope does not
+//          exist, it is created.
 
 // The resulting script expects a $imports variable to be available, which
 // should be an array containing the imported module objects.
@@ -435,8 +495,8 @@ function replize_script(script, imports = []) {
 // We then insert an assignment statement at the start of the script (following
 // the hoisted declaration) to
 
-//      a) give the function back its original name, and
-//      b) persist the function in the $scope.
+//  a) give the function back its original name, and
+//  b) persist the function in the $scope.
 
             const hoisted_name = "$" + node.id.name;
             alterations.push([node.id, hoisted_name]);
@@ -487,30 +547,25 @@ function replize_script(script, imports = []) {
         }
     );
 
-// Now we nest our payload script in a harness script containing two nested
-// evals. The things we do for strict mode!
+// Now we nest the altered script in a harness script inside two nested evals.
+// The things we do for strict mode!
 
-    const inner_script = inner_template.replace(
-        "{payload_script_json}",
-
-// The 'replace' method has a nasty gotcha: it recognises several special
-// patterns which, when present in strings passed as the second parameter, make
-// it behave in surprising ways. We gain immunity from this feature by passing a
-// replacer function as the second parameter.
-
-        function replacer() {
-            return JSON.stringify(alter_string(script, alterations));
-        }
-    );
-    return outer_template.replace(
-        "{identifiers_object_literal}",
-        function replacer() {
-            return make_identifiers_object_literal(top_names, imports);
-        }
-    ).replace(
-        "{inner_template_json}",
-        function replacer() {
-            return JSON.stringify(inner_script);
+    return fill(
+        outer_template,
+        {
+            identifiers_object_literal: make_identifiers_object_literal(
+                top_names,
+                imports
+            ),
+            scope_name_string: JSON.stringify(scope),
+            inner_template_string: JSON.stringify(fill(
+                inner_template,
+                {
+                    payload_script_string: JSON.stringify(
+                        alter_string(script, alterations)
+                    )
+                }
+            ))
         }
     );
 }
@@ -518,15 +573,15 @@ function replize_script(script, imports = []) {
 function find_specifiers(source) {
 
 // The 'find_specifiers' function searches the 'source' string of a module for
-// import specifiers, returning their value and position.
+// import specifiers, returning their value and position in the source.
 
 // It returns an array of objects, each of which contains the following
 // properties:
 
-//      value:
+//      specifier
 //          The value of the specifier, e.g. "./peach.js".
 
-//      range:
+//      range
 //          An object with a "start" and "end" property, corresponding to the
 //          starting and ending position of the specifier within 'source'.
 
@@ -561,7 +616,7 @@ function find_specifiers(source) {
 
 function digest(...args) {
 
-// The 'digest' function returns the hash string of its arguments.
+// The 'digest' function hashes its arguments, returning a string.
 
     return crypto.createHash("sha1").update(args.join()).digest("hex");
 }
@@ -588,7 +643,6 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
 //          which should resolve wunce it is safe to call 'on_eval'.
 
 //      on_eval(script, imports)
-
 //          A function which evaluates the script in each connected padawan. It
 //          is called with two parameters, 'script' and 'imports'. The 'script'
 //          parameter is a string containing JavaScript source code, devoid of
@@ -607,9 +661,9 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
 //          to turn a path-style locator into a fully qualified URL.
 
 // These variables constitute the REPL's in-memory cache. Each variable holds an
-// objects which has locators as its keys and Promises as its values. By
-// caching the Promise, not the value, multiple callers can subscribe to the
-// result of a single operation even before it has finished.
+// object, which has locators as keys and Promises as values. By caching the
+// Promise and not the value, multiple callers can subscribe to the result of a
+// single operation, even before it has finished.
 
     let locating = Object.create(null);
     let reading = Object.create(null);
@@ -630,7 +684,7 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
             parent_locator
         ).catch(function on_fail(exception) {
             delete locating[key];
-            throw exception;
+            return Promise.reject(exception);
         });
         return locating[key];
     }
@@ -638,7 +692,7 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
 
 // The 'read' function reads the source of a module, as a string. It is a
 // memoized form of the 'read' capability. The source is cached until the file
-// is next modified.
+// changes.
 
         if (reading[locator] !== undefined) {
             return reading[locator];
@@ -662,7 +716,7 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
             ).catch(function (exception) {
 
 // The watch capability is broken. We avoid caching this module, because there
-// is no way to find out when it next changes.
+// will be nothing to invalidate the cache when the file is modified.
 
                 capabilities.err(exception.stack + "\n");
                 return invalidate();
@@ -771,8 +825,8 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
             versions[locator] = the_version;
 
 // Incorporate the version into the locator. By versioning with a number, rather
-// than a hash, it is easy for the programmer to navigate to the freshest
-// version of a module in their debugger.
+// than a hash, it is easy for the programmer to find the freshest version of a
+// module in their debugger.
 
 // Rather than including the versioning information in a query string, we
 // prepend it. This is more respectful of the locator's opacity, and also
@@ -783,7 +837,7 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
     }
     function module(locator) {
 
-// The 'module' function prepare the source code of a local module for delivery
+// The 'module' function prepares the source code of a local module for delivery
 // to the padawan. This involves translating any import specifiers into
 // locators.
 
@@ -804,8 +858,8 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
 
                 return alter_string(
                     source,
-                    found_array.map(function ({range}, nr) {
-                        return [range, specify(versioned_locators[nr])];
+                    found_array.map(function (found, nr) {
+                        return [found.range, specify(versioned_locators[nr])];
                     })
                 );
             });
@@ -862,7 +916,11 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
             function (source) {
                 const {script, imports} = scriptify_module(source);
                 return Promise.all([
-                    Promise.resolve(replize_script(script, imports)),
+                    Promise.resolve(replize_script(
+                        script,
+                        imports,
+                        message.scope
+                    )),
                     Promise.all(
 
 // Resolve the specifiers in parallel.
