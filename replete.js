@@ -77,6 +77,14 @@
 //          Either "browser", "node" or "deno". This property determines which
 //          REPL will evaluate the source.
 
+//      scope
+//          If defined, this property is the name of the scope as a string.
+
+//      request
+//          If defined, this property will be copied verbatim onto the
+//          corresponding result messages. It can be used to associate a result
+//          with its command. It may be any value.
+
 // The process sends "result" messages, which come in four varieties. Depending
 // on its variety, a result message has wun of the following properties. The
 // value of the property is a string representation of a value.
@@ -94,6 +102,8 @@
 //          An exception which occurred outside of evaluation, or bytes written
 //          to STDERR.
 
+// A result message may also contain a 'request' property, as described above.
+
 // Here are some examples of commands and the results they might induce.
 
 //      COMMAND {"platform":"browser", "source":"navigator.vendor"}
@@ -109,6 +119,9 @@
 //      RESULT  {"out": "NaN Infinity\n"}
 //      RESULT  {"evaluation": "undefined"}
 
+//      COMMAND {"platform":"browser", "source":"1 + 1", "request": 42}
+//      RESULT  {"evaluation": "2", "request": 42}
+
 /*jslint node */
 
 import path from "path";
@@ -118,6 +131,10 @@ import util from "util";
 import make_node_repl from "./node_repl.js";
 import make_deno_repl from "./deno_repl.js";
 import make_browser_repl from "./browser_repl.js";
+
+function send_result(message) {
+    process.stdout.write(JSON.stringify(message) + "\n");
+}
 
 // These are the capabilities given to each platform's REPL. See README.md for a
 // description of each.
@@ -177,10 +194,10 @@ const capabilities = Object.freeze({
         }
     },
     out(string) {
-        console.log(JSON.stringify({out: string}));
+        send_result({out: string});
     },
     err(string) {
-        console.log(JSON.stringify({err: string}));
+        send_result({err: string});
     }
 });
 
@@ -206,53 +223,60 @@ process.argv.slice(2).forEach(function (argument) {
 
 const path_to_replete = path.dirname(process.argv[1]);
 
-// A separate REPL is created for each platform. No context is shared between
+// A separate REPL is configured for each platform. No context is shared between
 // them.
 
-const browser_repl = make_browser_repl(
-    capabilities,
-    path_to_replete,
-    options.browser_port,
-    options.browser_hostname
-);
-const node_repl = make_node_repl(
-    capabilities,
-    path_to_replete,
-    options.node_debugger_port,
-    options.which_node ?? process.argv[0]
-);
-const deno_repl = make_deno_repl(
-    capabilities,
-    path_to_replete,
-    options.deno_debugger_port,
-    options.which_deno ?? "deno"
-);
+const repls = Object.freeze({
+    browser: make_browser_repl(
+        capabilities,
+        path_to_replete,
+        options.browser_port,
+        options.browser_hostname
+    ),
+    node: make_node_repl(
+        capabilities,
+        path_to_replete,
+        options.node_debugger_port,
+        options.which_node ?? process.argv[0]
+    ),
+    deno: make_deno_repl(
+        capabilities,
+        path_to_replete,
+        options.deno_debugger_port,
+        options.which_deno ?? "deno"
+    )
+});
 
 function on_command(command) {
 
-// The 'on_command' function relays a 'command' message to the relevant REPL.
-// The REPL's response is relayed as a result message.
+// The 'on_command' function relays an incoming 'command' message to the
+// relevant REPL. The REPL's response is relayed back as a result message.
 
-    const repls = {
-        browser: browser_repl,
-        node: node_repl,
-        deno: deno_repl
-    };
     return repls[command.platform].send(command).then(
         function (evaluations) {
 
 // On success, the REPL replies with an array of evaluated values produced in
 // parallel. Each evaluation is sent back as a separate message.
 
-            return evaluations.forEach(function (evaluation) {
-                console.log(JSON.stringify({evaluation}));
+            evaluations.forEach(function (evaluation) {
+                send_result({
+                    evaluation,
+                    request: command.request
+                });
             });
         },
         function (exception) {
-            if (typeof exception !== "string") {
-                exception = util.inspect(exception);
-            }
-            console.log(JSON.stringify({exception}));
+
+// On failure, the first exception is sent back as a string.
+
+            send_result({
+                exception: (
+                    typeof exception === "string"
+                    ? exception
+                    : util.inspect(exception)
+                ),
+                request: command.request
+            });
         }
     );
 }
@@ -260,17 +284,17 @@ function on_command(command) {
 // Start the REPLs.
 
 function on_fail(exception) {
-    console.log(JSON.stringify({err: exception.stack + "\n"}));
+    send_result({err: exception.stack + "\n"});
 }
-browser_repl.start().catch(on_fail);
-node_repl.start().catch(on_fail);
-deno_repl.start().catch(on_fail);
+repls.browser.start().catch(on_fail);
+repls.node.start().catch(on_fail);
+repls.deno.start().catch(on_fail);
 
 // Begin reading command messages from STDIN, line by line.
 
 readline.createInterface({input: process.stdin}).on(
     "line",
     function on_line(line) {
-        return on_command(JSON.parse(line));
+        on_command(JSON.parse(line));
     }
 );

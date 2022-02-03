@@ -14,7 +14,7 @@
 // Any other value is a message from the server.
 
 /*jslint browser */
-/*global self, WebSocket */
+/*global self */
 
 let socket;
 function connect_to_server(url) {

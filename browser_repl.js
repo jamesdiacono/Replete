@@ -11,6 +11,7 @@ function browser_repl_constructor(
     path_to_replete,
     port,
     hostname = "localhost",
+    padawan_type = "iframe",
     humanoid = false
 ) {
 
@@ -30,21 +31,22 @@ function browser_repl_constructor(
 //      hostname
 //          The hostname of the WEBL server.
 
+//      padawan_type
+//          The type of the padawan, wun of "iframe", "popup" or "worker".
+
 //      humanoid
 //          A boolean indicating whether to use C3PO as a favicon, rather than
 //          R2D2.
 
-// It returns the interface described in repl.js.
+// It returns the interface described in repl.js, with an additional 'recreate'
+// method. This method takes an alternatve 'padawan_type' and returns a Promise
+// which resolves wunce the padawans have been recreated.
 
 // Configure the WEBL server.
 
-    let clients_and_padawans = new Map();
-    function on_client_found(client) {
-        capabilities.out("WEBL found.\n");
-
-// Create a single padawan on each connecting client. The padawan is rendered as
-// an iframe which fills the WEBL client's viewport.
-
+    let clients = [];
+    let padawans = new WeakMap();
+    function create_padawan(client) {
         const padawan = client.padawan({
             on_log(...strings) {
                 return capabilities.out(strings.join(" ") + "\n");
@@ -52,7 +54,11 @@ function browser_repl_constructor(
             on_exception(string) {
                 return capabilities.err(string + "\n");
             },
-            type: "iframe",
+            type: padawan_type,
+
+// If the padawan is rendered as an iframe, it fills the WEBL client's
+// viewport.
+
             iframe_style_object: {
                 border: "none",
                 width: "100vw",
@@ -60,17 +66,27 @@ function browser_repl_constructor(
             },
             iframe_sandbox: false
         });
-        clients_and_padawans.set(client, padawan);
+        padawans.set(client, padawan);
         return padawan.create().catch(function (exception) {
             return capabilities.err(exception.stack + "\n");
         });
     }
+    function on_client_found(client) {
+        capabilities.out("WEBL found.\n");
+        clients.push(client);
+
+// Create a single padawan on each connecting client.
+
+        return create_padawan(client);
+    }
     function on_client_lost(client) {
         capabilities.out("WEBL lost.\n");
 
-// Forget the client and its padawans.
+// Forget the client.
 
-        clients_and_padawans.delete(client);
+        clients = clients.filter(function (a_client) {
+            return a_client !== client;
+        });
     }
     let webl_server;
     function on_start(serve) {
@@ -99,8 +115,8 @@ function browser_repl_constructor(
 // Evaluates the module in many padawans at wunce.
 
         return Promise.all(
-            Array.from(clients_and_padawans.values()).map(function (padawan) {
-                return padawan.eval(script, imports).then(
+            clients.map(function (client) {
+                return padawans.get(client).eval(script, imports).then(
                     function examine_report(report) {
                         if (report.exception === undefined) {
                             return report.evaluation;
@@ -118,13 +134,36 @@ function browser_repl_constructor(
 
         return locator;
     }
-    return make_repl(
+    const repl = make_repl(
         capabilities,
         on_start,
         on_eval,
         on_stop,
         specify
     );
+    function recreate(the_padawan_type) {
+
+// Destroy all the padawans, and then recreate them as the specified type.
+
+        padawan_type = the_padawan_type;
+        return Promise.all(
+            clients.map(function (client) {
+                return padawans.get(client).destroy();
+            })
+        ).then(function () {
+            return Promise.all(clients.map(function (client) {
+                return create_padawan(client).then(function () {
+                    return capabilities.out("WEBL " + padawan_type + ".\n");
+                });
+            }));
+        });
+    }
+    return Object.freeze({
+        start: repl.start,
+        send: repl.send,
+        stop: repl.stop,
+        recreate
+    });
 }
 
 export default Object.freeze(browser_repl_constructor);

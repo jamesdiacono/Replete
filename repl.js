@@ -333,12 +333,14 @@ const inner_template = `
 
 const outer_template = `
 
-// Ensure the global $scopes variable is available. It contains the scope
-// objects, which persist the state of the identifiers across evaluations. We
-// are assuming sloppy mode, where 'this' is bound to the global object.
+// Ensure that the global $scopes variable is available. It contains the scope
+// objects, which persist the state of the identifiers across evaluations.
+// This script must run in a variety of different runtime environments, each of
+// which names its global variable something different. The 'globalThis' alias
+// provides a convenient point of intersection, abhorrent though it is.
 
-    if (this.$scopes === undefined) {
-        this.$scopes = Object.create(null);
+    if (globalThis.$scopes === undefined) {
+        globalThis.$scopes = Object.create(null);
     }
     if ($scopes[<scope_name_string>] === undefined) {
         $scopes[<scope_name_string>] = {
@@ -349,7 +351,7 @@ const outer_template = `
 
 // Overwrite the global $scope variable with the named scope.
 
-    this.$scope = $scopes[<scope_name_string>];
+    globalThis.$scope = $scopes[<scope_name_string>];
 
 // Populate the scope with the script's declared identifiers.
 
