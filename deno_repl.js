@@ -1,6 +1,8 @@
 // This REPL evaluates JavaScript source code in an isolated Deno process. See
 // repl.js and deno_cmdl.js for more information.
 
+/*jslint node */
+
 import path from "path";
 import http from "http";
 import make_repl from "./repl.js";
@@ -62,8 +64,12 @@ function deno_repl_constructor(
     }
     function specify(locator) {
         return (
-            locator.startsWith("/")
-            ? "http://localhost:" + http_server_port + locator
+            locator.startsWith("file:///")
+            ? (
+                "http://localhost:"
+                + http_server_port
+                + locator.replace("file://", "")
+            )
             : locator
         );
     }

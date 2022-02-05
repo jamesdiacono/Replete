@@ -5,7 +5,7 @@
 
 Replete is an evaluator for JavaScript modules. It enables a highly interactive style of programming known as __REPL-driven development__. Replete can evaluate modules in the browser, Node.js and Deno.
 
-When integrated with a text editor, Replete becomes part of your development environment. Source code is sent from the editor's buffer to Replete, where it is evaluated. Anything from a mere expression to a whole file may be evaluated at a time. The evaluated value (or an exception) is reported back for perusal.
+When [integrated with a text editor](https://github.com/jamesdiacono/Replete/issues/5), Replete becomes part of your development environment. Source code is sent from the editor's buffer to Replete, where it is evaluated. Anything from a mere expression to a whole file may be evaluated at a time. The evaluated value (or an exception) is reported back for perusal.
 
 Replete encourages the development of modules in isolation, rather than in the context of a running application. Modules written in this way tend to be more independent and hence more reusable, more testable and hence more robust.
 
@@ -32,13 +32,13 @@ The __source__ capability extracts the source from a _message_ object, before it
 
     capabilities.source({
         source: "Math.random();",
-        locator: "/yummy/apple.js"
+        locator: "file:///yummy/apple.js"
     });
     -> "Math.random();"
 
     capabilities.source({
         source: "1 < 2 < 3",
-        locator: "/yummy/cinnamon.coffee"
+        locator: "file:///yummy/cinnamon.coffee"
     });
     -> "(1 < 2 && 2 < 3);"
 
@@ -47,41 +47,41 @@ The __locate__ capability resolves a module specifier. It is passed a _specifier
 
 A __specifier__ is the string portion of a module's import statement, for example "../my_module.js".
 
-A __locator__ is a string containing sufficient information to locate a file. A locator should start with a "/" if it refers to a file on disk, but otherwise its structure is completely up to you.
+A __locator__ is a URL string containing sufficient information to locate a file. A locator should begin with `file:///` if it refers to a file on disk, but otherwise its structure is completely up to you.
 
-If absolute paths were used as locators, the `locate` capability might behave like so:
+If locators for files on disk were structured like `file:///absolute/path/to/file.xyz`, then the `locate` capability might behave like so:
 
-    capabilities.locate("./apple.js", "/yummy/orange.js");
-    -> "/yummy/apple.js"
-    capabilities.locate("fs", "/yummy/orange.js");
-    -> "fs"
-    capabilities.locate("yucky", "/yummy/orange.js");
-    -> "/yummy/node_modules/yucky/yucky.js"
-    capabilities.locate("https://yum.my/noodles.js", "/yummy/orange.js");
+    capabilities.locate("./apple.js", "file:///yummy/orange.js");
+    -> "file:///yummy/apple.js"
+    capabilities.locate("fs", "file:///yummy/orange.js");
+    -> "node:fs"
+    capabilities.locate("yucky", "file:///yummy/orange.js");
+    -> "file:///yummy/node_modules/yucky/yucky.js"
+    capabilities.locate("https://yum.my/noodles.js", "file:///yummy/orange.js");
     -> "https://yum.my/noodles.js"
 
 ### capabilities.read(_locator_)
-The __read__ capability reads the contents of a file on disk. It is passed the  _locator_ of the file, and returns a Promise which resolves to a Buffer.
+The __read__ capability reads the contents of a file on disk. It is passed the _locator_ of the file, and returns a Promise which resolves to a Buffer.
 
-It is vital that this function denies access to sensitive files. Otherwise it may be possible for anybody with network access to the browser REPL to read arbitrary files off the disk.
+This function should deny access to sensitive files. Otherwise it may be possible for anybody with network access to the browser REPL to read arbitrary files off the disk.
 
-    capabilities.read("/yummy/apple.js");
+    capabilities.read("file:///yummy/apple.js");
     -> A Buffer containing JavaScript.
-    capabilities.read("/yummy/cinnamon.coffee");
+    capabilities.read("file:///yummy/cinnamon.coffee");
     -> A Buffer containing JavaScript, transpiled from CoffeeScript.
-    capabilities.read("/etc/passwd");
+    capabilities.read("file:///etc/passwd");
     -> Rejected!
 
 ### capabilities.watch(_locator_)
 The __watch__ capability detects when a file on disk is modified. It is passed the _locator_ of the file, and returns a Promise which resolves when the file next changes. This does not trigger any visible action. It simply informs Replete that it should drop the file from its cache.
 
 ### capabilities.mime(_locator_)
-The __mime__ capability predicts the MIME type of the Buffer produced by the `read` capability when it is called with the _locator_. It returns a string, or `undefined` if access to the file should be denied.
+The __mime__ capability predicts the MIME type of the Buffer produced by the `read` capability when it is called with the file _locator_. It returns a string, or `undefined` if access to the file should be denied.
 
-    capabilities.mime("/yummy/apple.js");          // "text/javascript"
-    capabilities.mime("/yummy/cinnamon.coffee");   // "text/javascript"
-    capabilities.mime("/yummy/spaghetti.jpg");     // "image/jpeg"
-    capabilities.mime("/yummy/secret.key");        // undefined
+    capabilities.mime("file:///yummy/apple.js");          // "text/javascript"
+    capabilities.mime("file:///yummy/cinnamon.coffee");   // "text/javascript"
+    capabilities.mime("file:///yummy/spaghetti.jpg");     // "image/jpeg"
+    capabilities.mime("file:///yummy/secret.key");        // undefined
 
 ### capabilities.out(_string_)
 The __out__ capability is called with a string representation of any arguments passed to `console.log` or bytes written to STDOUT.

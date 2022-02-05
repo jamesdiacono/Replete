@@ -114,6 +114,9 @@ function browser_repl_constructor(
 
 // Evaluates the module in many padawans at wunce.
 
+        if (clients.length === 0) {
+            return Promise.reject("No WEBL found.");
+        }
         return Promise.all(
             clients.map(function (client) {
                 return padawans.get(client).eval(script, imports).then(
@@ -129,10 +132,14 @@ function browser_repl_constructor(
     }
     function specify(locator) {
 
-// Locators provided to the padawans are qualified by the WEBL client, so we do
-// nothing here.
+// If the locator is a file URL, we convert it to an absolute path. This is then
+// fully qualified by the WEBL client before it is used by the padawan.
 
-        return locator;
+        return (
+            locator.startsWith("file:///")
+            ? locator.replace("file://", "")
+            : locator
+        );
     }
     const repl = make_repl(
         capabilities,

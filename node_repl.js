@@ -63,8 +63,12 @@ function node_repl_constructor(
     }
     function specify(locator) {
         return (
-            locator.startsWith("/")
-            ? "http://localhost:" + http_server_port + locator
+            locator.startsWith("file:///")
+            ? (
+                "http://localhost:"
+                + http_server_port
+                + locator.replace("file://", "")
+            )
             : locator
         );
     }

@@ -69,9 +69,8 @@
 //          The JavaScript source code to be evaluated, as a string.
 
 //      locator
-//          The absolute path on disk of the module being evaluated. This is
-//          required if the source contains any import statements, but optional
-//          otherwise.
+//          The file URL of the module being evaluated. This is required if the
+//          source contains any import statements, but optional otherwise.
 
 //      platform
 //          Either "browser", "node" or "deno". This property determines which
@@ -125,6 +124,7 @@
 /*jslint node */
 
 import path from "path";
+import url from "url";
 import fs from "fs";
 import readline from "readline";
 import util from "util";
@@ -137,9 +137,9 @@ function send_result(message) {
 }
 
 // These are the capabilities given to each platform's REPL. See README.md for a
-// description of each.
+// description of each. These capabilities use regular file URLs as locators for
+// files on disk, which is the simplest possible locator format.
 
-const root_directory = process.cwd();
 const capabilities = Object.freeze({
     source(message) {
         return Promise.resolve(message.source);
@@ -152,34 +152,31 @@ const capabilities = Object.freeze({
             return Promise.resolve(specifier);
         }
 
-// This set of capabilities use absolute file paths as locators. This is the
-// simplest possible locator format.
+// The 'import.meta.resolve' function uses Node's own mechanism for locating
+// local files.
 
-// The 'import.meta.resolve' function allows us to use Node's own mechanism for
-// locating files. It deals in URLs rather than paths, hence the conversions.
-
-        if (parent_locator !== undefined) {
-            parent_locator = "file://" + parent_locator;
-        }
-        return import.meta.resolve(specifier, parent_locator).then(
-            function (file_url) {
-                return file_url.replace("file://", "");
-            }
-        );
+        return import.meta.resolve(specifier, parent_locator);
     },
     read(locator) {
 
 // So that we do not inadvertently expose sensitive files to the network, we
-// refuse to read any files which are not beneath the root directory.
+// refuse to read any files which are not beneath the current working directory.
 
-        if (!locator.startsWith(root_directory + "/")) {
+        const locator_url = new URL(locator);
+        const cwd_url = url.pathToFileURL(
+
+// Ensure a trailing slash.
+
+            process.cwd().replace(/\/?$/, "/")
+        );
+        if (!locator_url.href.startsWith(cwd_url.href)) {
             return Promise.reject(new Error("Forbidden: " + locator));
         }
-        return fs.promises.readFile(locator);
+        return fs.promises.readFile(locator_url);
     },
     watch(locator) {
         return new Promise(function (resolve, reject) {
-            const watcher = fs.watch(locator, resolve);
+            const watcher = fs.watch(new URL(locator), resolve);
             watcher.on("error", reject);
             watcher.on("change", watcher.close);
         });
@@ -189,7 +186,7 @@ const capabilities = Object.freeze({
 // By default, only JavaScript files are served to the REPLs. If you wish to
 // serve other types of files, such as images, just return a suitable mime type.
 
-        if (locator.endsWith(".js")) {
+        if (locator.endsWith(".js") || locator.endsWith(".mjs")) {
             return "text/javascript";
         }
     },

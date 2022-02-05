@@ -623,7 +623,7 @@ function digest(...args) {
     return crypto.createHash("sha1").update(args.join()).digest("hex");
 }
 
-const rx_versioned_locator = /^\/v([^\/]+)\/([^\/]+)(.*)$/;
+const rx_versioned_locator = /^file:\/\/\/v([^\/]+)\/([^\/]+)(.*)$/;
 
 // Capturing groups:
 //  [1] The version
@@ -659,8 +659,7 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
 
 //      specify(locator)
 //          A function which is used to transform each locator before it is
-//          provided as a specifier to a padawan. For example, it might be used
-//          to turn a path-style locator into a fully qualified URL.
+//          provided as a specifier to a padawan.
 
 // These variables constitute the REPL's in-memory cache. Each variable holds an
 // object, which has locators as keys and Promises as values. By caching the
@@ -772,7 +771,7 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
 // employed by the above functions.
 
         if (
-            !locator.startsWith("/")
+            !locator.startsWith("file:///")
             || capabilities.mime(locator) !== "text/javascript"
         ) {
             return Promise.resolve();
@@ -831,10 +830,12 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
 // module in their debugger.
 
 // Rather than including the versioning information in a query string, we
-// prepend it. This is more respectful of the locator's opacity, and also
-// easier to read.
+// prepend it to the path. This is more respectful of the locator's opacity, and
+// also easier to read.
 
-            return "/v" + the_version + "/" + unguessable + locator;
+            return locator.replace(/^file:\/\//, function (prefix) {
+                return prefix + "/v" + the_version + "/" + unguessable;
+            });
         });
     }
     function module(locator) {
@@ -878,14 +879,14 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
             res.statusCode = 500;
             return res.end();
         }
-        let locator = req.url;
+        let locator = "file://" + req.url;
 
 // Any versioning information in the URL has served its purpose, which was to
 // defeat the padawan's module cache. It is discarded before continuing.
 
         const matches = locator.match(rx_versioned_locator);
         if (matches && matches[2] === unguessable) {
-            locator = matches[3];
+            locator = "file://" + matches[3];
         }
         const content_type = capabilities.mime(locator);
         if (content_type === undefined) {
