@@ -9,8 +9,9 @@ import make_node_cmdl from "./cmdl/node_cmdl.js";
 function node_repl_constructor(
     capabilities,
     path_to_replete,
-    debugger_port,
-    which_node
+    which_node,
+    node_args = [],
+    env = {}
 ) {
     const cmdl = make_node_cmdl(
         path.join(path_to_replete, "cmdl", "node_padawan.js"),
@@ -20,9 +21,16 @@ function node_repl_constructor(
         function on_stderr(buffer) {
             return capabilities.err(buffer.toString());
         },
-        debugger_port,
-        path.join(path_to_replete, "cmdl", "node_loader.js"),
-        which_node
+        which_node,
+        node_args.concat(
+            "--experimental-loader",
+            path.join(path_to_replete, "cmdl", "node_loader.js"),
+
+// Suppress the "experimental feature" warnings. We know we are experimenting!
+
+            "--no-warnings"
+        ),
+        env
     );
 
 // The Node.js REPL uses an HTTP server to serve modules to the padawan, which

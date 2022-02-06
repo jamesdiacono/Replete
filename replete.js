@@ -1,39 +1,37 @@
-// This is an example of a REPL built using Replete. It is a very minimal
-// configuration, and may be considered a starting point for building more
-// interesting REPLs. To start it, run
+// This is the standard Replete program. It defines the interface which text
+// editor plugins are expected to adhere to. But it should only be considered a
+// starting point. You are encouraged to modify this file, and particularly the
+// capability functions, to suit your own needs.
+
+// To begin, run
 
 //      $ node --experimental-import-meta-resolve /path/to/replete.js [options]
 
-// from a directory which contains your source code. The following options are
-// supported.
+// from a directory containing any modules which might be imported, directly or
+// indirectly, during evaluation. Node.js v17+ is required. The following
+// options are supported:
 
-//      --browser_port <port>
+//      --browser_port=<port>
 //          The port number of the browser REPL. If this option is omitted, an
 //          unallocated port is chosen automatically. Providing a static port
 //          allows any connected tabs to survive a restart of Replete.
 
-//      --browser_hostname <hostname>
+//      --browser_hostname=<hostname>
 //          The hostname of the browser REPL. When this option is omitted, the
 //          browser REPL listens only on localhost. This option may be used to
 //          expose the browser REPL to the network.
 
-//      --node_debugger_port <port>
+//      --node_debugger_port=<port>
 //          A Node.js debugger will attempt to listen on the specified port.
 //          This makes it possible to monitor your evaluations using a fully
 //          featured debugger. To attach a debugger, open Google Chrome and
 //          navigate to chrome://inspect.
 
-//      --which_node <path>
-//          The path to the Node.js binary ('node') used for evaluation, which
-//          takes place in a child process. Only Node.js versions 17 and higher
-//          are supported. If this option is omitted, the path is inherited from
-//          the parent process.
-
-//      --deno_debugger_port <port>
+//      --deno_debugger_port=<port>
 //          Like the --node_debugger_port option, but for Deno. Both runtimes
 //          use the V8 Inspector Protocol.
 
-//      --which_deno <path>
+//      --which_deno=<path>
 //          The path to the Deno binary ('deno'). If this option is omitted,
 //          the 'deno' command must be available.
 
@@ -136,9 +134,8 @@ function send_result(message) {
     process.stdout.write(JSON.stringify(message) + "\n");
 }
 
-// These are the capabilities given to each platform's REPL. See README.md for a
-// description of each. These capabilities use regular file URLs as locators for
-// files on disk, which is the simplest possible locator format.
+// These are the capabilities given to the REPLs. See README.md for an
+// explanation of each.
 
 const capabilities = Object.freeze({
     source(message) {
@@ -152,8 +149,8 @@ const capabilities = Object.freeze({
             return Promise.resolve(specifier);
         }
 
-// The 'import.meta.resolve' function uses Node's own mechanism for locating
-// local files.
+// These capabilities use regular file URLs as locators for files on disk. This
+// makes it easy to use Node's own file resolution mechanism.
 
         return import.meta.resolve(specifier, parent_locator);
     },
@@ -201,22 +198,13 @@ const capabilities = Object.freeze({
 // Parse the command line arguments into an options object.
 
 let options = Object.create(null);
-let option_name;
 process.argv.slice(2).forEach(function (argument) {
-    const matches_name = argument.match(/^--(\w+)$/);
-    if (matches_name) {
-        option_name = matches_name[1];
-    } else {
-        options[option_name] = (
-            option_name.endsWith("port")
-            ? Number.parseInt(argument, 10)
-            : argument
-        );
-    }
+    const [ignore, name, value] = argument.match(/^--(\w+)=(.*)$/);
+    options[name] = value;
 });
 
-// The REPLs require read access to Replete's source files. They are situated in
-// the same directory as this file.
+// The REPLs require read access to Replete's source files. These are situated
+// in the same directory as this file.
 
 const path_to_replete = path.dirname(process.argv[1]);
 
@@ -227,20 +215,34 @@ const repls = Object.freeze({
     browser: make_browser_repl(
         capabilities,
         path_to_replete,
-        options.browser_port,
+        (
+            options.browser_port !== undefined
+            ? Number.parseInt(options.browser_port, 10)
+            : undefined
+        ),
         options.browser_hostname
     ),
     node: make_node_repl(
         capabilities,
         path_to_replete,
-        options.node_debugger_port,
-        options.which_node ?? process.argv[0]
+        process.argv[0],
+        (
+            options.node_debugger_port !== undefined
+            ? ["--inspect=" + options.node_debugger_port]
+            : []
+        ),
+        process.env
     ),
     deno: make_deno_repl(
         capabilities,
         path_to_replete,
-        options.deno_debugger_port,
-        options.which_deno ?? "deno"
+        options.which_deno ?? "deno",
+        (
+            options.deno_debugger_port !== undefined
+            ? ["--inspect=127.0.0.1:" + options.deno_debugger_port]
+            : []
+        ),
+        process.env
     )
 });
 
@@ -289,9 +291,6 @@ repls.deno.start().catch(on_fail);
 
 // Begin reading command messages from STDIN, line by line.
 
-readline.createInterface({input: process.stdin}).on(
-    "line",
-    function on_line(line) {
-        on_command(JSON.parse(line));
-    }
-);
+readline.createInterface({input: process.stdin}).on("line", function (line) {
+    on_command(JSON.parse(line));
+});

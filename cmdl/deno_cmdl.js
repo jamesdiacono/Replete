@@ -7,48 +7,76 @@
 import child_process from "child_process";
 import make_cmdl from "./cmdl.js";
 
+function allow_host(run_args, host) {
+
+// Deno only permits the --allow-net argument to appear wunce in its list of run
+// arguments. This means we need to jump thru hoops to avoid any duplication.
+
+    if (run_args.includes("--allow-net")) {
+
+// All hosts are already allowed.
+
+        return run_args;
+    }
+
+// If the specific form of --allow-net is present, we append 'host' onto its
+// list of hosts.
+
+    run_args = run_args.map(function (arg) {
+        return (
+            arg.startsWith("--allow-net=")
+            ? arg + "," + host
+            : arg
+        );
+    });
+
+// Otherwise we add the --allow-net.
+
+    return (
+        !run_args.some((arg) => arg.startsWith("--allow-net="))
+        ? run_args.concat("--allow-net=" + host)
+        : run_args
+    );
+}
+
 function deno_cmdl_constructor(
-    path_to_padawan,
-    on_stdout,
-    on_stderr,
-    debugger_port,
-    which_deno
-) {
 
 // The 'path_to_padawan' parameter is the absolute path to the entrypoint of the
-// padawan's program. The 'on_stdout' and 'on_stderr' parameters are functions,
-// called with a Buffer whenever data is written to STDOUT or STDERR.
+// padawan's program.
 
-// The 'debugger_port' parameter is the port number of the padawan's debugger.
-// If not specified, no debugger is started.
+    path_to_padawan,
 
+// The 'on_stdout' and 'on_stderr' parameters are functions, called with a
+// Buffer whenever data is written to STDOUT or STDERR.
+
+    on_stdout,
+    on_stderr,
+
+// The 'which_deno' parameter is the command used to run Deno.
+
+    which_deno,
+
+// The 'run_args' parameter is an array containing arguments to be passed to
+// Deno's "run" subcommand, before the script arg.
+
+    run_args = [],
+
+// The 'env' parameter is an object containing environment variables to make
+// available to the process. Don't forget to specify --allow-env in the
+// 'run_args'.
+
+    env = {}
+) {
     return make_cmdl(function spawn_deno_process(tcp_port) {
-        const args = [
-            "run",
-
-// Suppress diagnostic output, such as the importing of modules.
-
-            "--quiet",
-
-// Deno is run with unlimited permissions, and with access to this process's
-// environment variables. This is in line with the Node padawan, and seems
-// justified for development.
-
-            "--allow-all"
-        ];
-        if (debugger_port !== undefined) {
-            args.push("--inspect=127.0.0.1:" + debugger_port);
-        }
-        args.push(path_to_padawan, String(tcp_port));
         const subprocess = child_process.spawn(
             which_deno,
-            args,
-            {
-                env: Object.assign(
-                    {NO_COLOR: "1"},
-                    process.env
-                )
-            }
+            [
+                "run",
+                ...allow_host(run_args, "127.0.0.1:" + tcp_port),
+                path_to_padawan,
+                String(tcp_port)
+            ],
+            {env}
         );
         subprocess.stdout.on("data", on_stdout);
         subprocess.stderr.on("data", on_stderr);

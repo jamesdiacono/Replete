@@ -5,14 +5,21 @@
 
 Replete is an evaluator for JavaScript modules. It enables a highly interactive style of programming known as __REPL-driven development__. Replete can evaluate modules in the browser, Node.js and Deno.
 
-When [integrated with a text editor](https://github.com/jamesdiacono/Replete/issues/5), Replete becomes part of your development environment. Source code is sent from the editor's buffer to Replete, where it is evaluated. Anything from a mere expression to a whole file may be evaluated at a time. The evaluated value (or an exception) is reported back for perusal.
+When [integrated with a text editor](https://github.com/jamesdiacono/Replete/issues/5), Replete becomes part of your development environment. Source code is sent directly from your editor to Replete, where it is evaluated. Anything from a mere expression to a whole file may be evaluated at a time. The evaluated value (or an exception) is reported back for perusal.
+
+[Watch the demonstration](https://youtu.be/ZXXcn7jLNdk?t=1389).
 
 Replete encourages the development of modules in isolation, rather than in the context of a running application. Modules written in this way tend to be more independent and hence more reusable, more testable and hence more robust.
 
-Replete is in the Public Domain. [Watch the demonstration](https://youtu.be/ZXXcn7jLNdk?t=1389).
+Replete is in the Public Domain.
 
-## The message
-__Messages__ are sent to Replete, from a text editor or similar. A message is an object containing the following properties:
+## Dependencies
+Replete requires the Acorn JavaScript parser (https://github.com/acornjs/acorn) and Node.js v17.
+
+## Capabilities
+Replete expects to be provided with several __capability__ functions. These provide a rich opportunity to customise Replete. A minimal set of capabilities is defined for you, in the replete.js file. If you do not find these to be lacking, you may skip this section.
+
+Messages are sent to Replete, generally from a text editor. A __message__ is an object containing the following properties:
 
 - __source__: The source code to be evaluated. The source may contain import and export statements.
 - __locator__: The locator of the module which contains the source. It is used to resolve the source's imports. More on locators below.
@@ -21,9 +28,6 @@ __Messages__ are sent to Replete, from a text editor or similar. A message is an
 A __scope__ holds the value of every variable or function declared during evaluation, allowing them to be used in future evaluations. Distinct scopes provide a degree of isolation, however the same global object is shared by all scopes.
 
 A message may contain additional properties, although these are ignored by Replete.
-
-## The capabilities
-You must supply Replete with several __capability__ functions. These provide a rich opportunity to customise Replete. A set of example capabilities are defined in the replete.js file.
 
 The _capabilities_ parameter passed to Replete's constructors should be an object containing the following methods:
 
@@ -89,14 +93,10 @@ The __out__ capability is called with a string representation of any arguments p
 ### capabilities.err(_string_)
 The __err__ capability is called with a string representation of any exceptions which occur outside of evaluation, or of any bytes written to STDERR.
 
-## The files
+## Files
 - _replete.js_: A Node.js program. Read this file for instructions on its use.
 
-- _browser_repl.js_: A Node.js module exporting the constructor for a REPL which evaluates messages in a browser environment.
-
-- _node_repl.js_: A Node.js module exporting the constructor for a REPL which evaluates messages in a Node.js environment.
-
-- _deno_repl.js_: A Node.js module exporting the constructor for a REPL which evaluates messages in a Deno environment.
+- _browser_repl.js_, _node_repl.js_, _deno_repl.js_: Node.js modules, each exporting the constructor for a REPL which evaluates messages in a particular environment.
 
 - _repl.js_: A Node.js module exporting the constructor for a generic REPL. This is the heart of Replete.
 
@@ -108,10 +108,7 @@ The __err__ capability is called with a string representation of any exceptions 
 
 - _cmdl/_: A directory containing the source code for the CMDL, which is like the WEBL but for command-line runtimes. See cmdl/README.md.
 
-- _package.json_: The Node.js package manifest. It specifies the Acorn dependency, and compels Node to interpret Replete's JavaScript files as modules.
-
-## Dependencies
-Replete requires the Acorn JavaScript parser (https://github.com/acornjs/acorn). The Node.js REPL requires Node.js v17 or higher.
+- _package.json_: The Node.js package manifest. It specifies the Acorn dependency, and tells Node that the above files are modules.
 
 ## Links
 - REPL-driven development in Clojure (Stuart Halloway, 2017) https://vimeo.com/223309989

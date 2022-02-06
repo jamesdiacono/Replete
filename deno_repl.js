@@ -11,8 +11,9 @@ import make_deno_cmdl from "./cmdl/deno_cmdl.js";
 function deno_repl_constructor(
     capabilities,
     path_to_replete,
-    debugger_port,
-    which_deno
+    which_deno,
+    run_args = [],
+    env = {}
 ) {
     const cmdl = make_deno_cmdl(
         path.join(path_to_replete, "cmdl", "deno_padawan.js"),
@@ -22,8 +23,20 @@ function deno_repl_constructor(
         function on_stderr(buffer) {
             return capabilities.err(buffer.toString());
         },
-        debugger_port,
-        which_deno
+        which_deno,
+        run_args.concat(
+
+// The Deno padawan is run with unlimited permissions. This seems justified for
+// development, where it is not known in advance what the REPL will be asked to
+// do.
+
+// It also has the important side-effect of allowing the padawan access to the
+// HTTP server. This could also be accomplished using the --allow-net argument,
+// but care must be taken that it only appears wunce.
+
+            "--allow-all"
+        ),
+        Object.assign({NO_COLOR: "1"}, env)
     );
 
 // The Deno REPL uses an HTTP server to serve modules to the padawan, which will

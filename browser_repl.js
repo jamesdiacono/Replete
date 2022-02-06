@@ -115,7 +115,7 @@ function browser_repl_constructor(
 // Evaluates the module in many padawans at wunce.
 
         if (clients.length === 0) {
-            return Promise.reject("No WEBL found.");
+            return Promise.reject("No WEBLs connected.");
         }
         return Promise.all(
             clients.map(function (client) {
