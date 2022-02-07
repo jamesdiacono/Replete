@@ -40,6 +40,9 @@ function node_cmdl_constructor(
             node_args.concat(path_to_padawan, String(tcp_port)),
             {env}
         );
+        subprocess.on("error", function (exception) {
+            return on_stderr(Buffer.from(exception.stack + "\n"));
+        });
         subprocess.stdout.on("data", on_stdout);
         subprocess.stderr.on("data", on_stderr);
         return Promise.resolve(subprocess);

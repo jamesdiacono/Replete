@@ -27,13 +27,13 @@
 //          featured debugger. To attach a debugger, open Google Chrome and
 //          navigate to chrome://inspect.
 
+//      --which_deno=<path>
+//          The path to the Deno binary ('deno'). If this option is omitted,
+//          the Deno REPL will not be available.
+
 //      --deno_debugger_port=<port>
 //          Like the --node_debugger_port option, but for Deno. Both runtimes
 //          use the V8 Inspector Protocol.
-
-//      --which_deno=<path>
-//          The path to the Deno binary ('deno'). If this option is omitted,
-//          the 'deno' command must be available.
 
 // The process communicates via STDIN and STDOUT. Messages are sent in both
 // directions, each message occupying a single line. A message is a JSON-encoded
@@ -236,7 +236,7 @@ const repls = Object.freeze({
     deno: make_deno_repl(
         capabilities,
         path_to_replete,
-        options.which_deno ?? "deno",
+        options.which_deno,
         (
             options.deno_debugger_port !== undefined
             ? ["--inspect=127.0.0.1:" + options.deno_debugger_port]
@@ -280,14 +280,16 @@ function on_command(command) {
     );
 }
 
-// Start the REPLs.
+// Start the REPLs. The Deno REPL is optional.
 
 function on_fail(exception) {
     send_result({err: exception.stack + "\n"});
 }
 repls.browser.start().catch(on_fail);
 repls.node.start().catch(on_fail);
-repls.deno.start().catch(on_fail);
+if (options.which_deno !== undefined) {
+    repls.deno.start().catch(on_fail);
+}
 
 // Begin reading command messages from STDIN, line by line.
 

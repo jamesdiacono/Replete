@@ -78,6 +78,9 @@ function deno_cmdl_constructor(
             ],
             {env}
         );
+        subprocess.on("error", function (exception) {
+            return on_stderr(Buffer.from(exception.stack + "\n"));
+        });
         subprocess.stdout.on("data", on_stdout);
         subprocess.stderr.on("data", on_stderr);
         return Promise.resolve(subprocess);
