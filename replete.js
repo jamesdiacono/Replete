@@ -103,20 +103,20 @@
 
 // Here are some examples of commands and the results they might induce.
 
-//      COMMAND {"platform":"browser", "source":"navigator.vendor"}
+//      COMMAND {"platform": "browser", "source": "navigator.vendor"}
 //      RESULT  {"evaluation": "Google Inc."}
 
-//      COMMAND {"platform":"node", "source":"process.version"}
+//      COMMAND {"platform": "node", "source": "process.version"}
 //      RESULT  {"evaluation": "v14.4.0"}
 
-//      COMMAND {"platform":"browser", "source":"process.version"}
+//      COMMAND {"platform": "browser", "source": "process.version"}
 //      RESULT  {"exception": "ReferenceError: process is not defined..."}
 
-//      COMMAND {"platform": "deno", "source":"console.log(0 / 0, 1 / 0)"}
+//      COMMAND {"platform": "deno", "source": "console.log(0 / 0, 1 / 0)"}
 //      RESULT  {"out": "NaN Infinity\n"}
 //      RESULT  {"evaluation": "undefined"}
 
-//      COMMAND {"platform":"browser", "source":"1 + 1", "request": 42}
+//      COMMAND {"platform": "browser", "source": "1 + 1", "request": 42}
 //      RESULT  {"evaluation": "2", "request": 42}
 
 /*jslint node */

@@ -128,28 +128,22 @@ const message_handlers = {
 };
 worker.onmessage = function (event) {
     if (typeof event.data === "boolean") {
-
-// The connection has been opened or closed.
-
         if (event.data) {
-            if (webl !== undefined) {
 
-// If the connection has just been restored, this implies that the WEBL server
-// was restarted. Anywun who restarts the WEBL server probably wants a clean
-// slate to work with, so we refresh the page, thereby clearing the module
-// cache. Wunce the page has refreshed, it will reconnect to the server.
+// The connection has been opened.
 
-                return window.location.reload();
-            }
             webl = make_webl();
             window.onbeforeunload = webl.destroy;
             document.title = "WEBL";
         } else {
 
-// Destroy the WEBL (to avoid the possibility of orphaned padawans) and wait for
-// the connection with the server to be repaired.
+// The connection has been closed. Destroy the WEBL (to avoid the possibility of
+// orphaned padawans) and wait for the connection with the server to be
+// repaired.
 
-            webl.destroy();
+            if (webl !== undefined) {
+                webl.destroy();
+            }
             document.title = "Reconnecting...";
         }
         return;

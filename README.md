@@ -51,7 +51,7 @@ The __locate__ capability resolves a module specifier. It is passed a _specifier
 
 A __specifier__ is the string portion of a module's import statement, for example "../my_module.js".
 
-A __locator__ is a URL string containing sufficient information to locate a file. A locator should begin with `file:///` if it refers to a file on disk, but otherwise its structure is completely up to you.
+A __locator__ is a URL string containing sufficient information to locate a file. A locator should begin with `file:///` if it refers to a file on disk, but structure of the rest of it is completely up to you.
 
 If locators for files on disk were structured like `file:///absolute/path/to/file.xyz`, then the `locate` capability might behave like so:
 

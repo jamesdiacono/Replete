@@ -317,6 +317,10 @@ const inner_template = `
 
     let {"""} = $scope;
 
+// The $functions object holds any functions declared during evaluation.
+
+    const $functions = {};
+
 // Evaluate the script, retaining the evaluated value.
 
     $evaluation = eval(<payload_script_string>);
@@ -324,7 +328,7 @@ const inner_template = `
 // Gather the variables back into the scope, retaining their values for the
 // benefit of future evaluations.
 
-    Object.assign($scope, {"""});
+    Object.assign($scope, {"""}, $functions);
 
 // Produce the evaluation.
 
@@ -334,10 +338,11 @@ const inner_template = `
 const outer_template = `
 
 // Ensure that the global $scopes variable is available. It contains the scope
-// objects, which persist the state of the identifiers across evaluations.
-// This script must run in a variety of different runtime environments, each of
-// which names its global variable something different. The 'globalThis' alias
-// provides a convenient point of intersection, abhorrent though it is.
+// objects, which persist the state of identifiers across evaluations.
+
+// This script must run in a variety of different runtime environments, in both
+// loose and strict modes. The only consistent name for the global variable is
+// 'globalThis'.
 
     if (globalThis.$scopes === undefined) {
         globalThis.$scopes = Object.create(null);
@@ -349,7 +354,8 @@ const outer_template = `
         };
     }
 
-// Overwrite the global $scope variable with the named scope.
+// Retrieve the named scope. We use a global variable only because attempting to
+// redeclare a 'const' would result in an exception.
 
     globalThis.$scope = $scopes[<scope_name_string>];
 
@@ -483,32 +489,36 @@ function replize_script(script, imports = [], scope = "") {
             });
         },
         FunctionDeclaration(node) {
-            top_names.push(node.id.name);
 
-// Function statements can be reevaluated without issue, but the value in the
-// $scope object will not be overwritten without an explicit assignment
-// statement. This is tricky, because treating the function declaration as an
-// expression and assigning it to the variable will prevent the function from
-// being hoisted, which can cause an exception if a function is referenced
-// before it is declared.
+// Function statements can be reevaluated without issue.
 
-// Our strategy is to leave the function as a statement, so it is still hoisted
-// to the start of the script. However, the hoisted function is subtly renamed.
-// We then insert an assignment statement at the start of the script (following
-// the hoisted declaration) to
+// However, a function statement causes a new variable to be declared in the
+// current scope. This variable is inaccessible to the parent scope, and so can
+// not be gathered like regular variables are, after evaluation has completed.
+// Instead, we gather the variable inline. This happens immediately after the
+// declaration, with the nice side effect that function declarations appear to
+// evaluate as functions, rather than undefined.
 
-//  a) give the function back its original name, and
-//  b) persist the function in the $scope.
-
-            const hoisted_name = "$" + node.id.name;
-            alterations.push([node.id, hoisted_name]);
             alterations.push([
                 {
-                    start: 0,
-                    end: 0
+                    start: node.end,
+                    end: node.end
                 },
-                node.id.name + " = " + hoisted_name + ";"
+                " $functions." + node.id.name + " = " + node.id.name + ";"
             ]);
+
+// There is a caveat that any additional changes to the variable are not
+// persisted:
+
+//      function tea_and_bickies() {
+//          return "Just the ticket.;
+//      }
+//      tea_and_bickies = "Yum";
+
+// After evaluating the above, $scope.tea_and_bickies is a function and not
+// "Yum". I expect this not to be a problem in practice. If I am wrong, we can
+// revert to our previous strategy.
+
         },
         ClassDeclaration(node) {
 

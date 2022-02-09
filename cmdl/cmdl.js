@@ -155,10 +155,7 @@ function cmdl_constructor(spawn_padawan) {
     }
     function eval_module(script, imports) {
         const id = String(Math.random());
-        return new Promise(function (resolve, reject) {
-            if (socket === undefined) {
-                return reject(new Error("CMDL not running."));
-            }
+        return new Promise(function (resolve) {
             report_callbacks[id] = resolve;
             return socket.write(JSON.stringify({script, imports, id}) + "\n");
         });

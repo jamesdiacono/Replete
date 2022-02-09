@@ -220,10 +220,11 @@ const padawan_create_script_template = `
         ?? self          // worker
     ));
 
-// The 'console.log' function is commonly used to send output to the REPL during
-// debugging. Here we apply a wiretap, sending its arguments to the master.
+// The 'console.log' function is commonly used in the browser as the equivalent
+// of printing to STDOUT. Here we apply a wiretap, sending its arguments to the
+// master.
 
-    (function (original_log) {
+    (function (original) {
         self.console.log = function (...args) {
             $webl.send({
                 name: "log",
@@ -240,9 +241,9 @@ const padawan_create_script_template = `
                     );
                 })
             });
-            return original_log(...args);
+            return original(...args);
         };
-    })(self.console.log);
+    })(console.log);
 
 // Inform the master of any uncaught exceptions.
 
