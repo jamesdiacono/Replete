@@ -57,15 +57,10 @@ function deno_repl_constructor(
             cmdl.create()
         ]);
     }
-    function on_eval(script, imports) {
-        return cmdl.eval(script, imports).then(
-            function examine_report(report) {
-                if (report.exception === undefined) {
-                    return [report.evaluation];
-                }
-                throw report.exception;
-            }
-        );
+    function on_eval(script, imports, on_result) {
+        return cmdl.eval(script, imports).then(function (report) {
+            return on_result(report.evaluation, report.exception);
+        });
     }
     function on_stop() {
         return Promise.all([

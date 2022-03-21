@@ -37,17 +37,19 @@
 //          Starts the REPL, returning a Promise which resolves wunce it is safe
 //          to call 'send'.
 
-//      send(message)
-//          Evaluates the message's source code in every connected padawan. It
-//          returns a Promise which resolves to an array containing string
-//          representations of each evaluated value. If any of the padawans
-//          raise an exception during evaluation, the Promise is rejected with
-//          a string representation of the exception.
+//      send(message, on_result)
+//          Evaluates the source code of the 'message' in every connected
+//          padawan. A Promise is returned, which rejects if there was a problem
+//          communicating with any of the padawans.
+
+//          The 'on_result' function is called with each padawan's result. If
+//          evaluation succeeded, the first parameter is a string representation
+//          of the evaluated value. Otherwise the first parameter is undefined
+//          and the second parameter is a string representation of the
+//          exception.
 
 //          Usually a REPL has exactly wun padawan, but this interface permits a
-//          REPL to evaluate source in multiple padawans concurrently. This
-//          makes it convenient to compare the behaviour of a variety of
-//          padawans.
+//          REPL to evaluate source in multiple padawans concurrently.
 
 //      stop()
 //          Stops the REPL. It returns a Promise which resolves wunce the system
@@ -654,14 +656,17 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
 //          objects whenever an HTTP request is received. It returns a Promise
 //          which should resolve wunce it is safe to call 'on_eval'.
 
-//      on_eval(script, imports)
-//          A function which evaluates the script in each connected padawan. It
-//          is called with two parameters, 'script' and 'imports'. The 'script'
-//          parameter is a string containing JavaScript source code, devoid of
-//          import or export statements. The 'imports' parameter is an array of
-//          import specifier strings.
+//      on_eval(script, imports, on_result)
+//          A function which evaluates the script in each connected padawan.
 
-//          It returns the same thing as the 'send' method documented above.
+//          The 'script' parameter is a string containing JavaScript source
+//          code, devoid of import or export statements. The 'imports'
+//          parameter is an array of import specifier strings. The 'on_result'
+//          parameter is the same as the 'on_result' function passed to
+//          the 'send' method, which is documented above.
+
+//          A Promise is returned, which rejects if there was a problem
+//          communicating with any of the padawans.
 
 //      on_stop()
 //          A function responsible for releasing any resources in use by the
@@ -917,7 +922,7 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
             fail
         );
     }
-    function send(message) {
+    function send(message, on_result) {
 
 // Prepare the message's source code for evaluation.
 
@@ -959,7 +964,7 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
             }
         ).then(
             function ([script, imports]) {
-                return on_eval(script, imports);
+                return on_eval(script, imports, on_result);
             }
         );
     }

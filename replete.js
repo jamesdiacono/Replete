@@ -125,7 +125,6 @@ import path from "path";
 import url from "url";
 import fs from "fs";
 import readline from "readline";
-import util from "util";
 import make_node_repl from "./node_repl.js";
 import make_deno_repl from "./deno_repl.js";
 import make_browser_repl from "./browser_repl.js";
@@ -246,45 +245,36 @@ const repls = Object.freeze({
     )
 });
 
+function on_fail(exception) {
+    send_result({err: exception.stack + "\n"});
+}
+
 function on_command(command) {
 
 // The 'on_command' function relays an incoming 'command' message to the
 // relevant REPL. The REPL's response is relayed back as a result message.
 
-    return repls[command.platform].send(command).then(
-        function (evaluations) {
+    return repls[command.platform].send(
+        command,
+        function on_result(evaluation, exception) {
 
-// On success, the REPL replies with an array of evaluated values produced in
-// parallel. Each evaluation is sent back as a separate message.
-
-            evaluations.forEach(function (evaluation) {
-                send_result({
-                    evaluation,
-                    request: command.request
-                });
-            });
-        },
-        function (exception) {
-
-// On failure, the first exception is sent back as a string.
+// The browser REPL may yield multiple results for each command, when multiple
+// tabs are connected. Only wun of 'evaluation' and 'exception' is a string,
+// the other is undefined.
 
             send_result({
-                exception: (
-                    typeof exception === "string"
-                    ? exception
-                    : util.inspect(exception)
-                ),
+                evaluation,
+                exception,
                 request: command.request
             });
         }
+    ).catch(
+        on_fail
     );
 }
 
 // Start the REPLs. The Deno REPL is optional.
 
-function on_fail(exception) {
-    send_result({err: exception.stack + "\n"});
-}
 repls.browser.start().catch(on_fail);
 repls.node.start().catch(on_fail);
 if (options.which_deno !== undefined) {

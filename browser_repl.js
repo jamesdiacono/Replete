@@ -110,21 +110,19 @@ function browser_repl_constructor(
     function on_stop() {
         return webl_server.stop();
     }
-    function on_eval(script, imports) {
+    function on_eval(script, imports, on_result) {
 
-// Evaluates the module in many padawans at wunce.
+// Evaluates the module in many padawans at wunce. Results are reported back as
+// they arrive.
 
         if (clients.length === 0) {
-            return Promise.reject("No WEBLs connected.");
+            capabilities.err("No WEBLs connected.\n");
         }
         return Promise.all(
             clients.map(function (client) {
                 return padawans.get(client).eval(script, imports).then(
-                    function examine_report(report) {
-                        if (report.exception === undefined) {
-                            return report.evaluation;
-                        }
-                        throw report.exception;
+                    function (report) {
+                        return on_result(report.evaluation, report.exception);
                     }
                 );
             })
