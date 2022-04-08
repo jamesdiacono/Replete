@@ -8,8 +8,10 @@
 //      $ node --experimental-import-meta-resolve /path/to/replete.js [options]
 
 // from a directory containing any modules which might be imported, directly or
-// indirectly, during evaluation. Node.js v17+ is required. The following
-// options are supported:
+// indirectly, during evaluation. Node.js v17+ is required. To stop the
+// process, send it a SIGINT or SIGTERM signal.
+
+// The following options are supported:
 
 //      --browser_port=<port>
 //          The port number of the browser REPL. If this option is omitted, an
@@ -281,8 +283,29 @@ if (options.which_deno !== undefined) {
     repls.deno.start().catch(on_fail);
 }
 
+// REPLs caught in an infinite loop require explicit termination, otherwise they
+// can survive the death of this process.
+
+function on_exit() {
+    Promise.all([
+        repls.browser.stop(),
+        repls.node.stop(),
+        repls.deno.stop()
+    ]).then(function () {
+        process.exit();
+    });
+}
+
+process.on("SIGTERM", on_exit);
+process.on("SIGINT", on_exit);
+
 // Begin reading command messages from STDIN, line by line.
 
-readline.createInterface({input: process.stdin}).on("line", function (line) {
-    on_command(JSON.parse(line));
-});
+readline.createInterface(
+    {input: process.stdin}
+).on(
+    "line",
+    function (line) {
+        on_command(JSON.parse(line));
+    }
+);

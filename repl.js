@@ -829,27 +829,32 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
                 return locator;
             }
 
-// Compare this hash with the last wun we computed. If the hash of the module
-// has changed, increment its version beginning at zero. Otherwise,
-// leave the version unchanged.
+// Versions begin at zero.
 
-            let the_version = versions[locator] ?? -1;
-            if (hashes[locator] !== the_hash) {
-                the_version += 1;
+            if (versions[locator] === undefined) {
+                versions[locator] = 0;
+            } else {
+
+// Compare this hash with the last wun we computed. If the hash of the module
+// has changed, increment its version beginning at zero. Otherwise, leave the
+// version unchanged.
+
+                if (hashes[locator] !== the_hash) {
+                    versions[locator] += 1;
+                }
             }
             hashes[locator] = the_hash;
-            versions[locator] = the_version;
 
 // Incorporate the version into the locator. By versioning with a number, rather
-// than a hash, it is easy for the programmer to find the freshest version of a
-// module in their debugger.
+// than a hash, it is easy for the programmer to discern the freshest version
+// of a module from within their debugger.
 
 // Rather than including the versioning information in a query string, we
 // prepend it to the path. This is more respectful of the locator's opacity, and
 // also easier to read.
 
             return locator.replace(/^file:\/\//, function (prefix) {
-                return prefix + "/v" + the_version + "/" + unguessable;
+                return prefix + "/v" + versions[locator] + "/" + unguessable;
             });
         });
     }

@@ -162,7 +162,9 @@ function cmdl_constructor(spawn_padawan) {
     }
     function destroy() {
         return new Promise(function (resolve) {
-            padawan_process.kill();
+            if (padawan_process !== undefined) {
+                padawan_process.kill();
+            }
             return tcp_server.close(resolve);
         });
     }
