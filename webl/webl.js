@@ -611,6 +611,4 @@ function webl_constructor() {
     return Object.freeze({padawan, destroy});
 }
 
-// Below is a demonstration showing how the WEBL can be used within the browser.
-
 export default Object.freeze(webl_constructor);

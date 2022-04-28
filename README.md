@@ -14,7 +14,7 @@ Replete encourages the development of modules in isolation, rather than in the c
 Replete is in the Public Domain.
 
 ## Dependencies
-Replete requires the Acorn JavaScript parser (https://github.com/acornjs/acorn) and Node.js v17.
+Replete requires the Acorn JavaScript parser (https://github.com/acornjs/acorn) and Node.js v17.6.0+.
 
 ## Capabilities
 Replete expects to be provided with several __capability__ functions. These provide a rich opportunity to customise Replete. A minimal set of capabilities is defined for you, in the replete.js file. If you do not find these to be lacking, you may skip this section.

@@ -182,7 +182,10 @@ function webl_server_constructor(
         }
         if (req.url === "/") {
             res.setHeader("content-type", "text/html");
-            return res.end("<script type=module src=webl_client.js></script>");
+            return res.end(
+                "<!DOCTYPE html>\n"
+                + "<script type=module src=webl_client.js></script>"
+            );
         }
         return on_unhandled_request(req, res);
     });

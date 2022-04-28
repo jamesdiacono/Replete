@@ -23,11 +23,11 @@ function node_repl_constructor(
         },
         which_node,
         node_args.concat(
-            "--experimental-loader",
-            path.join(path_to_replete, "cmdl", "node_loader.js"),
 
-// Suppress the "experimental feature" warnings. We know we are experimenting!
+// By default, Node.js will not import modules via HTTP. Adding a flag enables
+// this feature but causes a warning to be logged, which we suppress.
 
+            "--experimental-network-imports",
             "--no-warnings"
         ),
         env

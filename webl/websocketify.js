@@ -6,6 +6,9 @@ import crypto from "crypto";
 
 function make_frame(opcode, payload) {
 
+// The 'make_frame' function takes an integer 'opcode' and a 'payload' Buffer,
+// and returns a Buffer containing a single WebSocket frame.
+
 // We set the "fin" bit to true, meaning that this is the only frame in the
 // message.
 

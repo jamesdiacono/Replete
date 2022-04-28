@@ -8,7 +8,7 @@
 //      $ node --experimental-import-meta-resolve /path/to/replete.js [options]
 
 // from a directory containing any modules which might be imported, directly or
-// indirectly, during evaluation. Node.js v17+ is required. To stop the
+// indirectly, during evaluation. Node.js v17.6.0+ is required. To stop the
 // process, send it a SIGINT or SIGTERM signal.
 
 // The following options are supported:
