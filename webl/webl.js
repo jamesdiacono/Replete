@@ -108,26 +108,61 @@ function inspect(value) {
 
 // The value is an object. Print out its properties.
 
-        if (value.constructor !== Object) {
+        let keys;
+        if (value.constructor === undefined) {
 
-// The object has an unusual prototype. A descriptive prefix might be helpful.
+// The object has no prototype. A descriptive prefix might be helpful.
 
-            if (value.constructor === undefined) {
-                write("[Object: null prototype] ");
-            } else {
-                write("[" + value.constructor.name + "] ");
+            write("[Object: null prototype] ");
+            keys = Object.keys(value);
+        } else if (value.constructor === Object) {
+            keys = Object.keys(value);
+        } else {
+
+// The object has an unusual prototype, making it a pseudo-classical
+// monstrosity. Prefix it as such.
+
+            write("[" + value.constructor.name + "] ");
+
+// Some kinds of objects are better represented as an array.
+
+            if (value[Symbol.iterator] !== undefined) {
+                return print(Array.from(value));
             }
+
+// The prototype chain may contain useful methods, so these are included.
+// Object.getOwnPropertyNames is used instead of Object.keys so that
+// non-enumerable properties are included. The methods of Object.prototype are
+// omitted because they are just clutter.
+
+            let flat = Object.create(null);
+            keys = (function down(prototype) {
+                if (!prototype || prototype.constructor === Object) {
+                    return Object.keys(flat);
+                }
+                Object.getOwnPropertyNames(prototype).forEach(function (key) {
+                    if (key !== "constructor") {
+                        flat[key] = true;
+                    }
+                });
+                return down(Object.getPrototypeOf(prototype));
+            }(value));
         }
-        const keys = Object.keys(value);
         write("{");
         indent();
         keys.forEach(function (key, key_nr) {
-            print_member(
-                key,
-                value[key],
-                keys.length === 1 && is_primitive(value[key]),
-                key_nr === keys.length - 1
-            );
+
+// It is possible that the property is a getter, and that it will fail when
+// accessed. Omit any malfunctioning properties without affecting the others.
+
+            try {
+                print_member(
+                    key,
+                    value[key],
+                    keys.length === 1 && is_primitive(value[key]),
+                    key_nr === keys.length - 1
+                );
+            } catch (ignore) {}
         });
         outdent();
         return write("}");
@@ -384,7 +419,7 @@ function make_worker_padawan(name, secret, on_message) {
             {type: "application/javascript"}
         )
     );
-    const worker = new Worker(worker_src, {type: "module"});
+    const worker = new Worker(worker_src);
     worker.onmessage = on_message;
     return Object.freeze({
         send(message) {

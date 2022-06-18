@@ -57,12 +57,13 @@ function browser_repl_constructor(
             type: padawan_type,
 
 // If the padawan is rendered as an iframe, it fills the WEBL client's
-// viewport.
+// viewport. We set block display to avoid vertical scrolling.
 
             iframe_style_object: {
                 border: "none",
                 width: "100vw",
-                height: "100vh"
+                height: "100vh",
+                display: "block"
             },
             iframe_sandbox: false
         });

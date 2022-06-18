@@ -90,8 +90,14 @@
 
 //      greeting = "Goodbye";
 
-// and overwrite the old value. Likewise, we should be able to redeclare
-// functions.
+// and overwrite the old value. It should be possible to update a variable in a
+// future turn, like
+
+//      setTimeout(function () {
+//          greeting = "Goodbye";
+//      });
+
+// Likewise, we should be able to redeclare top-level functions.
 
 // The naive approach is to write to a global variable of the same name, but
 // doing so can overwrite actual global variables, making them permanently
@@ -255,18 +261,17 @@ function fill(template, substitutions) {
     });
 }
 
-function make_identifiers_object_literal(top_names, imports) {
+function make_identifiers_object_literal(variables, imports) {
     const members = [];
 
-// We insert the declared identifiers into the scope object, so we can know to
-// gather them up after they have been initialised during evaluation of the
-// payload script.
+// Variables are initialised to undefined.
 
-    top_names.forEach(function (name) {
+    variables.forEach(function (name) {
         members.push(name + ": undefined");
     });
 
-// The importations are extracted from the global $imports array.
+// The values of the importations are extracted from the $imports array, which
+// is assumed to have been declared in an outer scope.
 
     imports.forEach(function (the_import, import_nr) {
         if (the_import.default !== undefined) {
@@ -290,87 +295,59 @@ function make_identifiers_object_literal(top_names, imports) {
     return "{" + members.join(", ") + "}";
 }
 
-const inner_template = `
-
-// Opt in to strict mode from here on in. We enforce strict mode because the
-// script originates from a module, and modules are always run in strict mode.
-
-    "use strict";
-
-// Every identifier, including those from previous evaluations, are declared as
-// local variables. This means that scripts are free to shadow global variables,
-// without risk of clobbering the state.
-
-// The "triple quote" below is replaced with a bunch of identifiers separated by
-// commas. The reason we use such a weird token is that a triple quote can not
-// possibly appear in the JSON encoded payload script injected previously.
-
-    let {"""} = $scope;
-
-// The $functions object holds any functions declared during evaluation.
-
-    const $functions = {};
-
-// Evaluate the script, retaining the evaluated value.
-
-    $evaluation = eval(<payload_script_string>);
-
-// Gather the variables back into the scope, retaining their values for the
-// benefit of future evaluations.
-
-    Object.assign($scope, {"""}, $functions);
-
-// Produce the evaluation.
-
-    $evaluation;
-`;
-
-const outer_template = `
+const script_template = `
 
 // Ensure that the global $scopes variable is available. It contains the scope
 // objects, which persist the state of identifiers across evaluations.
 
-// This script must run in a variety of different runtime environments, in both
-// loose and strict modes. The only consistent name for the global variable is
-// 'globalThis'.
+// The only reliable way to store values is to attach them to the global object.
+// We get a reference to the global object via 'this' because it is a strategy
+// that works on every runtime, so long as this script is evaluated in
+// non-strict mode.
 
-    if (globalThis.$scopes === undefined) {
-        globalThis.$scopes = Object.create(null);
+    if (this.$scopes === undefined) {
+        this.$scopes = Object.create(null);
     }
     if ($scopes[<scope_name_string>] === undefined) {
-        $scopes[<scope_name_string>] = {
-            $default: undefined,
-            $evaluation: undefined
-        };
+        $scopes[<scope_name_string>] = Object.create(null);
+        $scopes[<scope_name_string>].$default = undefined;
+        $scopes[<scope_name_string>].$evaluation = undefined;
     }
 
-// Retrieve the named scope. We use a global variable only because attempting to
-// redeclare a 'const' would result in an exception.
+// Retrieve the named scope. We use a var because it can be redeclared, unlike a
+// const.
 
-    globalThis.$scope = $scopes[<scope_name_string>];
+    var $scope = $scopes[<scope_name_string>];
 
-// Populate the scope with the script's declared identifiers.
+// Populate the scope with the script's declared identifiers. Every identifier,
+// including those from previous evaluations, are simulated as local variables.
+// This means that scripts are free to shadow global variables, without risk of
+// interfering with the global object.
 
     Object.assign($scope, <identifiers_object_literal>);
 
-// A nested 'eval' is necessary because
-//  a) variables can not be declared dynamically, and
-//  b) we must inspect the $scope object to know which identifiers it contains.
+// The 'with' statement has a bad reputation, and is not even allowed in strict
+// mode. However, I can not think of a way to avoid using it here. It allows us
+// to use the scope object as an actual scope. It has the other advantage that
+// variable assignments taking place in future turns correctly update the
+// corresponding properties on the scope object.
 
-    eval(
-        <inner_template_string>.replace(
-            /"""/g,
+// If the scope object had a prototype, properties on the prototype chain of the
+// scope object (such as toString) could dredged up and misinterpreted as
+// identifiers. To avoid this hazard, the scope object was made without a
+// prototype.
 
-// The 'replace' method has a nasty gotcha: it recognises several special
-// patterns which, when present in strings passed as the second parameter, make
-// it behave in surprising ways. We gain immunity from this feature by passing a
-// function as the second parameter.
+    with ($scope) {
+        (function () {
 
-            function replacer() {
-                return Object.keys($scope).join(", ");
-            }
-        )
-    );
+// Evaluate the payload script in strict mode. We enforce strict mode because
+// the payload script originates from a module, and modules are always run in
+// strict mode.
+
+            "use strict";
+            return eval(<payload_script_string>);
+        }());
+    }
 `;
 
 function replize_script(script, imports = [], scope = "") {
@@ -396,21 +373,7 @@ function replize_script(script, imports = [], scope = "") {
 
     let tree = parse(script, {ecmaVersion: "latest"});
     let alterations = [];
-    let top_names = [];
-
-// Each of the importations should be retained in the scope.
-
-    imports.forEach(function (the_import) {
-        if (the_import.default !== undefined) {
-            top_names.push(the_import.default);
-        }
-        if (typeof the_import.names === "string") {
-            top_names.push(the_import.names);
-        }
-        if (typeof the_import.names === "object") {
-            top_names.push(...Object.values(the_import.names));
-        }
-    });
+    let variables = [];
     const handlers = {
         VariableDeclaration(variable_node) {
 
@@ -436,7 +399,7 @@ function replize_script(script, imports = [], scope = "") {
 
                     if (id.type === "ObjectPattern") {
                         id.properties.forEach(function (property_node) {
-                            top_names.push(property_node.key.name);
+                            variables.push(property_node.key.name);
                         });
 
 // Parenthesise the assignment if it is a destructured assignment, otherwise it
@@ -458,10 +421,10 @@ function replize_script(script, imports = [], scope = "") {
                         ]);
                     } else if (id.type === "ArrayPattern") {
                         id.elements.forEach(function (identifier_node) {
-                            top_names.push(identifier_node.name);
+                            variables.push(identifier_node.name);
                         });
                     } else {
-                        top_names.push(id.name);
+                        variables.push(id.name);
                     }
                 } else {
 
@@ -474,31 +437,33 @@ function replize_script(script, imports = [], scope = "") {
                         },
                         " = undefined"
                     ]);
-                    top_names.push(id.name);
+                    variables.push(id.name);
                 }
             });
         },
         FunctionDeclaration(node) {
 
-// Function statements can be reevaluated without issue.
+// Function statements can be reevaluated without issue. However, a function
+// statement causes a new variable to be declared in the current scope, rather
+// than updating the variable in the parent scope. A naive approach would be to
+// turn the function statement into an assignment statement, but that prevents
+// the function from being hoisted. Rather, we leave the function statement as
+// is, and inject an assignment statement immediately afterwards. The function
+// is thus assigned directly to the scope object, with the nice side effect
+// that function declarations appear to evaluate as functions, rather than
+// undefined.
 
-// However, a function statement causes a new variable to be declared in the
-// current scope. This variable is inaccessible to the parent scope, and so can
-// not be gathered like regular variables are, after evaluation has completed.
-// Instead, we gather the variable inline. This happens immediately after the
-// declaration, with the nice side effect that function declarations appear to
-// evaluate as functions, rather than undefined.
-
+            variables.push(node.id.name);
             alterations.push([
                 {
                     start: node.end,
                     end: node.end
                 },
-                " $functions." + node.id.name + " = " + node.id.name + ";"
+                " $scope." + node.id.name + " = " + node.id.name + ";"
             ]);
 
-// There is a caveat that any additional changes to the variable are not
-// persisted:
+// There is a caveat that any additional changes to the function variable are
+// not persisted:
 
 //      function tea_and_bickies() {
 //          return "Just the ticket.;
@@ -506,8 +471,7 @@ function replize_script(script, imports = [], scope = "") {
 //      tea_and_bickies = "Yum";
 
 // After evaluating the above, $scope.tea_and_bickies is a function and not
-// "Yum". I expect this not to be a problem in practice. If I am wrong, we can
-// revert to our previous strategy.
+// "Yum". I expect this not to be a problem in practice.
 
         },
         ClassDeclaration(node) {
@@ -515,7 +479,7 @@ function replize_script(script, imports = [], scope = "") {
 // Class declarations are similar to function declarations, but they are not
 // hoisted and can not be repeated. This requires a totally different strategy.
 
-            top_names.push(node.id.name);
+            variables.push(node.id.name);
 
 // We turn the statement into an expression, which is assigned to the local
 // variable.
@@ -548,26 +512,17 @@ function replize_script(script, imports = [], scope = "") {
             }
         }
     );
-
-// Now we nest the altered script in a harness script inside two nested evals.
-// The things we do for strict mode!
-
     return fill(
-        outer_template,
+        script_template,
         {
             identifiers_object_literal: make_identifiers_object_literal(
-                top_names,
+                variables,
                 imports
             ),
             scope_name_string: JSON.stringify(scope),
-            inner_template_string: JSON.stringify(fill(
-                inner_template,
-                {
-                    payload_script_string: JSON.stringify(
-                        alter_string(script, alterations)
-                    )
-                }
-            ))
+            payload_script_string: JSON.stringify(
+                alter_string(script, alterations)
+            )
         }
     );
 }
