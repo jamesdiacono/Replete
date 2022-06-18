@@ -11,10 +11,27 @@ When [integrated with a text editor](https://github.com/jamesdiacono/Replete/iss
 
 Replete encourages the development of modules in isolation, rather than in the context of a running application. Modules written in this way tend to be more independent and hence more reusable, more testable and hence more robust.
 
-Replete is in the Public Domain.
+Replete is in the Public Domain, and does not come with a warranty. It is as dangerous as the source code it is asked to evaluate, so be careful.
 
 ## Dependencies
-Replete requires the Acorn JavaScript parser (https://github.com/acornjs/acorn) and Node.js v17.6.0+.
+Replete requires the Acorn JavaScript parser (https://github.com/acornjs/acorn) and Node.js v17.6.0 or v18.5.0+.
+
+## Files
+- _replete.js_: A Node.js program. Read this file for instructions on its use.
+
+- _browser_repl.js_, _node_repl.js_, _deno_repl.js_: Node.js modules, each exporting the constructor for a REPL which evaluates messages in a particular environment.
+
+- _repl.js_: A Node.js module exporting the constructor for a generic REPL. This is the heart of Replete.
+
+- _scriptify_module.js_: A module exporting a function which deconstructs the source code of a JavaScript module into a script, its imports and its exports.
+
+- _alter_string.js_: A module exporting a string manipulation function, used for code transformations.
+
+- _webl/_: A directory containing source code for the WEBL, which is used by the browser REPL. The WEBL is a standalone tool for remotely evaluating source code in the browser. See webl/README.md.
+
+- _cmdl/_: A directory containing the source code for the CMDL, which is like the WEBL but for command-line runtimes. See cmdl/README.md.
+
+- _package.json_: The Node.js package manifest. It specifies the Acorn dependency, and tells Node that the above files are modules.
 
 ## Capabilities
 Replete expects to be provided with several __capability__ functions. These provide a rich opportunity to customise Replete. A minimal set of capabilities is defined for you, in the replete.js file. If you do not find these to be lacking, you may skip this section.
@@ -92,23 +109,6 @@ The __out__ capability is called with a string representation of any arguments p
 
 ### capabilities.err(_string_)
 The __err__ capability is called with a string representation of any exceptions which occur outside of evaluation, or of any bytes written to STDERR.
-
-## Files
-- _replete.js_: A Node.js program. Read this file for instructions on its use.
-
-- _browser_repl.js_, _node_repl.js_, _deno_repl.js_: Node.js modules, each exporting the constructor for a REPL which evaluates messages in a particular environment.
-
-- _repl.js_: A Node.js module exporting the constructor for a generic REPL. This is the heart of Replete.
-
-- _scriptify_module.js_: A module exporting a function which deconstructs the source code of a JavaScript module into a script, its imports and its exports.
-
-- _alter_string.js_: A module exporting a string manipulation function, used for code transformations.
-
-- _webl/_: A directory containing source code for the WEBL, which is used by the browser REPL. The WEBL is a standalone tool for evaluating source code in the browser. See webl/README.md.
-
-- _cmdl/_: A directory containing the source code for the CMDL, which is like the WEBL but for command-line runtimes. See cmdl/README.md.
-
-- _package.json_: The Node.js package manifest. It specifies the Acorn dependency, and tells Node that the above files are modules.
 
 ## Links
 - REPL-driven development in Clojure (Stuart Halloway, 2017) https://vimeo.com/223309989

@@ -24,10 +24,16 @@ function node_repl_constructor(
         which_node,
         node_args.concat(
 
-// By default, Node.js will not import modules via HTTP. Adding a flag enables
-// this feature but causes a warning to be logged, which we suppress.
+// We supply a custom "loader" so that the padawan can import modules via HTTP.
+// An alternative to using a loader would be to use the
+// --experiemental-network-imports flag, which is equivalent except that modules
+// loaded via HTTP are not allowed to import any Node.js built-in modules.
 
-            "--experimental-network-imports",
+            "--experimental-loader",
+            path.join(path_to_replete, "cmdl", "node_loader.js"),
+
+// Suppress the "experimental feature" warnings. We know we are experimenting!
+
             "--no-warnings"
         ),
         env
