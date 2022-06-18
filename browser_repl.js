@@ -32,7 +32,7 @@ function browser_repl_constructor(
 //          The hostname of the WEBL server.
 
 //      padawan_type
-//          The type of the padawan, wun of "iframe", "popup" or "worker".
+//          The type of the padawan, one of "iframe", "popup" or "worker".
 
 //      humanoid
 //          A boolean indicating whether to use C3PO as a favicon, rather than
@@ -40,7 +40,7 @@ function browser_repl_constructor(
 
 // It returns the interface described in repl.js, with an additional 'recreate'
 // method. This method takes an alternatve 'padawan_type' and returns a Promise
-// which resolves wunce the padawans have been recreated.
+// which resolves once the padawans have been recreated.
 
 // Configure the WEBL server.
 
@@ -112,7 +112,7 @@ function browser_repl_constructor(
     }
     function on_eval(script, imports, on_result) {
 
-// Evaluates the module in many padawans at wunce. Results are reported back as
+// Evaluates the module in many padawans at once. Results are reported back as
 // they arrive.
 
         if (clients.length === 0) {

@@ -7,7 +7,7 @@
 // This TCP server sends commands and receives reports, each of which is a
 // JSON-encoded message followed by a newline.
 
-// There is only wun kind of command, and that is the "eval" command. The "eval"
+// There is only one kind of command, and that is the "eval" command. The "eval"
 // command is an object containing these properties:
 
 //      script:
@@ -72,7 +72,7 @@ function cmdl_constructor(spawn_padawan) {
 // The 'spawn_padawan' parameter is a function which is responsible for starting
 // a padawan process. It is passed the port number of the running TCP server,
 // and returns a Promise which resolves to the ChildProcess object. It may be
-// called more than wunce, to restart the padawan if it dies.
+// called more than once, to restart the padawan if it dies.
 
 // The return value is an object with the same interface as a padawan described
 // in webl_server.js.
@@ -83,7 +83,7 @@ function cmdl_constructor(spawn_padawan) {
     let report_callbacks = Object.create(null);
     function wait_for_connection() {
 
-// Returns a Promise which resolves wunce a TCP connection with the padawan has
+// Returns a Promise which resolves once a TCP connection with the padawan has
 // been established.
 
         return new Promise(function (resolve) {

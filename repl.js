@@ -34,7 +34,7 @@
 // A REPL instance is an object with the following methods:
 
 //      start()
-//          Starts the REPL, returning a Promise which resolves wunce it is safe
+//          Starts the REPL, returning a Promise which resolves once it is safe
 //          to call 'send'.
 
 //      send(message, on_result)
@@ -48,11 +48,11 @@
 //          and the second parameter is a string representation of the
 //          exception.
 
-//          Usually a REPL has exactly wun padawan, but this interface permits a
+//          Usually a REPL has exactly one padawan, but this interface permits a
 //          REPL to evaluate source in multiple padawans concurrently.
 
 //      stop()
-//          Stops the REPL. It returns a Promise which resolves wunce the system
+//          Stops the REPL. It returns a Promise which resolves once the system
 //          resources in use by the REPL are released.
 
 // Discussed below are several expectations that a programmer might reasonably
@@ -103,30 +103,23 @@
 // would overwrite the global 'console' variable, preventing any future calls
 // to 'window.console.log'.
 
-// Replete takes a more sophisticated approach. A global variable named '$scope'
-// is defined, which is an object holding the value of every declared
-// identifier.
+// Replete takes a more sophisticated approach. A variable named '$scope' is
+// defined, which is an object holding the value of every declared identifier.
+// Declarations are replaced with assignments, and the whole script is
+// evaluated in this artificial scope.
 
+//      $scope.greeting;     // "Hello"
+//      with ($scope) {
+//          greeting = "Goodbye";
+//      }
 //      $scope.greeting;     // "Goodbye"
-
-// We replace declarations with assignments. In essence,
-
-//      let greeting = "Hello";
-
-// becomes
-
-//      let {greeting} = $scope;
-//      greeting = "Hello";
-//      $scope.greeting = greeting;
-
-// although the reality is somewhat more convoluted.
 
 // +------------+
 // | Separation |
 // +------------+
 
 // It is usually desirable to maintain a separate scope per file. This means
-// that identifiers declared in wun module can not interfere with the
+// that identifiers declared in one module can not interfere with the
 // evaluation of another:
 
 //  module_a.js:
@@ -135,7 +128,7 @@
 //  module_b.js:
 //      console.log("Hello, World!");
 
-// In Replete, many $scope objects can coexist within the wun padawan. For each
+// In Replete, many $scope objects can coexist within the one padawan. For each
 // evaluation, a scope is chosen by name.
 
 // Whilst declarations are kept separate, it should be noted that each scope
@@ -189,12 +182,9 @@
 // After evaluating the source, a.js and b.js are cached. Changes to these files
 // are not reflected in future evaluations.
 
-// Wun simple and robust solution is to randomise every specifier, for every
-// evaluation. Unfortunately, this introduces unnacceptable delays when the
-// module tree is large. Replete's solution is to include a token in the
-// specifier, which varies whenever the module or its descendants are modified.
-// In this way, the module cache is used to obtain a performance benefit
-// without the staleness.
+// Replete's solution is to include a token in the specifier, which varies
+// whenever the module or its descendants are modified. In this way, the module
+// cache is used to obtain a performance benefit without the staleness.
 
 // +-------+
 // | Speed |
@@ -202,11 +192,9 @@
 
 // Evaluation should be instantaneous, or close to it. That is the best possible
 // feedback loop, greatly improving the programmer's productivity and sense of
-// wellbeing.
-
-// Replete tries to satisfy the expectations of both speed and freshness, but it
-// is not pretty. That is because the two expectations are not really
-// compatible.
+// wellbeing. Replete tries to satisfy the expectations of both speed and
+// freshness, but it is not pretty. That is because the two expectations are
+// not really compatible.
 
 // Usually, the vast majority of evaluation time is spent importing modules.
 // Consider the following module tree:
@@ -654,7 +642,7 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
 //          A function which does any necessary setup work. It is passed a
 //          handler function, which can be called with the 'req' and 'res'
 //          objects whenever an HTTP request is received. It returns a Promise
-//          which should resolve wunce it is safe to call 'on_eval'.
+//          which should resolve once it is safe to call 'on_eval'.
 
 //      on_eval(script, imports, on_result)
 //          A function which evaluates the script in each connected padawan.
@@ -670,7 +658,7 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
 
 //      on_stop()
 //          A function responsible for releasing any resources in use by the
-//          REPL. It should return a Promise which resolves wunce it is done.
+//          REPL. It should return a Promise which resolves once it is done.
 
 //      specify(locator)
 //          A function which is used to transform each locator before it is
@@ -816,7 +804,7 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
 
 // Versions are local to REPL instances, and so an 'unguessable' value is used
 // to qualify them. It has the added benefit of making it very unlikely that
-// regular locators will be confused with versioned wuns.
+// regular locators will be confused with versioned ones.
 
     const unguessable = digest(Math.random()).slice(0, 4);
     function versionize(locator) {
@@ -835,7 +823,7 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
                 versions[locator] = 0;
             } else {
 
-// Compare this hash with the last wun we computed. If the hash of the module
+// Compare this hash with the last one we computed. If the hash of the module
 // has changed, increment its version beginning at zero. Otherwise, leave the
 // version unchanged.
 

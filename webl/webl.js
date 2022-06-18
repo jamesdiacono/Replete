@@ -258,7 +258,7 @@ const padawan_create_script_template = `
         return self.onunhandledrejection({reason: args[4]});
     };
 
-// Padawans receive only wun kind of message, containing the fulfillment of the
+// Padawans receive only one kind of message, containing the fulfillment of the
 // 'padawan_eval_script_template'.
 
     self.onmessage = function (event) {
@@ -440,7 +440,7 @@ function webl_constructor() {
 
 //          create()
 //              The 'create' method creates the padawan if it does not already
-//              exist. It returns a Promise which resolves wunce the padawan is
+//              exist. It returns a Promise which resolves once the padawan is
 //              ready to perform evaluation.
 
 //          eval(script, imports)

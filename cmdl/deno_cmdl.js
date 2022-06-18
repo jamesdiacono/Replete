@@ -9,7 +9,7 @@ import make_cmdl from "./cmdl.js";
 
 function allow_host(run_args, host) {
 
-// Deno only permits the --allow-net argument to appear wunce in its list of run
+// Deno only permits the --allow-net argument to appear once in its list of run
 // arguments. This means we need to jump thru hoops to avoid any duplication.
 
     if (run_args.includes("--allow-net")) {

@@ -3,7 +3,7 @@
 > The liquid pencil of this school is replete with a beauty peculiar to itself.
 >   -- John Constable
 
-Replete is an evaluator for JavaScript modules. It enables a highly interactive style of programming known as __REPL-driven development__. Replete can evaluate modules in the browser, Node.js and Deno.
+Replete is an evaluator for JavaScript modules. It enables a highly interactive style of programming called __REPL-driven development__. Replete can evaluate modules in the browser, Node.js and Deno.
 
 When [integrated with a text editor](https://github.com/jamesdiacono/Replete/issues/5), Replete becomes part of your development environment. Source code is sent directly from your editor to Replete, where it is evaluated. Anything from a mere expression to a whole file may be evaluated at a time. The evaluated value (or an exception) is reported back for perusal.
 

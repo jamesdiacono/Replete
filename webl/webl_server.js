@@ -40,13 +40,13 @@ function webl_server_constructor(
 //  start(port, hostname)
 //      The 'start' method starts the server on the specified 'port' and
 //      'hostname', returning a Promise which resolves to the chosen port number
-//      wunce the server is ready. The 'port' parameter determines the port of
-//      the web server. If a port is not specified, wun is chosen automatically.
+//      once the server is ready. The 'port' parameter determines the port of
+//      the web server. If a port is not specified, one is chosen automatically.
 //      The 'hostname' parameter defaults to "localhost" if it is undefined.
 
 //  stop()
 //      The 'stop' method closes down the server. It returns a Promise which
-//      resolves wunce the server is stopped.
+//      resolves once the server is stopped.
 
 // When a WEBL client connects to the server, the 'on_client_found' function is
 // called with an interface for the client. Likewise, when a client disconnects,
@@ -67,7 +67,7 @@ function webl_server_constructor(
 
 //          destroy()
 //              Similar to the function as described in ./webl.js, except that
-//              it returns a Promise which resolves wunce the padawan has ceased
+//              it returns a Promise which resolves once the padawan has ceased
 //              to exist.
 
     let connections = [];
@@ -245,7 +245,7 @@ function webl_server_constructor(
     }
     function stop() {
 
-// The server will only close down wunce it no longer has active connections.
+// The server will only close down once it no longer has active connections.
 
         connections.forEach(function (connection) {
             return connection.close();

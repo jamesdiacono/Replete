@@ -85,8 +85,8 @@
 //          with its command. It may be any value.
 
 // The process sends "result" messages, which come in four varieties. Depending
-// on its variety, a result message has wun of the following properties. The
-// value of the property is a string representation of a value.
+// on its variety, a result message has one of the following properties. The
+// value of the property is always a string representation of a value.
 
 //      evaluation
 //          The evaluated value, if evaluation was completed successfully.
@@ -261,7 +261,7 @@ function on_command(command) {
         function on_result(evaluation, exception) {
 
 // The browser REPL may yield multiple results for each command, when multiple
-// tabs are connected. Only wun of 'evaluation' and 'exception' is a string,
+// tabs are connected. Only one of 'evaluation' and 'exception' is a string,
 // the other is undefined.
 
             send_result({

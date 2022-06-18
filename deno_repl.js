@@ -32,7 +32,7 @@ function deno_repl_constructor(
 
 // It also has the important side-effect of allowing the padawan access to the
 // HTTP server. This could also be accomplished using the --allow-net argument,
-// but care must be taken that it only appears wunce.
+// but care must be taken that it only appears once.
 
             "--allow-all"
         ),
