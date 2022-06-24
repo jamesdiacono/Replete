@@ -5,10 +5,11 @@
 
 /*jslint browser, null */
 
-function inspect(value) {
+function inspect(value, maximum_depth = 3) {
 
 // The 'inspect' function formats the 'value' as a nice readable string. It is
-// useful for debugging.
+// useful for debugging. Values nested within 'value' are inspected no deeper
+// than 'maximum_depth' levels.
 
     function is_primitive(value) {
         return (
@@ -38,7 +39,7 @@ function inspect(value) {
 // otherwise we would be at risk of entering an infinite loop.
 
     let seen = new WeakMap();
-    (function print(value) {
+    (function print(value, depth = 0) {
         if (typeof value === "function") {
             return write("[Function: " + (value.name || "(anonymous)") + "]");
         }
@@ -78,7 +79,7 @@ function inspect(value) {
             if (key !== undefined) {
                 write(key + ": ");
             }
-            print(value);
+            print(value, depth + 1);
             if (!last) {
                 return write(
                     compact
@@ -91,6 +92,9 @@ function inspect(value) {
             }
         }
         if (Array.isArray(value)) {
+            if (depth >= maximum_depth) {
+                return write("[Array]");
+            }
             const compact = value.length < 3 && value.every(is_primitive);
             write("[");
             indent();
@@ -113,39 +117,49 @@ function inspect(value) {
 
 // The object has no prototype. A descriptive prefix might be helpful.
 
-            write("[Object: null prototype] ");
-            keys = Object.keys(value);
-        } else if (value.constructor === Object) {
+            write("[Object: null prototype]");
+            if (depth >= maximum_depth) {
+                return;
+            }
+            write(" ");
             keys = Object.keys(value);
         } else {
+            if (depth >= maximum_depth) {
+                return write("[" + value.constructor.name + "]");
+            }
+            if (value.constructor !== Object) {
 
 // The object has an unusual prototype, making it a pseudo-classical
 // monstrosity. Prefix it as such.
 
-            write("[" + value.constructor.name + "] ");
+                write("[" + value.constructor.name + "] ");
+            }
 
 // Some kinds of objects are better represented as an array.
 
             if (value[Symbol.iterator] !== undefined) {
-                return print(Array.from(value));
+                return print(Array.from(value), depth);
             }
 
 // The prototype chain may contain useful methods, so these are included.
 // Object.getOwnPropertyNames is used instead of Object.keys so that
-// non-enumerable properties are included. The methods of Object.prototype are
-// omitted because they are just clutter.
+// non-enumerable properties are included. Methods inherited from the
+// Object prototype are omitted because they are just clutter.
 
             let flat = Object.create(null);
+            let object_prototype = Object.getPrototypeOf({});
             keys = (function down(prototype) {
-                if (!prototype || prototype.constructor === Object) {
-                    return Object.keys(flat);
-                }
                 Object.getOwnPropertyNames(prototype).forEach(function (key) {
                     if (key !== "constructor") {
                         flat[key] = true;
                     }
                 });
-                return down(Object.getPrototypeOf(prototype));
+                prototype = Object.getPrototypeOf(prototype);
+                return (
+                    (prototype && prototype !== object_prototype)
+                    ? down(prototype)
+                    : Object.keys(flat)
+                );
             }(value));
         }
         write("{");
