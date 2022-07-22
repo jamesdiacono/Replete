@@ -7,8 +7,8 @@
 
 //      $ node --experimental-import-meta-resolve /path/to/replete.js [options]
 
-// from a directory which contains your source code. Node.js v17.6.0 or v18.5.0+
-// is required.
+// from a directory which contains your source code. Node.js v18.6.0+ is
+// required.
 
 // The following options are supported:
 
@@ -44,14 +44,14 @@
 //             |                                          |
 //             |               Text editor                |
 //             |                                          |
-//             +----------------+--------^----------------+
-//                              |        |
+//             +----------------+-------------------------+
+//                              |        ^
 //                              |        |
 //                     Command  |        |  Result
 //                    messages  |        |  messages
 //                              |        |
-//                              |        |
-//          +-------------------v--------+--------------------+
+//                              V        |
+//          +----------------------------+--------------------+
 //          |                                                 |
 //          |                 Node.js process                 |
 //          |                   (replete.js)                  |
@@ -59,7 +59,6 @@
 //          | +--------------+ +--------------+ +-----------+ |
 //          | | Browser REPL | | Node.js REPL | | Deno REPL | |
 //          | +--------------+ +--------------+ +-----------+ |
-//          |                                                 |
 //          +-------------------------------------------------+
 
 // The process receives "command" messages with the following properties:
@@ -78,7 +77,7 @@
 //      scope
 //          If defined, this property is the name of the scope as a string.
 
-//      request
+//      id
 //          If defined, this property will be copied verbatim onto the
 //          corresponding result messages. It can be used to associate a result
 //          with its command. It may be any value.
@@ -100,7 +99,7 @@
 //          An exception which occurred outside of evaluation, or bytes written
 //          to STDERR.
 
-// A result message may also contain a 'request' property, as described above.
+// A result message may also contain an 'id' property, as described above.
 
 // Here are some examples of commands and the results they might induce.
 
@@ -117,8 +116,8 @@
 //      RESULT  {"out": "NaN Infinity\n"}
 //      RESULT  {"evaluation": "undefined"}
 
-//      COMMAND {"platform": "browser", "source": "1 + 1", "request": 42}
-//      RESULT  {"evaluation": "2", "request": 42}
+//      COMMAND {"platform": "browser", "source": "1 + 1", "id": 42}
+//      RESULT  {"evaluation": "2", "id": 42}
 
 /*jslint node */
 
@@ -266,7 +265,7 @@ function on_command(command) {
             send_result({
                 evaluation,
                 exception,
-                request: command.request
+                id: command.id
             });
         }
     ).catch(

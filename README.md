@@ -14,7 +14,7 @@ Replete encourages the development of modules in isolation, rather than in the c
 Replete is in the Public Domain, and does not come with a warranty. It is as dangerous as the source code it is asked to evaluate, so be careful.
 
 ## Dependencies
-Replete requires the Acorn JavaScript parser (https://github.com/acornjs/acorn) and Node.js v17.6.0 or v18.5.0+.
+Replete requires the Acorn JavaScript parser (https://github.com/acornjs/acorn) and Node.js v18.6.0+.
 
 ## Files
 - _replete.js_: A Node.js program. Read this file for instructions on its use.

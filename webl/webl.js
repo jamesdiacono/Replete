@@ -389,7 +389,7 @@ function make_iframe_padawan(
             iframe.contentWindow.postMessage(message, "*");
         },
         destroy() {
-            document.body.removeChild(iframe);
+            iframe.remove();
             window.removeEventListener("message", on_message);
         }
     });

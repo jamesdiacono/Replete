@@ -3,59 +3,43 @@
 
 /*jslint node */
 
-import http from "http";
-import https from "https";
-
 const rx_http = /^https?:\/\//;
 
-function resolve(specifier, context, default_resolve) {
-    const parent_url = context.parentURL;
+function resolve(specifier, context, next_resolve) {
     if (rx_http.test(specifier)) {
-        return {url: specifier};
-    }
-    if (parent_url && rx_http.test(parent_url)) {
         return {
-            url: new URL(specifier, parent_url).href
+            url: specifier,
+            shortCircuit: true
         };
     }
-    return default_resolve(specifier, context, default_resolve);
+    if (context.parentURL && rx_http.test(context.parentURL)) {
+        return {
+            url: new URL(specifier, context.parentURL).href,
+            shortCircuit: true
+        };
+    }
+    return next_resolve(specifier, context);
 }
 
-function load(url, context, default_load) {
+function load(url, context, next_load) {
     if (rx_http.test(url)) {
 
 // Load the module's source code from the network.
 
-        const http_module = (
-            url.startsWith("https:")
-            ? https
-            : http
-        );
-        return new Promise(function (resolve, reject) {
-            return http_module.get(
-                url,
-                function read_response(res) {
-                    if (res.statusCode !== 200) {
-                        return reject(new Error("Failed to load module."));
-                    }
-                    let source = "";
-                    res.on("data", function (chunk) {
-                        source += chunk;
-                    });
-                    return res.on("end", function () {
-                        return resolve({
-                            format: "module",
-                            source
-                        });
-                    });
-                }
-            ).on(
-                "error",
-                reject
-            );
+        return fetch(url).then(function (response) {
+            if (response.status >= 400) {
+                throw new Error("Failed to load module.");
+            }
+            return response.text();
+        }).then(function (source) {
+            return {
+                format: "module",
+                source,
+                shortCircuit: true
+            };
         });
     }
-    return default_load(url, context, default_load);
+    return next_load(url, context);
 }
 
 export {resolve, load};
