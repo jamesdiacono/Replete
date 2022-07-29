@@ -1,4 +1,4 @@
-// This file is a Node.js "loader" module, which allows the Node.js padawan to
+// This file is a Node.js "loader" module, allowing the Node.js padawan to
 // import modules via HTTP.
 
 /*jslint node */

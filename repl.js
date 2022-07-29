@@ -34,7 +34,7 @@
 // A REPL instance is an object with the following methods:
 
 //      start()
-//          Starts the REPL, returning a Promise which resolves once it is safe
+//          Starts the REPL, returning a Promise that resolves once it is safe
 //          to call 'send'.
 
 //      send(message, on_result)
@@ -52,7 +52,7 @@
 //          REPL to evaluate source in multiple padawans concurrently.
 
 //      stop()
-//          Stops the REPL. It returns a Promise which resolves once the system
+//          Stops the REPL. It returns a Promise that resolves once the system
 //          resources in use by the REPL are released.
 
 // Discussed below are several expectations that a programmer might reasonably
@@ -146,10 +146,10 @@
 // +---------+
 
 // Usually, an application is made up of modules. And usually, a module is
-// composed of other modules. JavaScript has an 'import' statement, which is
-// used to acquire the interface of another module. Replete supports the
-// evaluation of 'import' statements, making it possible to evaluate modules
-// (and even whole applications) in the REPL.
+// composed of other modules. JavaScript has an 'import' statement, used to
+// acquire the interface of another module. Replete supports the evaluation
+// of 'import' statements, making it possible to evaluate modules(and even
+// whole applications) in the REPL.
 
 // At the heart of each padawan is the global 'eval' function. eval, being
 // immediate in nature, does not support the import statement.
@@ -157,7 +157,7 @@
 //      SyntaxError: Cannot use import statement outside a module
 
 // When evaluating a fragment of source code, Replete removes from it any import
-// or export statements, leaving a bare script which can be passed to eval. The
+// or export statements, leaving a bare script that can be passed to eval. The
 // requisite modules are instead imported via the import() function, and the
 // importations placed within the scope of the script as it is eval'd.
 
@@ -183,12 +183,12 @@
 // its own source changes, but when the source of any of its descendants
 // change! This is illustrated in the following scenario.
 
-//      source -> a.js -> b.js // source imports a.js, which imports b.js
+//      source -> a.js -> b.js // source imports a.js which imports b.js
 
 // After evaluating the source, a.js and b.js are cached. Changes to these files
 // are not reflected in future evaluations.
 
-// Replete's solution is to include a token in the specifier, which varies
+// Replete's solution is to include a token in the specifier, varying the token
 // whenever the module or its descendants are modified. In this way, the module
 // cache is used to obtain a performance benefit without the staleness.
 
@@ -230,10 +230,10 @@
 // | Strictness |
 // +------------+
 
-// ES5 introduced "strict mode", an opt-in feature which repaired some of
-// JavaScript's worst flaws. Within an ES6 module, strict mode is no longer
-// opt-in. It is the default mode of execution. Because Replete is an evaluator
-// for modules, it evaluates all JavaScript in strict mode.
+// ES5 introduced "strict mode", an opt-in feature that repaired some of
+// JavaScript's flaws. Within an ES6 module, strict mode is no longer opt-in.
+// It is the default mode of execution. Because Replete is an evaluator for
+// modules, it evaluates all JavaScript in strict mode.
 
 // +--------------+
 // | Traceability |
@@ -297,8 +297,8 @@ function make_identifiers_object_literal(variables, imports) {
 
 const script_template = `
 
-// Ensure that the global $scopes variable is available. It contains the scope
-// objects, which persist the state of identifiers across evaluations.
+// Ensure that the global $scopes variable is available. It contains scope
+// objects that persist the state of identifiers across evaluations.
 
 // The only reliable way to store values is to attach them to the global object.
 // We get a reference to the global object via 'this' because it is a strategy
@@ -481,7 +481,7 @@ function replize_script(script, imports = [], scope = "") {
 
             variables.push(node.id.name);
 
-// We turn the statement into an expression, which is assigned to the local
+// We turn the statement into an expression, and assign it to the local
 // variable.
 
             alterations.push([
@@ -532,8 +532,7 @@ function find_specifiers(source) {
 // The 'find_specifiers' function searches the 'source' string of a module for
 // import specifiers, returning their value and position in the source.
 
-// It returns an array of objects, each of which contains the following
-// properties:
+// It returns an array of objects, each containing the following properties:
 
 //      specifier
 //          The value of the specifier, e.g. "./peach.js".
@@ -594,33 +593,33 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
 //          An object containing the Replete capability functions.
 
 //      on_start(serve)
-//          A function which does any necessary setup work. It is passed a
+//          A function that does any necessary setup work. It is passed a
 //          handler function, which can be called with the 'req' and 'res'
-//          objects whenever an HTTP request is received. It returns a Promise
-//          which should resolve once it is safe to call 'on_eval'.
+//          objects whenever an HTTP request is received. The returned Promise
+//          resolves once it is safe to call 'on_eval'.
 
 //      on_eval(script, imports, on_result)
-//          A function which evaluates the script in each connected padawan.
+//          A function that evaluates the script in each connected padawan.
 
 //          The 'script' parameter is a string containing JavaScript source
 //          code, devoid of import or export statements. The 'imports'
 //          parameter is an array of import specifier strings. The 'on_result'
 //          parameter is the same as the 'on_result' function passed to
-//          the 'send' method, which is documented above.
+//          the 'send' method, documented above.
 
-//          A Promise is returned, which rejects if there was a problem
-//          communicating with any of the padawans.
+//          The returned Promise rejects if there was a problem communicating
+//          with any of the padawans.
 
 //      on_stop()
 //          A function responsible for releasing any resources in use by the
-//          REPL. It should return a Promise which resolves once it is done.
+//          REPL. It should return a Promise that resolves once it is done.
 
 //      specify(locator)
-//          A function which is used to transform each locator before it is
-//          provided as a specifier to a padawan.
+//          A function that transforms each locator before it is provided as a
+//          specifier to a padawan.
 
 // These variables constitute the REPL's in-memory cache. Each variable holds an
-// object, which has locators as keys and Promises as values. By caching the
+// object, containing locators as keys and Promises as values. By caching the
 // Promise and not the value, multiple callers can subscribe to the result of a
 // single operation, even before it has finished.
 
@@ -751,8 +750,8 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
     }
 
 // The 'hashes' object contains the last known hash of each locator.
-// The 'versions' object contains an integer version, which is incremented each
-// time the hash of a module changes.
+// The 'versions' object contains an integer version, incremented each time the
+// hash of a module changes.
 
     let hashes = Object.create(null);
     let versions = Object.create(null);
@@ -844,8 +843,8 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
         }
         let locator = "file://" + req.url;
 
-// Any versioning information in the URL has served its purpose, which was to
-// defeat the padawan's module cache. It is discarded before continuing.
+// Any versioning information in the URL has served its purpose by defeating the
+// padawan's module cache. It is discarded before continuing.
 
         const matches = locator.match(rx_versioned_locator);
         if (matches && matches[2] === unguessable) {

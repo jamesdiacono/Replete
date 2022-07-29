@@ -35,7 +35,7 @@ function inspect(value, maximum_depth = 3) {
         string += fragment;
     }
 
-// We keep track of values which have already been (or are being) printed,
+// We keep track of values that have already been (or are being) printed,
 // otherwise we would be at risk of entering an infinite loop.
 
     let seen = new WeakMap();
@@ -186,7 +186,7 @@ function inspect(value, maximum_depth = 3) {
 
 function reason(exception) {
 
-// A self-contained function which formats an exception as a human-readable
+// A self-contained function that formats an exception as a human-readable
 // string.
 
     try {
@@ -282,7 +282,7 @@ const padawan_create_script_template = `
                     return (
 
 // If the value happens to be a string, it is passed through unchanged. This
-// improves the readability of strings which span multiple lines.
+// improves the readability of strings that span multiple lines.
 
                         typeof value === "string"
                         ? value
@@ -455,12 +455,12 @@ function webl_constructor() {
 //      'spec' object, containing the following properties:
 
 //          "on_log"
-//              A function which is called with the stringified arguments of any
+//              A function that is called with the stringified arguments of any
 //              calls to console.log. The arguments are stringified by the
 //              'inspect' function.
 
 //          "on_exception"
-//              A function which is called with a string representation of any
+//              A function that is called with a string representation of any
 //              exceptions or Promise rejections encountered outside of
 //              evaluation.
 
@@ -489,7 +489,7 @@ function webl_constructor() {
 
 //          create()
 //              The 'create' method creates the padawan if it does not already
-//              exist. It returns a Promise which resolves once the padawan is
+//              exist. It returns a Promise that resolves once the padawan is
 //              ready to perform evaluation.
 
 //          eval(script, imports)
@@ -498,17 +498,17 @@ function webl_constructor() {
 //              The 'script' parameter should be a string containing JavaScript
 //              source code devoid of import or export statements.
 
-//              The 'imports' parameter is an array of module specifiers which
+//              The 'imports' parameter is an array of module specifiers that
 //              are to be imported prior to the scripts evaluation. A
 //              corresponding array of module objects is made available to the
 //              script via the "$imports" variable.
 
-//              It returns a Promise which resolves to a report object. If the
+//              It returns a Promise that resolves to a report object. If the
 //              evaluation was successful, the report contains an 'evaluation'
 //              property containing the evaluated value after it has been
 //              stringified by the 'inspect' function. If an exception occured
 //              during evaluation, the report will instead contain an
-//              'exception' property, which contains a string representation of
+//              'exception' property, which is a string representation of
 //              the exception.
 
 //          destroy()
@@ -573,7 +573,7 @@ function webl_constructor() {
             }
 
 // Make a copy of the on_message function, thereby giving each padawan a unique
-// listener which can be added and removed to global events independently.
+// listener that can be added and removed to global events independently.
 
             function on_message_facet(event) {
                 return on_message(event);

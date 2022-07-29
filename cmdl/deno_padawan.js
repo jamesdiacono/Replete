@@ -14,7 +14,7 @@
 function evaluate(script, import_specifiers) {
 
 // The 'evaluate' function evaluates the 'script', after resolving any imported
-// modules. It returns a Promise which resolves to a report object.
+// modules. It returns a Promise that resolves to a report object.
 
     return Promise.all(
         import_specifiers.map(function (specifier) {

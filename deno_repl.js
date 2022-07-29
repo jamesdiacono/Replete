@@ -39,8 +39,8 @@ function deno_repl_constructor(
         Object.assign({NO_COLOR: "1"}, env)
     );
 
-// The Deno REPL uses an HTTP server to serve modules to the padawan, which will
-// import them via the dynamic 'import' function.
+// The Deno REPL uses an HTTP server to serve modules to the padawan, which
+// imports them via the 'import' function.
 
     let http_server;
     let http_server_port;

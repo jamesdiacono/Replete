@@ -40,7 +40,7 @@ function browser_repl_constructor(
 
 // It returns the interface described in repl.js, with an additional 'recreate'
 // method. This method takes an alternatve 'padawan_type' and returns a Promise
-// which resolves once the padawans have been recreated.
+// that resolves once the padawans have been recreated.
 
 // Configure the WEBL server.
 

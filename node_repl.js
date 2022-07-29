@@ -40,7 +40,7 @@ function node_repl_constructor(
     );
 
 // The Node.js REPL uses an HTTP server to serve modules to the padawan, which
-// will import them via the dynamic 'import' function.
+// imports them via the dynamic 'import' function.
 
     let http_server;
     let http_server_port;

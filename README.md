@@ -1,13 +1,10 @@
 # Replete
 
-> The liquid pencil of this school is replete with a beauty peculiar to itself.
->   -- John Constable
-
 Replete is an evaluator for JavaScript modules. It enables a highly interactive style of programming called __REPL-driven development__. Replete can evaluate modules in the browser, Node.js and Deno.
 
 When [integrated with a text editor](https://github.com/jamesdiacono/Replete/issues/5), Replete becomes part of your development environment. Source code is sent directly from your editor to Replete, where it is evaluated. Anything from a mere expression to a whole file may be evaluated at a time. The evaluated value (or an exception) is reported back for perusal.
 
-[Watch the demonstration](https://youtu.be/ZXXcn7jLNdk?t=1389).
+[Watch the demonstration](https://www.youtube.com/watch?v=dGNxva2epK4&t=1596s).
 
 Replete encourages the development of modules in isolation, rather than in the context of a running application. Modules written in this way tend to be more independent and hence more reusable, more testable and hence more robust.
 
@@ -19,11 +16,11 @@ Replete requires the Acorn JavaScript parser (https://github.com/acornjs/acorn) 
 ## Files
 - _replete.js_: A Node.js program. Read this file for instructions on its use.
 
-- _browser_repl.js_, _node_repl.js_, _deno_repl.js_: Node.js modules, each exporting the constructor for a REPL which evaluates messages in a particular environment.
+- _browser_repl.js_, _node_repl.js_, _deno_repl.js_: Node.js modules, each exporting the constructor for a REPL that evaluates messages in a particular environment.
 
 - _repl.js_: A Node.js module exporting the constructor for a generic REPL. This is the heart of Replete.
 
-- _scriptify_module.js_: A module exporting a function which deconstructs the source code of a JavaScript module into a script, its imports and its exports.
+- _scriptify_module.js_: A module exporting a function that deconstructs the source code of a JavaScript module into a script, its imports and its exports.
 
 - _alter_string.js_: A module exporting a string manipulation function, used for code transformations.
 
@@ -39,7 +36,7 @@ Replete expects to be provided with several __capability__ functions. These prov
 Messages are sent to Replete, generally from a text editor. A __message__ is an object containing the following properties:
 
 - __source__: The source code to be evaluated. The source may contain import and export statements.
-- __locator__: The locator of the module which contains the source. It is used to resolve the source's imports. More on locators below.
+- __locator__: The locator of the module that contains the source. It is used to resolve the source's imports. More on locators below.
 - __scope__: The name of the scope, which can be any string. If undefined, the default scope `""` is chosen. The scope is created if it does not exist.
 
 A __scope__ holds the value of every variable or function declared during evaluation, allowing them to be used in future evaluations. Distinct scopes provide a degree of isolation, however the same global object is shared by all scopes.
@@ -64,7 +61,7 @@ The __source__ capability extracts the source from a _message_ object, before it
     -> "(1 < 2 && 2 < 3);"
 
 ### capabilities.locate(_specifier_, _parent_locator_)
-The __locate__ capability resolves a module specifier. It is passed a _specifier_ string, which specifies which module is to be located. Usually, it is also passed a _parent_locator_ parameter, which is the locator of the module which contains the specifier. It returns a Promise which resolves to the locator.
+The __locate__ capability resolves a module specifier. It is passed a _specifier_ string, specifying a module to be located. It may also be passed a _parent_locator_ parameter, which is the locator of the module which contains the specifier. The returned Promise resolves to the locator.
 
 A __specifier__ is the string portion of a module's import statement, for example "../my_module.js".
 
@@ -82,7 +79,7 @@ If locators for files on disk were structured like `file:///absolute/path/to/fil
     -> "https://yum.my/noodles.js"
 
 ### capabilities.read(_locator_)
-The __read__ capability reads the contents of a file on disk. It is passed the _locator_ of the file, and returns a Promise which resolves to a Buffer.
+The __read__ capability reads the contents of a file on disk. It is passed the _locator_ of the file, and returns a Promise that resolves to a Buffer.
 
 This function should deny access to sensitive files. Otherwise it may be possible for anybody with network access to the browser REPL to read arbitrary files off the disk.
 
@@ -94,7 +91,7 @@ This function should deny access to sensitive files. Otherwise it may be possibl
     -> Rejected!
 
 ### capabilities.watch(_locator_)
-The __watch__ capability detects when a file on disk is modified. It is passed the _locator_ of the file, and returns a Promise which resolves when the file next changes. This does not trigger any visible action. It simply informs Replete that it should drop the file from its cache.
+The __watch__ capability detects when a file on disk is modified. It is passed the _locator_ of the file, and returns a Promise that resolves when the file next changes. This does not trigger any visible action. It simply informs Replete that it should drop the file from its cache.
 
 ### capabilities.mime(_locator_)
 The __mime__ capability predicts the MIME type of the Buffer produced by the `read` capability when it is called with the file _locator_. It returns a string, or `undefined` if access to the file should be denied.
@@ -108,8 +105,11 @@ The __mime__ capability predicts the MIME type of the Buffer produced by the `re
 The __out__ capability is called with a string representation of any arguments passed to `console.log` or bytes written to STDOUT.
 
 ### capabilities.err(_string_)
-The __err__ capability is called with a string representation of any exceptions which occur outside of evaluation, or of any bytes written to STDERR.
+The __err__ capability is called with a string representation of any exceptions that occur outside of evaluation, or of any bytes written to STDERR.
 
-## Links
+## Inspiration
+> The liquid pencil of this school is replete with a beauty peculiar to itself.
+>   — John Constable
+
 - REPL-driven development in Clojure (Stuart Halloway, 2017) https://vimeo.com/223309989
 - Whats makes a REPL (Eric Normand, 2019) https://lispcast.com/what-makes-a-repl/

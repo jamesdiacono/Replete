@@ -25,7 +25,7 @@ function webl_server_constructor(
 // directory containing the WEBL's source files on disk. Without it, the source
 // of the webellion can not be found.
 
-// The 'on_exception' parameter is a function which is called when the WEBL
+// The 'on_exception' parameter is a function that is called when the WEBL
 // server itself encounters a problem.
 
 // When the WEBL server receives an unrecognised HTTP request, it invokes the
@@ -39,13 +39,13 @@ function webl_server_constructor(
 
 //  start(port, hostname)
 //      The 'start' method starts the server on the specified 'port' and
-//      'hostname', returning a Promise which resolves to the chosen port number
+//      'hostname', returning a Promise that resolves to the chosen port number
 //      once the server is ready. The 'port' parameter determines the port of
 //      the web server. If a port is not specified, one is chosen automatically.
 //      The 'hostname' parameter defaults to "localhost" if it is undefined.
 
 //  stop()
-//      The 'stop' method closes down the server. It returns a Promise which
+//      The 'stop' method closes down the server. It returns a Promise that
 //      resolves once the server is stopped.
 
 // When a WEBL client connects to the server, the 'on_client_found' function is
@@ -56,8 +56,8 @@ function webl_server_constructor(
 
 //  padawan(spec)
 //      The 'padawan' method returns an interface for a new, unique padawan. It
-//      takes a 'spec' object, which is described in ./webl.js. The returned
-//      object contains three functions:
+//      takes a 'spec' object, described in ./webl.js. The returned object
+//      contains three functions:
 
 //          create()
 //              See ./webl.js.
@@ -67,7 +67,7 @@ function webl_server_constructor(
 
 //          destroy()
 //              Similar to the function as described in ./webl.js, except that
-//              it returns a Promise which resolves once the padawan has ceased
+//              it returns a Promise that resolves once the padawan has ceased
 //              to exist.
 
     let connections = [];
@@ -80,7 +80,7 @@ function webl_server_constructor(
         function request(name, parameters) {
 
 // The 'request' function sends a request message thru the WebSocket connection
-// to the client. It returns a Promise which resolves to the value of the
+// to the client. It returns a Promise that resolves to the value of the
 // response.
 
             const id = String(Math.random());

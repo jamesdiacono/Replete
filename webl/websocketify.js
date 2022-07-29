@@ -109,9 +109,9 @@ function websocketify(
             "\r\n"
         ].join("\r\n"));
 
-// The 'buffer' variable holds the bytes which have arrived over the wire, but
+// The 'buffer' variable holds the bytes that have arrived over the wire, but
 // have not yet been consumed. The 'payload_fragment' variable contains the
-// accumulated bytes of a message which has been split into multiple frames. The
+// accumulated bytes of a message that has been split into multiple frames. The
 // 'textual' variable is true if 'payload_fragment' is to be interpreted as
 // text.
 
@@ -238,7 +238,7 @@ function websocketify(
             } else if (opcode === 0x9) {
 
 // Reply to a ping with a pong. The pong must contain the same payload as the
-// ping which triggered it.
+// ping that triggered it.
 
                 socket.write(make_frame(0xA, payload));
             } else {

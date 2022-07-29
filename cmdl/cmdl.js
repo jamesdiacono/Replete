@@ -69,10 +69,10 @@ import readline from "readline";
 
 function cmdl_constructor(spawn_padawan) {
 
-// The 'spawn_padawan' parameter is a function which is responsible for starting
+// The 'spawn_padawan' parameter is a function that is responsible for starting
 // a padawan process. It is passed the port number of the running TCP server,
-// and returns a Promise which resolves to the ChildProcess object. It may be
-// called more than once, to restart the padawan if it dies.
+// and returns a Promise resolving to the ChildProcess object. It may be called
+// more than once, to restart the padawan if it dies.
 
 // The return value is an object with the same interface as a padawan described
 // in webl_server.js.
@@ -83,8 +83,8 @@ function cmdl_constructor(spawn_padawan) {
     let report_callbacks = Object.create(null);
     function wait_for_connection() {
 
-// Returns a Promise which resolves once a TCP connection with the padawan has
-// been established.
+// The returned Promise resolves once a TCP connection with the padawan has been
+// established.
 
         return new Promise(function (resolve) {
             return tcp_server.once("connection", function (the_socket) {

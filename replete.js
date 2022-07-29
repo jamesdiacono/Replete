@@ -1,14 +1,13 @@
-// This is the standard Replete program. It defines the interface which text
-// editor plugins are expected to adhere to. But it should only be considered a
-// starting point. You are encouraged to modify this file, and particularly the
+// This is the Replete program. It defines the standard interface that text
+// editor plugins are expected to adhere to. It should, however, be considered
+// a starting point: you are encouraged to modify this file, in particular the
 // capability functions, to suit your own needs.
 
-// To begin, run
+// To start Replete, run
 
 //      $ node --experimental-import-meta-resolve /path/to/replete.js [options]
 
-// from a directory which contains your source code. Node.js v18.6.0+ is
-// required.
+// from a directory containing your source code. Node.js v18.6.0+ is required.
 
 // The following options are supported:
 
@@ -36,9 +35,8 @@
 //          Like the --node_debugger_port option, but for Deno. Both runtimes
 //          use the V8 Inspector Protocol.
 
-// The process communicates via STDIN and STDOUT. Messages are sent in both
-// directions, each message occupying a single line. A message is a JSON-encoded
-// object.
+// The process communicates via its STDIN and STDOUT. Messages are sent in both
+// directions, each occupying a single line. A message is a JSON-encoded object.
 
 //             +------------------------------------------+
 //             |                                          |
@@ -96,7 +94,7 @@
 //          Any arguments passed to console.log, or bytes written to STDOUT.
 
 //      err
-//          An exception which occurred outside of evaluation, or bytes written
+//          An exception that occurred outside of evaluation, or bytes written
 //          to STDERR.
 
 // A result message may also contain an 'id' property, as described above.
@@ -156,7 +154,7 @@ const capabilities = Object.freeze({
     read(locator) {
 
 // So that we do not inadvertently expose sensitive files to the network, we
-// refuse to read any files which are not beneath the current working directory.
+// refuse to read any files that are not beneath the current working directory.
 
         const locator_url = new URL(locator);
         const cwd_url = url.pathToFileURL(

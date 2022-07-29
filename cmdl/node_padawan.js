@@ -7,7 +7,7 @@
 // The 'tcp_port' argument is the port number of a TCP server running on
 // localhost. See cmdl.js for a description of the message protocol.
 
-// Any exceptions which occur outside of evaluation are printed to STDERR.
+// Any exceptions that occur outside of evaluation are printed to STDERR.
 
 import net from "net";
 import vm from "vm";
@@ -17,7 +17,7 @@ import readline from "readline";
 function evaluate(script, import_specifiers) {
 
 // The 'evaluate' function evaluates the 'script', after resolving any imported
-// modules. It returns a Promise which resolves to a report object.
+// modules. It returns a Promise that resolves to a report object.
 
     return Promise.all(
         import_specifiers.map(function (specifier) {
@@ -65,7 +65,7 @@ const socket = net.connect(
             );
         });
 
-// Uncaught exceptions which occur as a result of, but not during evaluation are
+// Uncaught exceptions that occur as a result of, but not during evaluation are
 // non-fatal. They are caught by a global handler and reported to STDERR.
 
         process.on("uncaughtException", console.error);

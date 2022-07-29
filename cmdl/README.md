@@ -8,7 +8,7 @@ The CMDL is in the public domain.
 
 ## Structure
 
-A CMDL instance instructs a single padawan. A __padawan__ is a process which is used as an isolated execution environment. If a padawan dies, it is resurrected immediately.
+A CMDL instance instructs a single padawan. A __padawan__ is a process that is used as an isolated execution environment. If a padawan dies, it is resurrected immediately.
 
                      +----------------------------+      
                      |                            |      

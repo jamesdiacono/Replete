@@ -5,7 +5,7 @@ function scriptify_module(source) {
 
 // The 'eval' function can not handle import or export statements. The
 // 'scriptify_module' function takes the source code of a module, parses its
-// imports & exports, and produces a script which is safe to eval.
+// imports & exports, and produces a script that is safe to eval.
 
 // It returns an object containing three properties:
 
@@ -61,7 +61,7 @@ function scriptify_module(source) {
 //      exports
 //          An exports object, or undefined if the source contains no exports.
 //          Each key is the name of the exportation (or "default"). The value is
-//          the identifier within 'script' which holds the value of the
+//          the identifier within 'script' that holds the value of the
 //          exportation.
 
 //              ORIGINAL                       | REWRITTEN
