@@ -90,8 +90,14 @@ function webl_server_constructor(
                 name,
                 parameters
             }));
-            return new Promise(function (resolve) {
-                on_response_callbacks[id] = resolve;
+            return new Promise(function (resolve, reject) {
+                on_response_callbacks[id] = function (value, reason) {
+                    return (
+                        value === undefined
+                        ? reject(reason)
+                        : resolve(value)
+                    );
+                };
             });
         }
         function padawan(spec) {
