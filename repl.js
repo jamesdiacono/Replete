@@ -148,7 +148,7 @@
 // Usually, an application is made up of modules. And usually, a module is
 // composed of other modules. JavaScript has an 'import' statement, used to
 // acquire the interface of another module. Replete supports the evaluation
-// of 'import' statements, making it possible to evaluate modules(and even
+// of 'import' statements, making it possible to evaluate modules (and even
 // whole applications) in the REPL.
 
 // At the heart of each padawan is the global 'eval' function. eval, being
@@ -188,9 +188,10 @@
 // After evaluating the source, a.js and b.js are cached. Changes to these files
 // are not reflected in future evaluations.
 
-// Replete's solution is to include a token in the specifier, varying the token
-// whenever the module or its descendants are modified. In this way, the module
-// cache is used to obtain a performance benefit without the staleness.
+// Replete's solution is to include a version in the specifier, varying the
+// version whenever the module or its descendants are modified. In this way,
+// the module cache is used to obtain a performance benefit without the
+// staleness.
 
 // +-------+
 // | Speed |
@@ -852,7 +853,7 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
         }
         const content_type = capabilities.mime(locator);
         if (content_type === undefined) {
-            return fail(new Error("Unknown content type: " + locator));
+            return fail(new Error("No MIME type for " + locator));
         }
         return (
 

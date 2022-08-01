@@ -1,6 +1,7 @@
 // This REPL evaluates JavaScript source code in an isolated Node.js process.
 // See repl.js and node_cmdl.js for more information.
 
+import url from "url";
 import path from "path";
 import http from "http";
 import make_repl from "./repl.js";
@@ -30,7 +31,13 @@ function node_repl_constructor(
 // loaded via HTTP are not allowed to import any Node.js built-in modules.
 
             "--experimental-loader",
-            path.join(path_to_replete, "cmdl", "node_loader.js"),
+
+// Weirdly, Node.js requires that we supply the path to the loader as a file URL
+// on Windows.
+
+            url.pathToFileURL(
+                path.join(path_to_replete, "cmdl", "node_loader.js")
+            ),
 
 // Suppress the "experimental feature" warnings. We know we are experimenting!
 

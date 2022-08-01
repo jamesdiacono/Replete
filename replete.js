@@ -157,11 +157,11 @@ const capabilities = Object.freeze({
 // refuse to read any files that are not beneath the current working directory.
 
         const locator_url = new URL(locator);
-        const cwd_url = url.pathToFileURL(
 
 // Ensure a trailing slash.
 
-            process.cwd().replace(/\/?$/, "/")
+        const cwd_url = url.pathToFileURL(
+            process.cwd().replace(/[\/\\]?$/, path.sep)
         );
         if (!locator_url.href.startsWith(cwd_url.href)) {
             return Promise.reject(new Error("Forbidden: " + locator));
