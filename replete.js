@@ -205,32 +205,32 @@ process.argv.slice(2).forEach(function (argument) {
 
 const path_to_replete = path.dirname(process.argv[1]);
 
-// A separate REPL is configured for each platform. No context is shared between
-// them.
+// A separate REPL is configured for each platform. The Deno REPL is optional.
 
-const repls = Object.freeze({
-    browser: make_browser_repl(
-        capabilities,
-        path_to_replete,
-        (
-            options.browser_port !== undefined
-            ? Number.parseInt(options.browser_port, 10)
-            : undefined
-        ),
-        options.browser_hostname
+const repls = Object.create(null);
+repls.browser = make_browser_repl(
+    capabilities,
+    path_to_replete,
+    (
+        options.browser_port !== undefined
+        ? Number.parseInt(options.browser_port, 10)
+        : undefined
     ),
-    node: make_node_repl(
-        capabilities,
-        path_to_replete,
-        process.argv[0],
-        (
-            options.node_debugger_port !== undefined
-            ? ["--inspect=" + options.node_debugger_port]
-            : []
-        ),
-        process.env
+    options.browser_hostname
+);
+repls.node = make_node_repl(
+    capabilities,
+    path_to_replete,
+    process.argv[0],
+    (
+        options.node_debugger_port !== undefined
+        ? ["--inspect=" + options.node_debugger_port]
+        : []
     ),
-    deno: make_deno_repl(
+    process.env
+);
+if (options.which_deno !== undefined) {
+    repls.deno = make_deno_repl(
         capabilities,
         path_to_replete,
         options.which_deno,
@@ -240,8 +240,8 @@ const repls = Object.freeze({
             : []
         ),
         process.env
-    )
-});
+    );
+}
 
 function on_fail(exception) {
     send_result({err: exception.stack + "\n"});
@@ -275,7 +275,7 @@ function on_command(command) {
 
 repls.browser.start().catch(on_fail);
 repls.node.start().catch(on_fail);
-if (options.which_deno !== undefined) {
+if (repls.deno !== undefined) {
     repls.deno.start().catch(on_fail);
 }
 
@@ -283,11 +283,11 @@ if (options.which_deno !== undefined) {
 // can survive the death of this process.
 
 function on_exit() {
-    Promise.all([
-        repls.browser.stop(),
-        repls.node.stop(),
-        repls.deno.stop()
-    ]).then(function () {
+    Promise.all(
+        repls.deno !== undefined
+        ? [repls.browser.stop(), repls.node.stop(), repls.deno.stop()]
+        : [repls.browser.stop(), repls.node.stop()]
+    ).then(function () {
         process.exit();
     });
 }
@@ -299,9 +299,6 @@ process.on("SIGINT", on_exit);
 
 readline.createInterface(
     {input: process.stdin}
-).on(
-    "line",
-    function (line) {
-        on_command(JSON.parse(line));
-    }
-);
+).on("line", function (line) {
+    on_command(JSON.parse(line));
+});
