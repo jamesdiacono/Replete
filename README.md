@@ -2,21 +2,20 @@
 
 Replete is an evaluator for JavaScript modules. It enables a highly interactive style of programming called __REPL-driven development__. Replete can evaluate modules in the browser, Node.js and Deno.
 
-When [integrated with a text editor](https://github.com/jamesdiacono/Replete/issues/5), Replete becomes part of your development environment. Source code is sent directly from your editor to Replete, where it is evaluated. Anything from a mere expression to a whole file may be evaluated at a time. The evaluated value (or an exception) is reported back for perusal.
+[Watch the demonstration](https://youtu.be/A_JrJekP9tQ?t=2085).
 
-[Watch the demonstration](https://www.youtube.com/watch?v=dGNxva2epK4&t=1596s).
+When integrated with a text editor, Replete becomes part of your development environment. You send source code directly from your editor to Replete, where it is evaluated. Anything from a mere expression to a whole file may be evaluated at a time. The evaluated value (or an exception) is reported back for perusal.
+
+[Browse the text editor plugins](https://github.com/jamesdiacono/Replete/issues/5).
 
 Replete encourages the development of modules in isolation, rather than in the context of a running application. Modules written in this way tend to be more independent and hence more reusable, more testable and hence more robust.
 
-Replete is in the Public Domain, and does not come with a warranty. It is as dangerous as the source code it is asked to evaluate, so be careful.
-
-## Dependencies
-Replete requires the Acorn JavaScript parser (https://github.com/acornjs/acorn) and Node.js v18.6.0+.
+Replete is in the Public Domain, and does not come with a warranty. It is at least as dangerous as the source code it is asked to evaluate, so be careful.
 
 ## Files
 - _replete.js_: A Node.js program. Read this file for instructions on its use.
 
-- _browser_repl.js_, _node_repl.js_, _deno_repl.js_: Node.js modules, each exporting the constructor for a REPL that evaluates messages in a particular environment.
+- _browser_repl.js_, _node_repl.js_, _deno_repl.js_: Node.js modules, each exporting the constructor for a REPL runs in a particular environment.
 
 - _repl.js_: A Node.js module exporting the constructor for a generic REPL. This is the heart of Replete.
 
@@ -41,9 +40,7 @@ Messages are sent to Replete, generally from a text editor. A __message__ is an 
 
 A __scope__ holds the value of every variable or function declared during evaluation, allowing them to be used in future evaluations. Distinct scopes provide a degree of isolation, however the same global object is shared by all scopes.
 
-A message may contain additional properties, although these are ignored by Replete.
-
-The _capabilities_ parameter passed to Replete's constructors should be an object containing the following methods:
+The _capabilities_ parameter passed to Replete's constructors is an object with the following methods:
 
 ### capabilities.source(_message_)
 The __source__ capability extracts the source from a _message_ object, before it is evaluated. The returned Promise resolves to a string containing JavaScript source code.
@@ -71,10 +68,13 @@ If locators for files on disk were structured like `file:///absolute/path/to/fil
 
     capabilities.locate("./apple.js", "file:///yummy/orange.js");
     -> "file:///yummy/apple.js"
+
     capabilities.locate("fs", "file:///yummy/orange.js");
     -> "node:fs"
+
     capabilities.locate("yucky", "file:///yummy/orange.js");
     -> "file:///yummy/node_modules/yucky/yucky.js"
+
     capabilities.locate("https://yum.my/noodles.js", "file:///yummy/orange.js");
     -> "https://yum.my/noodles.js"
 
@@ -85,8 +85,10 @@ This function should deny access to sensitive files. Otherwise it may be possibl
 
     capabilities.read("file:///yummy/apple.js");
     -> A Buffer containing JavaScript.
+
     capabilities.read("file:///yummy/cinnamon.coffee");
     -> A Buffer containing JavaScript, transpiled from CoffeeScript.
+
     capabilities.read("file:///etc/passwd");
     -> Rejected!
 
@@ -107,9 +109,6 @@ The __out__ capability is called with a string representation of any arguments p
 ### capabilities.err(_string_)
 The __err__ capability is called with a string representation of any exceptions that occur outside of evaluation, or of any bytes written to STDERR.
 
-## Inspiration
+## Quote
 > The liquid pencil of this school is replete with a beauty peculiar to itself.
 >   — John Constable
-
-- REPL-driven development in Clojure (Stuart Halloway, 2017) https://vimeo.com/223309989
-- Whats makes a REPL (Eric Normand, 2019) https://lispcast.com/what-makes-a-repl/

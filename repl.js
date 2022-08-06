@@ -448,31 +448,40 @@ function replize_script(script, imports = [], scope = "") {
 // statement causes a new variable to be declared in the current scope, rather
 // than updating the variable in the parent scope. A naive approach would be to
 // turn the function statement into an assignment statement, but that prevents
-// the function from being hoisted. Rather, we leave the function statement as
-// is, and inject an assignment statement immediately afterwards. The function
-// is thus assigned directly to the scope object, with the nice side effect
-// that function declarations appear to evaluate as functions, rather than
-// undefined.
+// the function from being hoisted.
 
             variables.push(node.id.name);
+
+// Our strategy is to prefix a dollar symbol to the function name
+
+            alterations.push([node.id, "$" + node.id.name]);
+
+// and assign its hoisted value to the appropriate scope variable. The
+// assignment statement is placed at the very start of the script. A newline
+// would improve readability, but would also affect the line numbering and so
+// is omitted.
+
             alterations.push([
-                {
-                    start: node.end,
-                    end: node.end
-                },
-                " $scope." + node.id.name + " = " + node.id.name + ";"
+                {start: 0, end: 0},
+                node.id.name + " = $" + node.id.name + ";"
             ]);
 
-// There is a caveat that any additional changes to the function variable are
-// not persisted:
+// This strategy has the desirable effect that functions evaluated in the same
+// scope are loosely referenced. Suppose we evaluate the following two
+// functions:
 
-//      function tea_and_bickies() {
-//          return "Just the ticket.;
+//      function apple() {
+//          return "red";
 //      }
-//      tea_and_bickies = "Yum";
+//      function fruit() {
+//          return apple();
+//      }
 
-// After evaluating the above, $scope.tea_and_bickies is a function and not
-// "Yum". I expect this not to be a problem in practice.
+// We then modify apple to return "green". After reevaluating apple, we find
+// that fruit now also returns "green". If fruit held a tight reference to the
+// original apple function then it would continue returning "red" until it was
+// reevaluated. But because apple is rewritten $apple, the function referenced
+// by $fruit is actually $scope.apple, which returns "green".
 
         },
         ClassDeclaration(node) {
