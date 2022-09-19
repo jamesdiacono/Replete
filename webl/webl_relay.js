@@ -4,8 +4,7 @@
 // The reason we maintain the connection via a Web Worker is that workers have
 // their own processing loop. This means that reconnection may occur even if the
 // window's processing loop is blocked, as it often is by a breakpoint in a
-// padawan. This helps avoid accidentally launching duplicate WEBL clients
-// following a server restart.
+// padawan.
 
 // If this worker receives a string message, it is taken to be a WebSocket URL
 // to connect to. Any other message is JSON encoded and sent to the server.
@@ -13,8 +12,7 @@
 // When the status of the connection changes, this worker sends a boolean value.
 // Any other value is a message from the server.
 
-/*jslint browser */
-/*global self */
+/*jslint browser, worker */
 
 let socket;
 function connect_to_server(url) {

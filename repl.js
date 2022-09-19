@@ -247,9 +247,10 @@
 /*jslint node */
 
 import {parse} from "acorn";
+import {simple} from "acorn-walk";
 import crypto from "crypto";
-import alter_string from "./alter_string.js";
-import scriptify_module from "./scriptify_module.js";
+
+const rx_relative_path = /^\.\.?\//;
 
 function fill(template, substitutions) {
 
@@ -262,38 +263,266 @@ function fill(template, substitutions) {
     });
 }
 
-function make_identifiers_object_literal(variables, imports) {
-    const members = [];
+function alter_string(string, alterations) {
 
-// Variables are initialised to undefined.
+// The 'alter_string' function applies an array of substitutions to a string.
+// The ranges of the alterations must be disjoint. The 'alterations' parameter
+// is an array of arrays like [range, replacement] where the range is an object
+// like {start, end}.
 
-    variables.forEach(function (name) {
-        members.push(name + ": undefined");
-    });
-
-// The values of the importations are extracted from the $imports array, which
-// is assumed to have been declared in an outer scope.
-
-    imports.forEach(function (the_import, import_nr) {
-        if (the_import.default !== undefined) {
-            members.push(
-                the_import.default
-                + ": $imports[" + import_nr + "].default"
-            );
+    alterations = alterations.slice().sort(
+        function compare(a, b) {
+            return a[0].start - b[0].start || a[0].end - b[0].end;
         }
-        if (typeof the_import.names === "string") {
-            members.push(the_import.names + ": $imports[" + import_nr + "]");
+    );
+    let end = 0;
+    return alterations.map(
+        function ([range, replacement]) {
+            const chunk = string.slice(end, range.start) + replacement;
+            end = range.end;
+            return chunk;
         }
-        if (typeof the_import.names === "object") {
-            Object.keys(the_import.names).forEach(function (name) {
-                members.push(
-                    the_import.names[name]
-                    + ": $imports[" + import_nr + "]." + name
-                );
+    ).concat(
+        string.slice(end)
+    ).join(
+        ""
+    );
+}
+
+function analyze_module(tree) {
+
+// The 'analyze_module' function statically analyzes a module to find any
+// imports, exports and dynamic specifiers within it. The 'tree' parameter is
+// the module's parsed source code.
+
+// An analysis object is returned, containing the following properties:
+
+//      imports
+//          An array of objects representing the parsed import statements. Each
+//          object contains the following properties:
+
+//              node
+//                  The import statement node.
+
+//                      import "./fridge.js";
+//                      -> {
+//                          node: {
+//                              start: 0,
+//                              end: 21,
+//                              source: {
+//                                  start: 7,
+//                                  end: 20,
+//                                  value: "./fridge.js",
+//                              }
+//                          },
+//                          ...
+//                      }
+
+//              default
+//                  The name of the default import, if any.
+
+//                      import fruit from "./apple.js";
+//                      -> {default: "fruit", ...}
+
+//              names
+//                  If the statement imports named members, this is an object
+//                  containing a property for each member. The key is the name
+//                  of the member, and the value is the alias.
+
+//                      import {
+//                          red,
+//                          green as blue
+//                      } from "./pink.js";
+//                      -> {
+//                          names: {
+//                              red: "red",
+//                              green: "blue"
+//                          },
+//                          ...
+//                      }
+
+//                  If the statement imports every member as a single
+//                  identifier, this property is instead a string.
+
+//                      import * as creatures from "./animals.js";
+//                      -> {names: "creatures", ...}
+
+//                  If the statement does not import any named members, this
+//                  property is omitted.
+
+//      exports
+//          An array of export statement nodes.
+
+//              export default 1 + 2;
+//              export {rake};
+//              export * from "./dig.js";
+//              -> [
+//                  {
+//                      type: "ExportDefaultDeclaration",
+//                      start: 0,
+//                      end: 21,
+//                      declaration: {start: 15, end: 20}
+//                  },
+//                  {
+//                      type: "ExportNamedDeclaration",
+//                      start: 22,
+//                      end: 36
+//                  },
+//                  {
+//                      type: "ExportAllDeclaration,
+//                      start: 37,
+//                      end: 62
+//                  }
+//              ]
+
+//      dynamics
+//          An array whose elements represent occurrences of the following
+//          forms:
+
+//              import("<specifier>")
+//              import.meta.resolve("<specifier>")
+//              new URL("<specifier>", import.meta.url)
+
+//          Each element is an object with a "value" property, containing the
+//          <specifier>, and "module" and "script" properties, both of which
+//          are ranges indicating an area of the source to be replaced by a
+//          string literal containing the resolved specifier.
+
+//          If the source is to be imported as a module, use the "module" range.
+//          If the source is to be evaluated as a script, replace the "script"
+//          property.
+
+//          The caller can use this information to rewrite the above forms
+//          into
+
+//              import("/path/to/my_module.js")
+//              "/path/to/my_module.js"
+//              new URL("/path/to/my_module.js", import.meta.url)
+
+//          once the specifiers have been resolved.
+
+    let imports = [];
+    let exports = [];
+    let dynamics = [];
+
+// Walk the tree.
+
+    simple(tree, {
+        ImportDeclaration(node) {
+            let the_import = {node};
+            node.specifiers.forEach(function (specifier_node) {
+                const {type, local, imported} = specifier_node;
+                if (type === "ImportDefaultSpecifier") {
+                    the_import.default = local.name;
+                }
+                if (type === "ImportSpecifier") {
+                    if (the_import.names === undefined) {
+                        the_import.names = {};
+                    }
+                    the_import.names[imported.name] = local.name;
+                }
+                if (type === "ImportNamespaceSpecifier") {
+                    the_import.names = local.name;
+                }
             });
+            imports.push(the_import);
+        },
+        ExportDefaultDeclaration(node) {
+            exports.push(node);
+        },
+        ExportNamedDeclaration(node) {
+            exports.push(node);
+        },
+        ExportAllDeclaration(node) {
+            exports.push(node);
+        },
+        ImportExpression(node) {
+            if (typeof node.source.value === "string") {
+
+// Found import("<specifier>").
+
+                dynamics.push({
+                    value: node.source.value,
+                    module: node.source,
+                    script: node.source
+                });
+            }
+        },
+        CallExpression(node) {
+            if (
+                node.callee.type === "MemberExpression"
+                && node.callee.object.type === "MetaProperty"
+                && node.callee.property.name === "resolve"
+                && node.arguments.length === 1
+                && typeof node.arguments[0].value === "string"
+            ) {
+
+// Found import.meta.resolve("<specifier>").
+
+                dynamics.push({
+                    value: node.arguments[0].value,
+                    module: node,
+                    script: node
+                });
+            }
+        },
+        NewExpression(node) {
+            if (
+                node.callee.name === "URL"
+                && node.arguments.length === 2
+                && node.arguments[0].type === "Literal"
+                && typeof node.arguments[0].value === "string"
+                && rx_relative_path.test(node.arguments[0].value)
+                && node.arguments[1].type === "MemberExpression"
+                && node.arguments[1].object.type === "MetaProperty"
+                && node.arguments[1].property.name === "url"
+            ) {
+
+// Found new URL("<specifier>", import.meta.url).
+
+// This form should be removed once the import.meta.resolve form is widely
+// supported, then we can dispense with the "module" and "script" properties
+// below.
+
+                dynamics.push({
+                    value: node.arguments[0].value,
+
+// The import.meta.url is permitted in a module, but not in a script. It is
+// required as a second parameter to URL when the specifier resolves to an
+// absolute path, rather than a fully qualified URL.
+
+                    module: node.arguments[0],
+                    script: {
+                        start: node.arguments[0].start,
+                        end: node.arguments[1].end
+                    }
+                });
+            }
         }
     });
-    return "{" + members.join(", ") + "}";
+    return {imports, exports, dynamics};
+}
+
+function all_specifiers(analysis) {
+
+// Return any import and dynamic specifier strings mentioned in the analysis.
+
+    return analysis.imports.map(
+        (the_import) => the_import.node.source.value
+    ).concat(analysis.dynamics.map(
+        (the_dynamic) => the_dynamic.value
+    ));
+}
+
+function blanks(source, range) {
+
+// Return some blanks lines append to a replacement, so that it matches the
+// number of lines of the original text. This is sometimes necessary to
+// maintain line numbering.
+
+    return "\n".repeat(
+        source.slice(range.start, range.end).split("\n").length - 1
+    );
 }
 
 const script_template = `
@@ -334,7 +563,7 @@ const script_template = `
 // corresponding properties on the scope object.
 
 // If the scope object had a prototype, properties on the prototype chain of the
-// scope object (such as toString) could dredged up and misinterpreted as
+// scope object (such as toString) could be dredged up and misinterpreted as
 // identifiers. To avoid this hazard, the scope object was made without a
 // prototype.
 
@@ -351,30 +580,112 @@ const script_template = `
     }
 `;
 
-function replize_script(script, imports = [], scope = "") {
+function make_identifiers_object_literal(variables, imports) {
+    const members = [];
 
-// The 'replize_script' function transforms a script, making it suitable for
-// evaluation in a REPL. It takes the following parameters:
+// Variables are initialised to undefined.
 
-//      script
-//          A string containing JavaScript source code, without any import or
-//          export statements.
+    variables.forEach(function (name) {
+        members.push(name + ": undefined");
+    });
 
-//      imports
-//          An array containing information about the importations used by
-//          the 'script'. Its structure is identical to that returned by
-//          the 'scriptify_module' function.
+// The values of the importations are extracted from the $imports array, which
+// is assumed to have been declared in an outer scope.
+
+    imports.forEach(function (the_import, import_nr) {
+        if (the_import.default !== undefined) {
+            members.push(
+                the_import.default
+                + ": $imports[" + import_nr + "].default"
+            );
+        }
+        if (typeof the_import.names === "string") {
+            members.push(the_import.names + ": $imports[" + import_nr + "]");
+        }
+        if (typeof the_import.names === "object") {
+            Object.keys(the_import.names).forEach(function (name) {
+                members.push(
+                    the_import.names[name]
+                    + ": $imports[" + import_nr + "]." + name
+                );
+            });
+        }
+    });
+    return "{" + members.join(", ") + "}";
+}
+
+function replize(source, tree, analysis, dynamic_specifiers, scope = "") {
+
+// The 'eval' function can not handle import or export statements. The 'replize'
+// function transforms 'source' such that it is safe to eval, wrapping it in a
+// harness to give it the REPL behaviour described at the top of this file. It
+// takes the following parameters:
+
+//      source
+//          A string containing the module's source code.
+
+//      tree
+//          The module's source as a parsed tree.
+
+//      analysis
+//          An object returned by the 'analyze_module' function.
+
+//      dynamic_specifiers
+//          An array containing the dynamic specifiers to be injected.
 
 //      scope
 //          The name of the scope to use for evaluation. If the scope does not
 //          exist, it is created.
 
-// The resulting script expects a $imports variable to be available, which
-// should be an array containing the imported module objects.
+// The resulting script contains a free variable, $imports, that is expected to
+// be an array containing the imported module objects.
 
-    let tree = parse(script, {ecmaVersion: "latest"});
+// Another free variable, $default, is assigned the default exportation, if
+// there is one.
+
+//      ORIGINAL                       | REWRITTEN
+//                                     |
+//      import frog from "./frog.js"   |
+//      export default 1 + 1;          | $default = 1 + 1;
+//      export {frog};                 |
+//      export * from "./lizard.js";   |
+
+// Notice how the import and export statements are stripped from the resulting
+// script.
+
     let alterations = [];
     let variables = [];
+
+// Transform the imports, exports and dynamic specifiers. Import statments are
+// removed, as are non-default export statements. Default export statements
+// are turned into assignments to $default. Dynamic specifiers are injected as
+// string literals.
+
+    analysis.imports.forEach(function ({node}) {
+        return alterations.push([node, blanks(source, node)]);
+    });
+    analysis.exports.forEach(function (node) {
+        return alterations.push(
+            node.type === "ExportDefaultDeclaration"
+            ? [
+                {
+                    start: node.start,
+                    end: node.declaration.start
+                },
+                "$default = "
+            ]
+            : [node, blanks(source, node)]
+        );
+    });
+    analysis.dynamics.forEach(function (dynamic, dynamic_nr) {
+        return alterations.push([
+            dynamic.script,
+            "\""
+            + dynamic_specifiers[dynamic_nr]
+            + "\""
+            + blanks(source, dynamic.script)
+        ]);
+    });
     const handlers = {
         VariableDeclaration(variable_node) {
 
@@ -527,55 +838,13 @@ function replize_script(script, imports = [], scope = "") {
         {
             identifiers_object_literal: make_identifiers_object_literal(
                 variables,
-                imports
+                analysis.imports
             ),
             scope_name_string: JSON.stringify(scope),
-            payload_script_string: JSON.stringify(
-                alter_string(script, alterations)
-            )
-        }
-    );
-}
-
-function find_specifiers(source) {
-
-// The 'find_specifiers' function searches the 'source' string of a module for
-// import specifiers, returning their value and position in the source.
-
-// It returns an array of objects, each containing the following properties:
-
-//      specifier
-//          The value of the specifier, e.g. "./peach.js".
-
-//      range
-//          An object with a "start" and "end" property, corresponding to the
-//          starting and ending position of the specifier within 'source'.
-
-    return parse(
-        source,
-        {
-            ecmaVersion: "latest",
-            sourceType: "module"
-        }
-    ).body.filter(
-        function (node) {
-            return (
-                node.type === "ImportDeclaration" ||
-                node.type === "ExportAllDeclaration"
-            );
-        }
-    ).map(
-        function (node) {
-            return {
-                specifier: node.source.value,
-                range: {
-
-// Exclude the surrounding quotation marks.
-
-                    start: node.source.start + 1,
-                    end: node.source.end - 1
-                }
-            };
+            payload_script_string: JSON.stringify(alter_string(
+                source,
+                alterations
+            ))
         }
     );
 }
@@ -608,14 +877,29 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
 //          objects whenever an HTTP request is received. The returned Promise
 //          resolves once it is safe to call 'on_eval'.
 
-//      on_eval(script, imports, on_result)
-//          A function that evaluates the script in each connected padawan.
+//      on_eval(
+//          on_result,
+//          produce_script,
+//          dynamic_specifiers,
+//          import_specifiers
+//      )
+//          A function that evaluates the script in each connected padawan. It
+//          takes the following parameters:
 
-//          The 'script' parameter is a string containing JavaScript source
-//          code, devoid of import or export statements. The 'imports'
-//          parameter is an array of import specifier strings. The 'on_result'
-//          parameter is the same as the 'on_result' function passed to
-//          the 'send' method, documented above.
+//              on_result
+//                  The same as the 'on_result' function passed to the 'send'
+//                  method, described above.
+
+//              produce_script
+//                  A function that takes an array of dynamic specifiers and
+//                  returns the eval-friendly script string. This provides an
+//                  opportunity to customise the dynamic specifiers.
+
+//              dynamic_specifiers
+//                  The array of dynamic specifier strings.
+
+//              import_specifiers
+//                  The array of import specifier strings.
 
 //          The returned Promise rejects if there was a problem communicating
 //          with any of the padawans.
@@ -636,7 +920,7 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
     let locating = Object.create(null);
     let reading = Object.create(null);
     let hashing = Object.create(null);
-    let finding = Object.create(null);
+    let analyzing = Object.create(null);
     function locate(specifier, parent_locator) {
 
 // The 'locate' function locates a file. It is a memoized form of the 'locate'
@@ -668,7 +952,7 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
         function invalidate() {
             delete reading[locator];
             delete hashing[locator];
-            delete finding[locator];
+            delete analyzing[locator];
         }
         reading[locator] = capabilities.read(locator).then(function (buffer) {
 
@@ -700,17 +984,21 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
         });
         return reading[locator];
     }
-    function find(locator) {
+    function analyze(locator) {
 
-// The 'find' function finds any import specifiers in a module. It is memoized
-// because finding the specifiers necessitates a full parse, which can be
-// expensive.
+// The 'analyze' function analyzes the module at 'locator'. It is memoized
+// because analysis necessitates a full parse, which can be expensive.
 
-        if (finding[locator] !== undefined) {
-            return finding[locator];
+        if (analyzing[locator] !== undefined) {
+            return analyzing[locator];
         }
-        finding[locator] = read(locator).then(find_specifiers);
-        return finding[locator];
+        analyzing[locator] = read(locator).then(function (source) {
+            return analyze_module(parse(source, {
+                ecmaVersion: "latest",
+                sourceType: "module"
+            }));
+        });
+        return analyzing[locator];
     }
     function hash_source(locator) {
 
@@ -749,13 +1037,15 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
 // it is cheaper.
 
             hash_source(locator),
-            find(locator).then(function (found_array) {
-                return Promise.all(found_array.map(function (found) {
-                    return locate(found.specifier, locator).then(hash);
-                }));
+            analyze(locator).then(function (analysis) {
+                return Promise.all(
+                    all_specifiers(analysis).map(function (specifier) {
+                        return locate(specifier, locator).then(hash);
+                    })
+                );
             })
-        ]).then(function ([source_hash, import_versions]) {
-            return digest(source_hash, ...import_versions);
+        ]).then(function ([source_hash, specifier_hashes]) {
+            return digest(source_hash, ...specifier_hashes);
         });
     }
 
@@ -774,8 +1064,18 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
     function versionize(locator) {
 
 // The 'versionize' function produces a versioned form of the 'locator', where
-// possible.
+// necessary.
 
+        if (
+            !locator.startsWith("file:///")
+            || capabilities.mime(locator) !== "text/javascript"
+        ) {
+
+// Only modules require versioning, because only they are subject to the
+// runtime's module cache.
+
+            return Promise.resolve(locator);
+        }
         return hash(locator).then(function (the_hash) {
             if (the_hash === undefined) {
                 return locator;
@@ -813,29 +1113,46 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
     function module(locator) {
 
 // The 'module' function prepares the source code of a local module for delivery
-// to the padawan. This involves translating any import specifiers into
-// locators.
+// to the padawan. This involves resolving and versioning all specifiers within
+// the source.
 
         return Promise.all([
             read(locator),
-            find(locator)
-        ]).then(function ([source, found_array]) {
+            analyze(locator)
+        ]).then(function ([source, analysis]) {
 
-// Resolve and version the import specifiers.
+// Resolve and version the specifiers.
 
             return Promise.all(
-                found_array.map(function (found) {
-                    return locate(found.specifier, locator).then(versionize);
+                all_specifiers(analysis).map(function (specifier) {
+                    return locate(specifier, locator).then(
+                        versionize
+                    ).then(
+                        specify
+                    );
                 })
-            ).then(function (versioned_locators) {
+            ).then(function (specifiers) {
 
-// Modify the source, replacing the import specifiers with versioned locators.
+// Modify the source, inserting the resolved and versioned specifiers as string
+// literals.
 
                 return alter_string(
                     source,
-                    found_array.map(function (found, nr) {
-                        return [found.range, specify(versioned_locators[nr])];
-                    })
+                    analysis.imports.map(function (the_import, specifier_nr) {
+                        return [
+                            the_import.node.source,
+                            "\"" + specifiers[specifier_nr] + "\""
+                        ];
+                    }).concat(analysis.dynamics.map(function (the_dynamic, nr) {
+                        const specifier_nr = analysis.imports.length + nr;
+                        return [
+                            the_dynamic.module,
+                            "\""
+                            + specifiers[specifier_nr]
+                            + "\""
+                            + blanks(source, the_dynamic.module)
+                        ];
+                    }))
                 );
             });
         });
@@ -889,39 +1206,38 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
             capabilities.source
         ).then(
             function (source) {
-                const {script, imports} = scriptify_module(source);
-                return Promise.all([
-                    Promise.resolve(replize_script(
-                        script,
-                        imports,
-                        message.scope
-                    )),
-                    Promise.all(
-
-// Resolve the specifiers in parallel.
-
-                        imports.map(
-                            function (the_import) {
-                                return the_import.specifier;
-                            }
-                        ).map(
-                            function (specifier) {
-                                return locate(
-                                    specifier,
-                                    message.locator
-                                ).then(
-                                    versionize
-                                ).then(
-                                    specify
-                                );
-                            }
-                        )
-                    )
-                ]);
-            }
-        ).then(
-            function ([script, imports]) {
-                return on_eval(script, imports, on_result);
+                const tree = parse(source, {
+                    ecmaVersion: "latest",
+                    sourceType: "module"
+                });
+                const analysis = analyze_module(tree);
+                return Promise.all(
+                    all_specifiers(analysis).map(function (specifier) {
+                        return locate(
+                            specifier,
+                            message.locator
+                        ).then(
+                            versionize
+                        ).then(
+                            specify
+                        );
+                    })
+                ).then(function (resolved_specifiers) {
+                    return on_eval(
+                        on_result,
+                        function produce_script(dynamic_specifiers) {
+                            return replize(
+                                source,
+                                tree,
+                                analysis,
+                                dynamic_specifiers,
+                                message.scope
+                            );
+                        },
+                        resolved_specifiers.slice(analysis.imports.length),
+                        resolved_specifiers.slice(0, analysis.imports.length)
+                    );
+                });
             }
         );
     }

@@ -25,12 +25,20 @@ function evaluate(script, import_specifiers) {
         })
     ).then(function (modules) {
 
-// The script is evaluated in the global scope, so it does not have access to
-// any local variables. The imported modules are provided as a global variable.
+// The script is evaluated in the global scope so that it does not have access
+// to any local variables. The imported modules are provided as a global
+// variable.
 
         global.$imports = modules;
         return {
-            evaluation: util.inspect(vm.runInThisContext(script))
+            evaluation: util.inspect(vm.runInThisContext(
+                script,
+                {
+                    importModuleDynamically(specifier) {
+                        return import(specifier);
+                    }
+                }
+            ))
         };
     }).catch(function (exception) {
         return {

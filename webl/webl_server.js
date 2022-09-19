@@ -52,7 +52,7 @@ function webl_server_constructor(
 // called with an interface for the client. Likewise, when a client disconnects,
 // the 'on_client_lost' function is called with the same interface object.
 
-// A client's interface is an object containing a single function:
+// A client's interface is an object containing two properties:
 
 //  padawan(spec)
 //      The 'padawan' method returns an interface for a new, unique padawan. It
@@ -70,13 +70,15 @@ function webl_server_constructor(
 //              it returns a Promise that resolves once the padawan has ceased
 //              to exist.
 
+//  origin
+//      The client's window.location.origin value.
+
     let connections = [];
     let clients = new WeakMap();
-    let on_open_callbacks = [];
     let on_response_callbacks = Object.create(null);
     let on_status_callbacks = Object.create(null);
     let padawan_count = 0;
-    function client_constructor(connection) {
+    function client_constructor(connection, origin) {
         function request(name, parameters) {
 
 // The 'request' function sends a request message thru the WebSocket connection
@@ -149,7 +151,7 @@ function webl_server_constructor(
                 destroy
             });
         }
-        return Object.freeze({padawan});
+        return Object.freeze({padawan, origin});
     }
     const server = http.createServer(function on_request(req, res) {
         function serve_file(file_path, mime_type) {
@@ -203,18 +205,17 @@ function webl_server_constructor(
         server,
         function on_open(connection) {
             connections.push(connection);
-
-// Inform the subscribers of the newly opened connection.
-
-            on_open_callbacks.forEach((callback) => callback());
-            on_open_callbacks = [];
-            const client = client_constructor(connection);
-            clients.set(connection, client);
-            return on_client_found(client);
         },
-        function on_receive(ignore, message) {
+        function on_receive(connection, message) {
             message = JSON.parse(message);
-            if (message.type === "response") {
+            if (message.type === "ready") {
+
+// The client is ready to start receiving messages.
+
+                const client = client_constructor(connection, message.value);
+                clients.set(connection, client);
+                on_client_found(client);
+            } else if (message.type === "response") {
 
 // Attempt to match up the response with its request, using the request's ID.
 
@@ -237,8 +238,10 @@ function webl_server_constructor(
         function on_close(connection) {
             connections.splice(connections.indexOf(connection), 1);
             const client = clients.get(connection);
-            clients.delete(connection);
-            return on_client_lost(client);
+            if (client !== undefined) {
+                clients.delete(connection);
+                on_client_lost(client);
+            }
         }
     );
     function start(port, hostname = "localhost") {

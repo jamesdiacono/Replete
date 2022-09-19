@@ -57,8 +57,16 @@ function deno_repl_constructor(
             cmdl.create()
         ]);
     }
-    function on_eval(script, imports, on_result) {
-        return cmdl.eval(script, imports).then(function (report) {
+    function on_eval(
+        on_result,
+        produce_script,
+        dynamic_specifiers,
+        import_specifiers
+    ) {
+        return cmdl.eval(
+            produce_script(dynamic_specifiers),
+            import_specifiers
+        ).then(function (report) {
             return on_result(report.evaluation, report.exception);
         });
     }

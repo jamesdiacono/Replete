@@ -111,7 +111,12 @@ function browser_repl_constructor(
     function on_stop() {
         return webl_server.stop();
     }
-    function on_eval(script, imports, on_result) {
+    function on_eval(
+        on_result,
+        produce_script,
+        dynamic_specifiers,
+        import_specifiers
+    ) {
 
 // Evaluates the module in many padawans at once. Results are reported back as
 // they arrive.
@@ -121,18 +126,32 @@ function browser_repl_constructor(
         }
         return Promise.all(
             clients.map(function (client) {
-                return padawans.get(client).eval(script, imports).then(
-                    function (report) {
-                        return on_result(report.evaluation, report.exception);
-                    }
-                );
+                function qualify(specifier) {
+
+// Generally, padawans have a different origin to that of the WEBL client. This
+// means that absolute paths might be resolved against an unexpected origin. To
+// avoid this hazard, each absolute path is converted to a fully-qualified URL
+// by prepending the client's origin.
+
+                    return (
+                        specifier.startsWith("/")
+                        ? client.origin + specifier
+                        : specifier
+                    );
+                }
+                return padawans.get(client).eval(
+                    produce_script(dynamic_specifiers.map(qualify)),
+                    import_specifiers.map(qualify)
+                ).then(function (report) {
+                    return on_result(report.evaluation, report.exception);
+                });
             })
         );
     }
     function specify(locator) {
 
 // If the locator is a file URL, we convert it to an absolute path. This is then
-// fully qualified by the WEBL client before it is used by the padawan.
+// fully qualified in 'on_eval' above.
 
         return (
             locator.startsWith("file:///")

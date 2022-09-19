@@ -60,7 +60,7 @@ const message_handlers = {
             }
         );
     },
-    eval_module(id, {imports, script, padawan_name}) {
+    eval_module(id, {script, imports, padawan_name}) {
 
 // Give a padawan some source code to evaluate, then transmit the
 // resulting value to the server.
@@ -76,22 +76,7 @@ const message_handlers = {
                 }
             });
         }
-        return padawan.eval(
-            script,
-            imports.map(function qualify(specifier) {
-
-// Generally, padawans have a different origin to the client. This means that it
-// is unsafe for the padawan to call import() with an absolute path, as it will
-// be resolved against an unexpected origin. In such cases, the specifier is
-// resolved to a fully-qualified URL, using the client's origin.
-
-                return (
-                    specifier.startsWith("/")
-                    ? window.location.origin + specifier
-                    : specifier
-                );
-            })
-        ).then(
+        return padawan.eval(script, imports).then(
             function on_success(report) {
                 return worker.postMessage({
                     type: "response",
@@ -135,6 +120,10 @@ worker.onmessage = function (event) {
             webl = make_webl();
             window.onbeforeunload = webl.destroy;
             document.title = "WEBL";
+            worker.postMessage({
+                type: "ready",
+                value: window.location.origin
+            });
         } else {
 
 // The connection has been closed. Destroy the WEBL (to avoid the possibility of
@@ -146,15 +135,15 @@ worker.onmessage = function (event) {
             }
             document.title = "Reconnecting...";
         }
-        return;
-    }
+    } else {
 
 // A message has been received from the server.
 
-    return message_handlers[event.data.name](
-        event.data.id,
-        event.data.parameters
-    );
+        message_handlers[event.data.name](
+            event.data.id,
+            event.data.parameters
+        );
+    }
 };
 document.body.style.margin = "0";
 document.title = "Connecting...";

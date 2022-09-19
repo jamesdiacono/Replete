@@ -15,13 +15,9 @@ Replete is in the Public Domain, and does not come with a warranty. It is at lea
 ## Files
 - _replete.js_: A Node.js program. Read this file for instructions on its use.
 
-- _browser_repl.js_, _node_repl.js_, _deno_repl.js_: Node.js modules, each exporting the constructor for a REPL runs in a particular environment.
+- _browser_repl.js_, _node_repl.js_, _deno_repl.js_: Node.js modules, each exporting the constructor for a REPL that is specialised to a particular environment.
 
 - _repl.js_: A Node.js module exporting the constructor for a generic REPL. This is the heart of Replete.
-
-- _scriptify_module.js_: A module exporting a function that deconstructs the source code of a JavaScript module into a script, its imports and its exports.
-
-- _alter_string.js_: A module exporting a string manipulation function, used for code transformations.
 
 - _webl/_: A directory containing source code for the WEBL, which is used by the browser REPL. The WEBL is a standalone tool for remotely evaluating source code in the browser. See webl/README.md.
 

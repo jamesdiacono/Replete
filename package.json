@@ -1,6 +1,7 @@
 {
     "type": "module",
     "dependencies": {
-        "acorn": "*"
+        "acorn": "latest",
+        "acorn-walk": "latest"
     }
 }

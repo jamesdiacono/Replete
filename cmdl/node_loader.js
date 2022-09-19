@@ -28,7 +28,7 @@ function load(url, context, next_load) {
 
         return fetch(url).then(function (response) {
             if (response.status >= 400) {
-                throw new Error("Failed to load module.");
+                throw new Error("Failed to load " + url + ".");
             }
             return response.text();
         }).then(function (source) {
