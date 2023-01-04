@@ -120,6 +120,11 @@
 //      }
 //      $scope.greeting;     // "Goodbye"
 
+// Additionally, it should be possible to reference the values from previous
+// evaluations, for example to drill down into a deeply nested value. Replete
+// makes this possible by storing the result of the previous evaluation in a
+// variable named '$value'.
+
 // +------------+
 // | Separation |
 // +------------+
@@ -541,7 +546,7 @@ const script_template = `
     if ($scopes[<scope_name_string>] === undefined) {
         $scopes[<scope_name_string>] = Object.create(null);
         $scopes[<scope_name_string>].$default = undefined;
-        $scopes[<scope_name_string>].$evaluation = undefined;
+        $scopes[<scope_name_string>].$value = undefined;
     }
 
 // Retrieve the named scope. We use a var because it can be redeclared, unlike a
@@ -568,7 +573,7 @@ const script_template = `
 // prototype.
 
     with ($scope) {
-        (function () {
+        $value = (function () {
 
 // Evaluate the payload script in strict mode. We enforce strict mode because
 // the payload script originates from a module, and modules are always run in
