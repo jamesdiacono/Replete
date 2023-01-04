@@ -2,13 +2,11 @@
 
 /*jslint node */
 
-import path from "path";
 import make_repl from "./repl.js";
 import make_webl_server from "./webl/webl_server.js";
 
 function browser_repl_constructor(
     capabilities,
-    path_to_replete,
     port,
     hostname = "localhost",
     padawan_type = "iframe",
@@ -19,10 +17,6 @@ function browser_repl_constructor(
 
 //      capabilities
 //          An object containing the standard Replete capability functions.
-
-//      path_to_replete
-//          The absolute path to the directory containing Replete's source files
-//          on disk.
 
 //      port
 //          The port number of the WEBL server. If undefined, an unallocated
@@ -92,7 +86,6 @@ function browser_repl_constructor(
     let webl_server;
     function on_start(serve) {
         webl_server = make_webl_server(
-            path.join(path_to_replete, "webl"),
             function on_exception(error) {
                 return capabilities.err(error.stack + "\n");
             },

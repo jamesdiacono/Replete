@@ -160,10 +160,13 @@ const capabilities = Object.freeze({
 
 // Ensure a trailing slash.
 
-        const cwd_url = url.pathToFileURL(
-            process.cwd().replace(/[\/\\]?$/, path.sep)
+        const cwd_href = url.pathToFileURL(
+            process.cwd()
+        ).href.replace(
+            /\/?$/,
+            "/"
         );
-        if (!locator_url.href.startsWith(cwd_url.href)) {
+        if (!locator_url.href.startsWith(cwd_href)) {
             return Promise.reject(new Error("Forbidden: " + locator));
         }
         return fs.promises.readFile(locator_url);
@@ -200,17 +203,11 @@ process.argv.slice(2).forEach(function (argument) {
     options[name] = value;
 });
 
-// The REPLs require read access to Replete's source files. These are situated
-// in the same directory as this file.
-
-const path_to_replete = path.dirname(process.argv[1]);
-
 // A separate REPL is configured for each platform. The Deno REPL is optional.
 
 const repls = Object.create(null);
 repls.browser = make_browser_repl(
     capabilities,
-    path_to_replete,
     (
         options.browser_port !== undefined
         ? Number.parseInt(options.browser_port, 10)
@@ -220,7 +217,6 @@ repls.browser = make_browser_repl(
 );
 repls.node = make_node_repl(
     capabilities,
-    path_to_replete,
     process.argv[0],
     (
         options.node_debugger_port !== undefined
@@ -232,7 +228,6 @@ repls.node = make_node_repl(
 if (options.which_deno !== undefined) {
     repls.deno = make_deno_repl(
         capabilities,
-        path_to_replete,
         options.which_deno,
         (
             options.deno_debugger_port !== undefined

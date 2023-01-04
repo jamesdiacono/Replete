@@ -4,13 +4,12 @@
 
 /*jslint node */
 
-import path from "path";
 import fs from "fs";
 import http from "http";
 import websocketify from "./websocketify.js";
+const location_of_the_webl_base = new URL("./", import.meta.url);
 
 function webl_server_constructor(
-    location_of_the_webl_base,
     on_exception,
     on_client_found,
     on_client_lost,
@@ -20,10 +19,6 @@ function webl_server_constructor(
     },
     humanoid = false
 ) {
-
-// The 'location_of_the_webl_base' parameter is the absolute path to the
-// directory containing the WEBL's source files on disk. Without it, the source
-// of the webellion can not be found.
 
 // The 'on_exception' parameter is a function that is called when the WEBL
 // server itself encounters a problem.
@@ -154,8 +149,8 @@ function webl_server_constructor(
         return Object.freeze({padawan, origin});
     }
     const server = http.createServer(function on_request(req, res) {
-        function serve_file(file_path, mime_type) {
-            return fs.readFile(file_path, "utf8", function (error, data) {
+        function serve_file(file_url, mime_type) {
+            return fs.readFile(file_url, "utf8", function (error, data) {
                 if (error) {
                     on_exception(error);
                     res.statusCode = 500;
@@ -167,14 +162,11 @@ function webl_server_constructor(
         }
         if (req.url === "/favicon.ico") {
             return serve_file(
-                path.join(
-                    location_of_the_webl_base,
-                    (
-                        humanoid
-                        ? "c2po.svg"
-                        : "r2d2.svg"
-                    )
-                ),
+                new URL((
+                    humanoid
+                    ? "./c3po.svg"
+                    : "./r2d2.svg"
+                ), location_of_the_webl_base),
                 "image/svg+xml"
             );
         }
@@ -184,7 +176,7 @@ function webl_server_constructor(
             req.url === "/webl_relay.js"
         ) {
             return serve_file(
-                path.join(location_of_the_webl_base, req.url),
+                new URL("." + req.url, location_of_the_webl_base),
                 "text/javascript"
             );
         }

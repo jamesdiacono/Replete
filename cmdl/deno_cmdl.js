@@ -6,6 +6,7 @@
 
 import child_process from "child_process";
 import make_cmdl from "./cmdl.js";
+const padawan_url = new URL("./deno_padawan.js", import.meta.url);
 
 function allow_host(run_args, host) {
 
@@ -41,11 +42,6 @@ function allow_host(run_args, host) {
 
 function deno_cmdl_constructor(
 
-// The 'path_to_padawan' parameter is the absolute path to the entrypoint of the
-// padawan's program.
-
-    path_to_padawan,
-
 // The 'on_stdout' and 'on_stderr' parameters are functions, called with a
 // Buffer whenever data is written to STDOUT or STDERR.
 
@@ -73,7 +69,7 @@ function deno_cmdl_constructor(
             [
                 "run",
                 ...allow_host(run_args, "127.0.0.1:" + tcp_port),
-                path_to_padawan,
+                padawan_url.href,
                 String(tcp_port)
             ],
             {env}

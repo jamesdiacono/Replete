@@ -3,20 +3,17 @@
 
 /*jslint node */
 
-import path from "path";
 import http from "http";
 import make_repl from "./repl.js";
 import make_deno_cmdl from "./cmdl/deno_cmdl.js";
 
 function deno_repl_constructor(
     capabilities,
-    path_to_replete,
     which_deno,
     run_args = [],
     env = {}
 ) {
     const cmdl = make_deno_cmdl(
-        path.join(path_to_replete, "cmdl", "deno_padawan.js"),
         function on_stdout(buffer) {
             return capabilities.out(buffer.toString());
         },

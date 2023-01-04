@@ -2,7 +2,7 @@
 
 Replete is an evaluator for JavaScript modules. It enables a highly interactive style of programming called __REPL-driven development__. Replete can evaluate modules in the browser, Node.js and Deno.
 
-When integrated with a text editor, Replete becomes part of your development environment. You send source code directly from your editor to Replete, where it is evaluated. Anything from a mere expression to a whole file may be evaluated at a time. The evaluated value (or an exception) is reported back for perusal.
+When integrated with your text editor, Replete becomes part of your development environment. Source code is sent directly from your editor to Replete, where it is evaluated. Anything from a mere expression to a whole file may be evaluated at a time. The resulting value (or an exception) is reported back for perusal.
 
 ![](https://james.diacono.com.au/talks/feedback_and_the_repl/replete.gif)
 
@@ -10,7 +10,7 @@ Replete encourages the development of modules in isolation, rather than in the c
 
 [Browse the text editor plugins](https://github.com/jamesdiacono/Replete/issues/5).
 
-Replete is in the Public Domain, and does not come with a warranty. It is at least as dangerous as the source code it is asked to evaluate, so be careful.
+Replete is in the Public Domain, and does not come with a warranty. It is at least as dangerous as the source code it is asked to import or evaluate, so be careful.
 
 ## Files
 - _replete.js_: A Node.js program. Read this file for instructions on its use.
@@ -19,14 +19,14 @@ Replete is in the Public Domain, and does not come with a warranty. It is at lea
 
 - _repl.js_: A Node.js module exporting the constructor for a generic REPL. This is the heart of Replete.
 
-- _webl/_: A directory containing source code for the WEBL, which is used by the browser REPL. The WEBL is a standalone tool for remotely evaluating source code in the browser. See webl/README.md.
+- _webl/_: A directory containing source code for the WEBL, used by the browser REPL. The WEBL is a standalone tool for remotely evaluating source code in the browser. See webl/README.md.
 
-- _cmdl/_: A directory containing the source code for the CMDL, which is like the WEBL but for command-line runtimes. See cmdl/README.md.
+- _cmdl/_: A directory containing the source code for the CMDL, like the WEBL but for command-line runtimes. See cmdl/README.md.
 
 - _package.json_: The Node.js package manifest. It specifies the Acorn dependency, and tells Node that the above files are modules.
 
 ## Capabilities
-Replete expects to be provided with several __capability__ functions. These provide a rich opportunity to customise Replete. A minimal set of capabilities is defined for you, in the replete.js file. If you do not find these to be lacking, you may skip this section.
+Replete expects to be provided with several __capability__ functions. These provide a rich opportunity to customise Replete. A minimal set of capabilities is defined for you, in the replete.js file. If you do not find them to be lacking, you may skip this section.
 
 Messages are sent to Replete, generally from a text editor. A __message__ is an object containing the following properties:
 
@@ -54,13 +54,11 @@ The __source__ capability extracts the source from a _message_ object, before it
     -> "(1 < 2 && 2 < 3);"
 
 ### capabilities.locate(_specifier_, _parent_locator_)
-The __locate__ capability resolves a module specifier. It is passed a _specifier_ string, specifying a module to be located. It may also be passed a _parent_locator_ parameter, which is the locator of the module which contains the specifier. The returned Promise resolves to the locator.
+The __locate__ capability resolves a module specifier. It is passed a _specifier_ string, specifying a module to be located. It may also be passed a _parent_locator_ parameter, which is the locator of the module that contains the specifier. The returned Promise resolves to the locator.
 
 A __specifier__ is the string portion of a module's import statement, for example "../my_module.js".
 
-A __locator__ is a URL string containing sufficient information to locate a file. A locator should begin with `file:///` if it refers to a file on disk, but structure of the rest of it is completely up to you.
-
-If locators for files on disk were structured like `file:///absolute/path/to/file.xyz`, then the `locate` capability might behave like so:
+A __locator__ is a URL string containing sufficient information to locate a file. A locator should begin with `file:///` if it refers to a file on disk, but the structure of the rest of it is completely up to you. If locators for files on disk were structured like `file:///absolute/path/to/file.xyz`, then the `locate` capability might behave like so:
 
     capabilities.locate("./apple.js", "file:///yummy/orange.js");
     -> "file:///yummy/apple.js"

@@ -1,21 +1,20 @@
 // This REPL evaluates JavaScript source code in an isolated Node.js process.
 // See repl.js and node_cmdl.js for more information.
 
-import url from "url";
-import path from "path";
+/*jslint node */
+
 import http from "http";
 import make_repl from "./repl.js";
 import make_node_cmdl from "./cmdl/node_cmdl.js";
+const loader_url = new URL("./cmdl/node_loader.js", import.meta.url);
 
 function node_repl_constructor(
     capabilities,
-    path_to_replete,
     which_node,
     node_args = [],
     env = {}
 ) {
     const cmdl = make_node_cmdl(
-        path.join(path_to_replete, "cmdl", "node_padawan.js"),
         function on_stdout(buffer) {
             return capabilities.out(buffer.toString());
         },
@@ -35,9 +34,7 @@ function node_repl_constructor(
 // Weirdly, Node.js requires that we supply the path to the loader as a file URL
 // on Windows.
 
-            url.pathToFileURL(
-                path.join(path_to_replete, "cmdl", "node_loader.js")
-            ),
+            loader_url.href,
 
 // Suppress the "experimental feature" warnings. We know we are experimenting!
 
