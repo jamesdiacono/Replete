@@ -73,7 +73,9 @@ function webl_server_constructor(
     let on_response_callbacks = Object.create(null);
     let on_status_callbacks = Object.create(null);
     let padawan_count = 0;
+
     function client_constructor(connection, origin) {
+
         function request(name, parameters) {
 
 // The 'request' function sends a request message thru the WebSocket connection
@@ -97,6 +99,7 @@ function webl_server_constructor(
                 };
             });
         }
+
         function padawan(spec) {
 
 // Each padawan is assigned a unique name, so that messages originating from
@@ -104,6 +107,7 @@ function webl_server_constructor(
 
             let name = "Padawan " + padawan_count;
             padawan_count += 1;
+
             function create() {
                 on_status_callbacks[name] = function (
                     message_name,
@@ -126,6 +130,7 @@ function webl_server_constructor(
                     }
                 );
             }
+
             function eval_module(script, imports = []) {
                 return request(
                     "eval_module",
@@ -136,10 +141,12 @@ function webl_server_constructor(
                     }
                 );
             }
+
             function destroy() {
                 delete on_status_callbacks[name];
                 return request("destroy_padawan", {name});
             }
+
             return Object.freeze({
                 create,
                 eval: eval_module,
@@ -148,7 +155,9 @@ function webl_server_constructor(
         }
         return Object.freeze({padawan, origin});
     }
+
     const server = http.createServer(function on_request(req, res) {
+
         function serve_file(file_url, mime_type) {
             return fs.readFile(file_url, "utf8", function (error, data) {
                 if (error) {
@@ -160,6 +169,7 @@ function webl_server_constructor(
                 return res.end(data);
             });
         }
+
         if (req.url === "/favicon.ico") {
             return serve_file(
                 new URL((
@@ -236,6 +246,7 @@ function webl_server_constructor(
             }
         }
     );
+
     function start(port, hostname = "localhost") {
         return new Promise(function (resolve, reject) {
             server.once("error", reject);
@@ -244,6 +255,7 @@ function webl_server_constructor(
             });
         });
     }
+
     function stop() {
 
 // The server will only close down once it no longer has active connections.

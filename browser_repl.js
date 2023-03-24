@@ -40,6 +40,7 @@ function browser_repl_constructor(
 
     let clients = [];
     let padawans = new WeakMap();
+
     function create_padawan(client) {
         const padawan = client.padawan({
             on_log(...strings) {
@@ -66,6 +67,7 @@ function browser_repl_constructor(
             return capabilities.err(exception.stack + "\n");
         });
     }
+
     function on_client_found(client) {
         capabilities.out("WEBL found.\n");
         clients.push(client);
@@ -74,6 +76,7 @@ function browser_repl_constructor(
 
         return create_padawan(client);
     }
+
     function on_client_lost(client) {
         capabilities.out("WEBL lost.\n");
 
@@ -83,7 +86,9 @@ function browser_repl_constructor(
             return a_client !== client;
         });
     }
+
     let webl_server;
+
     function on_start(serve) {
         webl_server = make_webl_server(
             function on_exception(error) {
@@ -101,9 +106,11 @@ function browser_repl_constructor(
             );
         });
     }
+
     function on_stop() {
         return webl_server.stop();
     }
+
     function on_eval(
         on_result,
         produce_script,
@@ -119,6 +126,7 @@ function browser_repl_constructor(
         }
         return Promise.all(
             clients.map(function (client) {
+
                 function qualify(specifier) {
 
 // Generally, padawans have a different origin to that of the WEBL client. This
@@ -132,6 +140,7 @@ function browser_repl_constructor(
                         : specifier
                     );
                 }
+
                 return padawans.get(client).eval(
                     produce_script(dynamic_specifiers.map(qualify)),
                     import_specifiers.map(qualify)
@@ -141,6 +150,7 @@ function browser_repl_constructor(
             })
         );
     }
+
     function specify(locator) {
 
 // If the locator is a file URL, we convert it to an absolute path. This is then
@@ -152,6 +162,7 @@ function browser_repl_constructor(
             : locator
         );
     }
+
     const repl = make_repl(
         capabilities,
         on_start,
@@ -159,6 +170,7 @@ function browser_repl_constructor(
         on_stop,
         specify
     );
+
     function recreate(the_padawan_type) {
 
 // Destroy all the padawans, and then recreate them as the specified type.
@@ -176,6 +188,7 @@ function browser_repl_constructor(
             }));
         });
     }
+
     return Object.freeze({
         start: repl.start,
         send: repl.send,

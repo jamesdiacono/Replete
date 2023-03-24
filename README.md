@@ -103,9 +103,12 @@ The __out__ capability is called with a string representation of any arguments p
 ### capabilities.err(_string_)
 The __err__ capability is called with a string representation of any exceptions that occur outside of evaluation, or of any bytes written to STDERR.
 
-## Quote
+## Quotes
 > The liquid pencil of this school is replete with a beauty peculiar to itself.
 >   — John Constable
+
+> Any mechanism that can decrease the cost of testing and debugging a large program is worth its weight in gold.
+>   — Glenford Myers
 
 ## Links
 - [Feedback and the REPL](https://www.youtube.com/watch?v=A_JrJekP9tQ&t=706s)

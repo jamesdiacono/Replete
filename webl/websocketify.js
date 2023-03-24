@@ -118,6 +118,7 @@ function websocketify(
         let buffer = Buffer.alloc(0);
         let payload_fragment;
         let textual;
+
         function consume_buffer() {
 
 // The 'consume_buffer' function attempts to tease WebSocket frames out of the
@@ -252,6 +253,7 @@ function websocketify(
 
             return consume_buffer();
         }
+
         socket.on("data", function (chunk) {
             buffer = Buffer.concat([buffer, chunk]);
             return consume_buffer();

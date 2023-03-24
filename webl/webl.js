@@ -20,10 +20,13 @@ function inspect(value, maximum_depth = 3) {
             || value === undefined
         );
     }
+
     let dent = "";
+
     function indent() {
         dent += "    ";
     }
+
     function outdent() {
         dent = dent.slice(4);
     }
@@ -31,6 +34,7 @@ function inspect(value, maximum_depth = 3) {
 // The string is built up as the value is traversed.
 
     let string = "";
+
     function write(fragment) {
         string += fragment;
     }
@@ -68,6 +72,7 @@ function inspect(value, maximum_depth = 3) {
                 "[" + value.constructor.name + ": " + String(value) + "]"
             );
         }
+
         function print_member(key, value, compact, last) {
 
 // The 'print_member' function prints out an element of an array, or property of
@@ -525,6 +530,7 @@ function webl_constructor() {
     let log_callbacks = Object.create(null);
     let exception_callbacks = Object.create(null);
     let eval_count = 0;
+
     function on_message(event) {
 
 // Messages from the padawans are received here.
@@ -553,6 +559,7 @@ function webl_constructor() {
             return exception_callbacks[message.padawan](message.reason);
         }
     }
+
     function padawan(spec) {
         const {
             on_log,
@@ -567,6 +574,7 @@ function webl_constructor() {
             return on_log(...strings);
         };
         exception_callbacks[name] = on_exception;
+
         function create() {
             if (padawans[name] !== undefined) {
                 return Promise.resolve();
@@ -578,6 +586,7 @@ function webl_constructor() {
             function on_message_facet(event) {
                 return on_message(event);
             }
+
             if (type === "worker") {
                 padawans[name] = make_worker_padawan(
                     name,
@@ -607,6 +616,7 @@ function webl_constructor() {
                 };
             });
         }
+
         function eval_module(script, imports = []) {
             const id = String(eval_count);
             eval_count += 1;
@@ -631,6 +641,7 @@ function webl_constructor() {
                 ));
             });
         }
+
         function destroy() {
             if (padawans[name] !== undefined) {
                 padawans[name].destroy();
@@ -640,12 +651,14 @@ function webl_constructor() {
                 delete exception_callbacks[name];
             }
         }
+
         return Object.freeze({
             create,
             eval: eval_module,
             destroy
         });
     }
+
     function destroy() {
 
 // I have seen a security hologram of this function...killing younglings.
@@ -657,6 +670,7 @@ function webl_constructor() {
             delete padawans[the_name];
         });
     }
+
     return Object.freeze({padawan, destroy});
 }
 

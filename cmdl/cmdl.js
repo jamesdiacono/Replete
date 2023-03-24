@@ -81,6 +81,7 @@ function cmdl_constructor(spawn_padawan) {
     let socket;
     let tcp_server = net.createServer();
     let report_callbacks = Object.create(null);
+
     function wait_for_connection() {
 
 // The returned Promise resolves once a TCP connection with the padawan has been
@@ -102,6 +103,7 @@ function cmdl_constructor(spawn_padawan) {
             });
         });
     }
+
     function start_padawan() {
 
 // Starts the padawan and waits for it to connect to the TCP server.
@@ -128,6 +130,7 @@ function cmdl_constructor(spawn_padawan) {
                 socket = undefined;
             });
         }
+
         return Promise.all([
             spawn_padawan(
                 tcp_server.address().port
@@ -137,6 +140,7 @@ function cmdl_constructor(spawn_padawan) {
             wait_for_connection()
         ]);
     }
+
     function create() {
         if (tcp_server.listening) {
             return Promise.resolve();
@@ -153,6 +157,7 @@ function cmdl_constructor(spawn_padawan) {
             start_padawan
         );
     }
+
     function eval_module(script, imports) {
         const id = String(Math.random());
         return new Promise(function (resolve) {
@@ -160,6 +165,7 @@ function cmdl_constructor(spawn_padawan) {
             return socket.write(JSON.stringify({script, imports, id}) + "\n");
         });
     }
+
     function destroy() {
         return new Promise(function (resolve) {
             if (padawan_process !== undefined) {
@@ -168,6 +174,7 @@ function cmdl_constructor(spawn_padawan) {
             return tcp_server.close(resolve);
         });
     }
+
     return Object.freeze({
         create,
         eval: eval_module,

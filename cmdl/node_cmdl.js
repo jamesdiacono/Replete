@@ -4,6 +4,7 @@
 
 /*jslint node */
 
+import url from "url";
 import child_process from "child_process";
 import make_cmdl from "./cmdl.js";
 let padawan_url = new URL("./node_padawan.js", import.meta.url);
@@ -33,7 +34,7 @@ function node_cmdl_constructor(
     return make_cmdl(function spawn_node_process(tcp_port) {
         const subprocess = child_process.spawn(
             which_node,
-            node_args.concat(padawan_url.pathname, String(tcp_port)),
+            node_args.concat(url.fileURLToPath(padawan_url), String(tcp_port)),
             {env}
         );
         subprocess.stdout.on("data", on_stdout);

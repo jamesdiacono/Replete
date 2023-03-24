@@ -94,6 +94,7 @@ function receive(bytes) {
 }
 
 let chunk = new Uint8Array(16640);
+
 function read() {
 
 // Read the incoming bytes into the buffer.

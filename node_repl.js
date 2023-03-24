@@ -48,6 +48,7 @@ function node_repl_constructor(
 
     let http_server;
     let http_server_port;
+
     function on_start(serve) {
         http_server = http.createServer(serve);
         return Promise.all([
@@ -61,6 +62,7 @@ function node_repl_constructor(
             cmdl.create()
         ]);
     }
+
     function on_eval(
         on_result,
         produce_script,
@@ -74,6 +76,7 @@ function node_repl_constructor(
             return on_result(report.evaluation, report.exception);
         });
     }
+
     function on_stop() {
         return Promise.all([
             new Promise(function (resolve) {
@@ -82,6 +85,7 @@ function node_repl_constructor(
             cmdl.destroy()
         ]);
     }
+
     function specify(locator) {
         return (
             locator.startsWith("file:///")
@@ -93,6 +97,7 @@ function node_repl_constructor(
             : locator
         );
     }
+
     return make_repl(
         capabilities,
         on_start,

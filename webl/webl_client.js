@@ -33,6 +33,7 @@ const message_handlers = {
                 }
             });
         }
+
         function on_exception(reason) {
             return worker.postMessage({
                 type: "status",
@@ -43,6 +44,7 @@ const message_handlers = {
                 }
             });
         }
+
         padawans[spec.name] = webl.padawan(Object.assign(
             {on_log, on_exception},
             spec

@@ -521,7 +521,7 @@ function all_specifiers(analysis) {
 
 function blanks(source, range) {
 
-// Return some blanks lines append to a replacement, so that it matches the
+// Return some blanks lines to append to a replacement, so that it matches the
 // number of lines of the original text. This is sometimes necessary to
 // maintain line numbering.
 
@@ -537,7 +537,7 @@ const script_template = `
 
 // The only reliable way to store values is to attach them to the global object.
 // We get a reference to the global object via 'this' because it is a strategy
-// that works on every runtime, so long as this script is evaluated in
+// that works in every runtime, so long as this script is evaluated in
 // non-strict mode.
 
     if (this.$scopes === undefined) {
@@ -549,8 +549,8 @@ const script_template = `
         $scopes[<scope_name_string>].$value = undefined;
     }
 
-// Retrieve the named scope. We use a var because it can be redeclared, unlike a
-// const.
+// Retrieve the named scope. We use a var because it can be redeclared without
+// raising an exception, unlike a const.
 
     var $scope = $scopes[<scope_name_string>];
 
@@ -926,6 +926,7 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
     let reading = Object.create(null);
     let hashing = Object.create(null);
     let analyzing = Object.create(null);
+
     function locate(specifier, parent_locator) {
 
 // The 'locate' function locates a file. It is a memoized form of the 'locate'
@@ -945,6 +946,7 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
         });
         return locating[key];
     }
+
     function read(locator) {
 
 // The 'read' function reads the source of a module, as a string. It is a
@@ -954,11 +956,13 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
         if (reading[locator] !== undefined) {
             return reading[locator];
         }
+
         function invalidate() {
             delete reading[locator];
             delete hashing[locator];
             delete analyzing[locator];
         }
+
         reading[locator] = capabilities.read(locator).then(function (buffer) {
 
 // Invalidate the cache next time the file is modified. There is the potential
@@ -989,6 +993,7 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
         });
         return reading[locator];
     }
+
     function analyze(locator) {
 
 // The 'analyze' function analyzes the module at 'locator'. It is memoized
@@ -1005,6 +1010,7 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
         });
         return analyzing[locator];
     }
+
     function hash_source(locator) {
 
 // The 'hash_source' function hashes the source of a module as a string. Its
@@ -1016,12 +1022,13 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
         hashing[locator] = read(locator).then(digest);
         return hashing[locator];
     }
+
     function hash(locator) {
 
 // The 'hash' function produces a hash string for a module. It produces
 // undefined if the 'locator' does not refer to a module on disk.
 
-// The hash is dependant on:
+// The hash is dependent on:
 
 //  a) the source of the module itself, and
 //  b) the hashes of any modules it imports.
@@ -1061,11 +1068,12 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
     let hashes = Object.create(null);
     let versions = Object.create(null);
 
-// Versions are local to REPL instances, and so an 'unguessable' value is used
-// to qualify them. It has the added benefit of making it very unlikely that
+// Versions are local to REPL instances, and so an unguessable value is used to
+// qualify them. This has the added benefit of making it very unlikely that
 // regular locators will be confused with versioned ones.
 
     const unguessable = digest(Math.random()).slice(0, 4);
+
     function versionize(locator) {
 
 // The 'versionize' function produces a versioned form of the 'locator', where
@@ -1115,6 +1123,7 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
             });
         });
     }
+
     function module(locator) {
 
 // The 'module' function prepares the source code of a local module for delivery
@@ -1162,6 +1171,7 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
             });
         });
     }
+
     function serve(req, res) {
 
 // The 'serve' function responds to HTTP requests made by the padawans. The
@@ -1173,6 +1183,7 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
             res.statusCode = 500;
             return res.end();
         }
+
         let locator = "file://" + req.url;
 
 // Any versioning information in the URL has served its purpose by defeating the
@@ -1201,6 +1212,7 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
             fail
         );
     }
+
     function send(message, on_result) {
 
 // Prepare the message's source code for evaluation.
@@ -1246,6 +1258,7 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
             }
         );
     }
+
     return Object.freeze({
         start() {
             return on_start(serve);

@@ -15,6 +15,7 @@
 /*jslint browser, worker */
 
 let socket;
+
 function connect_to_server(url) {
     socket = new WebSocket(url);
     socket.onopen = function () {
