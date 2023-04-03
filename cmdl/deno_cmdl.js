@@ -72,7 +72,10 @@ function deno_cmdl_constructor(
                 padawan_url.href,
                 String(tcp_port)
             ],
-            {env}
+            {
+                env,
+                windowsHide: true
+            }
         );
         subprocess.stdout.on("data", on_stdout);
         subprocess.stderr.on("data", on_stderr);
