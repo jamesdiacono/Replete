@@ -8,7 +8,7 @@ import make_repl from "./repl.js";
 import make_node_cmdl from "./cmdl/node_cmdl.js";
 const loader_url = new URL("./cmdl/node_loader.js", import.meta.url);
 
-function node_repl_constructor(
+function make_node_repl(
     capabilities,
     which_node,
     node_args = [],
@@ -107,4 +107,4 @@ function node_repl_constructor(
     );
 }
 
-export default Object.freeze(node_repl_constructor);
+export default Object.freeze(make_node_repl);

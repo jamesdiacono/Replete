@@ -9,7 +9,7 @@ import child_process from "child_process";
 import make_cmdl from "./cmdl.js";
 let padawan_url = new URL("./node_padawan.js", import.meta.url);
 
-function node_cmdl_constructor(
+function make_node_cmdl(
 
 // The 'on_stdout' and 'on_stderr' parameters are functions, called with a
 // Buffer whenever data is written to STDOUT or STDERR.
@@ -35,10 +35,7 @@ function node_cmdl_constructor(
         const subprocess = child_process.spawn(
             which_node,
             node_args.concat(url.fileURLToPath(padawan_url), String(tcp_port)),
-            {
-                env,
-                windowsHide: true
-            }
+            {env}
         );
         subprocess.stdout.on("data", on_stdout);
         subprocess.stderr.on("data", on_stderr);
@@ -46,4 +43,4 @@ function node_cmdl_constructor(
     });
 }
 
-export default Object.freeze(node_cmdl_constructor);
+export default Object.freeze(make_node_cmdl);

@@ -9,7 +9,7 @@ import http from "http";
 import websocketify from "./websocketify.js";
 const location_of_the_webl_base = new URL("./", import.meta.url);
 
-function webl_server_constructor(
+function make_webl_server(
     on_exception,
     on_client_found,
     on_client_lost,
@@ -68,13 +68,13 @@ function webl_server_constructor(
 //  origin
 //      The client's window.location.origin value.
 
-    let connections = [];
+    let sockets = [];
     let clients = new WeakMap();
     let on_response_callbacks = Object.create(null);
     let on_status_callbacks = Object.create(null);
     let padawan_count = 0;
 
-    function client_constructor(connection, origin) {
+    function make_client(connection, origin) {
 
         function request(name, parameters) {
 
@@ -205,8 +205,8 @@ function webl_server_constructor(
 
     websocketify(
         server,
-        function on_open(connection) {
-            connections.push(connection);
+        function on_open() {
+            return;
         },
         function on_receive(connection, message) {
             message = JSON.parse(message);
@@ -214,7 +214,7 @@ function webl_server_constructor(
 
 // The client is ready to start receiving messages.
 
-                const client = client_constructor(connection, message.value);
+                const client = make_client(connection, message.value);
                 clients.set(connection, client);
                 on_client_found(client);
             } else if (message.type === "response") {
@@ -238,7 +238,6 @@ function webl_server_constructor(
             }
         },
         function on_close(connection) {
-            connections.splice(connections.indexOf(connection), 1);
             const client = clients.get(connection);
             if (client !== undefined) {
                 clients.delete(connection);
@@ -246,6 +245,13 @@ function webl_server_constructor(
             }
         }
     );
+
+// Keep track of each created socket so they can all be destroyed at once. This
+// includes HTTP sockets in addition to WebSockets.
+
+    server.on("connection", function (socket) {
+        sockets.push(socket);
+    });
 
     function start(port, hostname = "localhost") {
         return new Promise(function (resolve, reject) {
@@ -259,15 +265,17 @@ function webl_server_constructor(
     function stop() {
 
 // The server will only close down once it no longer has active connections.
+// Destroy all open sockets.
 
-        connections.forEach(function (connection) {
-            return connection.close();
+        sockets.forEach(function (socket) {
+            socket.destroy();
         });
         return new Promise(function (resolve) {
             return server.close(resolve);
         });
     }
+
     return Object.freeze({start, stop});
 }
 
-export default Object.freeze(webl_server_constructor);
+export default Object.freeze(make_webl_server);

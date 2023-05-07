@@ -7,7 +7,7 @@ import http from "http";
 import make_repl from "./repl.js";
 import make_deno_cmdl from "./cmdl/deno_cmdl.js";
 
-function deno_repl_constructor(
+function make_deno_repl(
     capabilities,
     which_deno,
     run_args = [],
@@ -100,4 +100,4 @@ function deno_repl_constructor(
     );
 }
 
-export default Object.freeze(deno_repl_constructor);
+export default Object.freeze(make_deno_repl);

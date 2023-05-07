@@ -145,7 +145,7 @@ function websocketify(
 // |                     Payload Data continued ...                |
 // +---------------------------------------------------------------+
 
-// The integers are big-endian, meaning that the most significant bit arrives
+// The integers are big-endian, meaning that the most significant byte arrives
 // first. The full WebSockets specification can be found at
 // https://datatracker.ietf.org/doc/html/rfc6455.
 
@@ -267,7 +267,7 @@ function websocketify(
         });
         socket.on("close", function () {
             delete sockets[socket_id];
-            return on_close(connection, close_reason);
+            on_close(connection, close_reason);
         });
         return on_open(connection);
     });

@@ -119,13 +119,22 @@ worker.onmessage = function (event) {
 
 // The connection has been opened.
 
-            webl = make_webl();
-            window.onbeforeunload = webl.destroy;
-            document.title = "WEBL";
-            worker.postMessage({
-                type: "ready",
-                value: window.location.origin
-            });
+            if (webl === undefined) {
+                webl = make_webl();
+                window.onbeforeunload = webl.destroy;
+                document.title = "WEBL";
+                worker.postMessage({
+                    type: "ready",
+                    value: window.location.origin
+                });
+            } else {
+
+// We have reconnected to the server. Reload the page to clear any global state
+// (for example, modifications to the DOM or window object made by a "top"
+// padawan). Following the reload a fresh WEBL will be created.
+
+                window.location.reload();
+            }
         } else {
 
 // The connection has been closed. Destroy the WEBL (to avoid the possibility of
@@ -147,5 +156,4 @@ worker.onmessage = function (event) {
         );
     }
 };
-document.body.style.margin = "0";
 document.title = "Connecting...";

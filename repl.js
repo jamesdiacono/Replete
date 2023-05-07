@@ -868,9 +868,9 @@ const rx_versioned_locator = /^file:\/\/\/v([^\/]+)\/([^\/]+)(.*)$/;
 //  [2] The unguessable
 //  [3] The locator
 
-function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
+function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
 
-// The 'repl_constructor' function returns a new REPL instance. It takes the
+// The 'make_repl' function returns a new REPL instance. It takes the
 // following parameters:
 
 //      capabilities
@@ -1268,4 +1268,4 @@ function repl_constructor(capabilities, on_start, on_eval, on_stop, specify) {
     });
 }
 
-export default Object.freeze(repl_constructor);
+export default Object.freeze(make_repl);

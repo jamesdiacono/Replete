@@ -40,7 +40,7 @@ function allow_host(run_args, host) {
     );
 }
 
-function deno_cmdl_constructor(
+function make_deno_cmdl(
 
 // The 'on_stdout' and 'on_stderr' parameters are functions, called with a
 // Buffer whenever data is written to STDOUT or STDERR.
@@ -72,10 +72,7 @@ function deno_cmdl_constructor(
                 padawan_url.href,
                 String(tcp_port)
             ],
-            {
-                env,
-                windowsHide: true
-            }
+            {env}
         );
         subprocess.stdout.on("data", on_stdout);
         subprocess.stderr.on("data", on_stderr);
@@ -83,4 +80,4 @@ function deno_cmdl_constructor(
     });
 }
 
-export default Object.freeze(deno_cmdl_constructor);
+export default Object.freeze(make_deno_cmdl);

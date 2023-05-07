@@ -1,7 +1,12 @@
 // A WEBL is master to many padawans. A padawan is an isolated execution context
 // with its own global object. It can be asked to evaluate arbitrary JavaScript
-// source code, and it reports any logging or exceptions. A padawan is sandboxed
-// such that it can not interfere with its master or other padawans.
+// source code, and it reports any logging or exceptions.
+
+// The "iframe", "popup" and "worker" padawans are sandboxed such that they can
+// not interfere with their master or other padawans.
+
+// The "top" padawan executes code in the context of the current page, so is not
+// sandboxed at all. Only a single "top" padawan can exist at one time.
 
 /*jslint browser, null */
 
@@ -239,7 +244,7 @@ const padawan_create_script_template = `
 // The '$webl' object contains a couple of functions used internally by the
 // padawan to communicate with its master.
 
-    const $webl = Object.freeze(function (global) {
+    self.$webl = Object.freeze(function (global) {
         return {
             send(message) {
 
@@ -270,7 +275,7 @@ const padawan_create_script_template = `
 // property before it is deleted.
 
         self.opener      // popup
-        ?? self.parent   // iframe
+        ?? self.parent   // iframe or top
         ?? self          // worker
     ));
 
@@ -297,7 +302,7 @@ const padawan_create_script_template = `
             });
             return original(...args);
         };
-    })(console.log);
+    }(console.log));
 
 // Inform the master of any uncaught exceptions.
 
@@ -365,6 +370,35 @@ const padawan_eval_script_template = `
     });
 `;
 
+let top;
+
+function make_top_padawan(
+    name,
+    secret,
+    on_message
+) {
+    if (top !== undefined) {
+        top.destroy();
+    }
+    window.addEventListener("message", on_message);
+    const script_element = document.createElement("script");
+    script_element.textContent = fill(
+        padawan_create_script_template,
+        {name, secret}
+    );
+    document.head.append(script_element);
+    top = Object.freeze({
+        send(message) {
+            window.postMessage(message);
+        },
+        destroy() {
+            window.removeEventListener("message", on_message);
+            script_element.remove();
+        }
+    });
+    return top;
+}
+
 function make_iframe_padawan(
     name,
     secret,
@@ -399,6 +433,7 @@ function make_iframe_padawan(
         }
     });
 }
+
 function make_popup_padawan(
     name,
     secret,
@@ -431,6 +466,7 @@ function make_popup_padawan(
         }
     });
 }
+
 function make_worker_padawan(name, secret, on_message) {
     const worker_src = URL.createObjectURL(
         new Blob(
@@ -451,9 +487,9 @@ function make_worker_padawan(name, secret, on_message) {
     });
 }
 
-function webl_constructor() {
+function make_webl() {
 
-// The 'webl_constructor' function returns an object containing two functions:
+// The 'make_webl' function returns an object containing two functions:
 
 //  padawan(spec)
 //      The 'padawan' method returns an interface for a new padawan. It takes a
@@ -474,7 +510,7 @@ function webl_constructor() {
 
 //          "type"
 //              Determines the means of containerisation, and should be either
-//              the string "popup", "iframe" or "worker".
+//              the string "top", "iframe", "popup" or "worker".
 
 //          "popup_window_features"
 //              The string passed as the third argument to window.open, for
@@ -600,13 +636,19 @@ function webl_constructor() {
                     on_message_facet,
                     popup_window_features
                 );
-            } else {
+            } else if (type === "iframe") {
                 padawans[name] = make_iframe_padawan(
                     name,
                     secret,
                     on_message_facet,
                     iframe_style_object,
                     iframe_sandbox
+                );
+            } else {
+                padawans[name] = make_top_padawan(
+                    name,
+                    secret,
+                    on_message_facet
                 );
             }
             return new Promise(function (resolve) {
@@ -674,4 +716,4 @@ function webl_constructor() {
     return Object.freeze({padawan, destroy});
 }
 
-export default Object.freeze(webl_constructor);
+export default Object.freeze(make_webl);

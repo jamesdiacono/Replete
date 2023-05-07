@@ -5,15 +5,15 @@
 import make_repl from "./repl.js";
 import make_webl_server from "./webl/webl_server.js";
 
-function browser_repl_constructor(
+function make_browser_repl(
     capabilities,
     port,
     hostname = "localhost",
-    padawan_type = "iframe",
+    padawan_type = "top",
     humanoid = false
 ) {
 
-// The 'browser_repl_constructor' function takes several parameters:
+// The 'make_browser_repl' function takes several parameters:
 
 //      capabilities
 //          An object containing the standard Replete capability functions.
@@ -26,7 +26,7 @@ function browser_repl_constructor(
 //          The hostname of the WEBL server.
 
 //      padawan_type
-//          The type of the padawan, one of "iframe", "popup" or "worker".
+//          The type of the padawan, see ./webl/webl.js.
 
 //      humanoid
 //          A boolean indicating whether to use C3PO as a favicon, rather than
@@ -197,4 +197,4 @@ function browser_repl_constructor(
     });
 }
 
-export default Object.freeze(browser_repl_constructor);
+export default Object.freeze(make_browser_repl);

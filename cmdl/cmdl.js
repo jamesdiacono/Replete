@@ -67,7 +67,7 @@
 import net from "net";
 import readline from "readline";
 
-function cmdl_constructor(spawn_padawan) {
+function make_cmdl(spawn_padawan) {
 
 // The 'spawn_padawan' parameter is a function that is responsible for starting
 // a padawan process. It is passed the port number of the running TCP server,
@@ -182,4 +182,4 @@ function cmdl_constructor(spawn_padawan) {
     });
 }
 
-export default Object.freeze(cmdl_constructor);
+export default Object.freeze(make_cmdl);
