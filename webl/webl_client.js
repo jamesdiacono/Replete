@@ -13,7 +13,12 @@ let padawans = Object.create(null);
 // URL to the server.
 
 const worker = new Worker("./webl_relay.js");
-worker.postMessage("ws://" + window.location.host);
+const websockets_url = (
+    window.location.protocol === "http:"
+    ? "ws://"
+    : "wss://"
+) + window.location.host;
+worker.postMessage(websockets_url);
 
 // Each type of message received from the server invokes a different handler
 // function.
@@ -129,10 +134,18 @@ worker.onmessage = function (event) {
                 });
             } else {
 
-// We have reconnected to the server. Reload the page to clear any global state
-// (for example, modifications to the DOM or window object made by a "top"
-// padawan). Following the reload a fresh WEBL will be created.
+// The server is back up. Reload the page to clear any global state (for
+// example, modifications to the DOM or window object made by a "top" padawan).
+// Following the reload a new connection will be attempted.
 
+// Firefox, unlike other browsers, fires the "close" event on any open
+// WebSockets as the page unloads. The relay worker responds to a "close" event
+// by attempting to reestablish a WebSocket connection, and this appears to
+// occasionally leave behind some sort of "ghost" WebSocket that kicks the page
+// into an infinite reload loop. To suppress any doomed reconnection attempts,
+// we terminate the relay worker before unloading the page.
+
+                worker.terminate();
                 window.location.reload();
             }
         } else {

@@ -188,7 +188,7 @@
 // its own source changes, but when the source of any of its descendants
 // change! This is illustrated in the following scenario.
 
-//      source -> a.js -> b.js // source imports a.js which imports b.js
+//      source -> a.js -> b.js // source imports a.js, which imports b.js
 
 // After evaluating the source, a.js and b.js are cached. Changes to these files
 // are not reflected in future evaluations.
@@ -1184,33 +1184,37 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
             return res.end();
         }
 
-        let locator = "file://" + req.url;
+        try {
+            let locator = "file://" + req.url;
 
 // Any versioning information in the URL has served its purpose by defeating the
 // padawan's module cache. It is discarded before continuing.
 
-        const matches = locator.match(rx_versioned_locator);
-        if (matches && matches[2] === unguessable) {
-            locator = "file://" + matches[3];
-        }
-        const content_type = capabilities.mime(locator);
-        if (content_type === undefined) {
-            return fail(new Error("No MIME type for " + locator));
-        }
-        return (
+            const matches = locator.match(rx_versioned_locator);
+            if (matches && matches[2] === unguessable) {
+                locator = "file://" + matches[3];
+            }
+            const content_type = capabilities.mime(locator);
+            if (content_type === undefined) {
+                return fail(new Error("No MIME type for " + locator));
+            }
+            return (
 
 // If the file is a JavaScript module, prepare its source for delivery.
 // Otherwise serve the file verbatim.
 
-            content_type === "text/javascript"
-            ? module(locator)
-            : capabilities.read(locator)
-        ).then(function (string_or_buffer) {
-            res.setHeader("content-type", content_type);
-            return res.end(string_or_buffer);
-        }).catch(
-            fail
-        );
+                content_type === "text/javascript"
+                ? module(locator)
+                : capabilities.read(locator)
+            ).then(function (string_or_buffer) {
+                res.setHeader("content-type", content_type);
+                return res.end(string_or_buffer);
+            }).catch(
+                fail
+            );
+        } catch (exception) {
+            fail(exception);
+        }
     }
 
     function send(message, on_result) {
