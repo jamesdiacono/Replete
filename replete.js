@@ -149,7 +149,10 @@ const capabilities = Object.freeze({
 // These capabilities use regular file URLs as locators for files on disk. This
 // makes it easy to use Node's own file resolution mechanism.
 
-        return import.meta.resolve(specifier, parent_locator);
+// The return value of import.meta.resolve is wrapped in a Promise because it
+// became synchronous as of Node.js v20.
+
+        return Promise.resolve(import.meta.resolve(specifier, parent_locator));
     },
     read(locator) {
 
