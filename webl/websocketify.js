@@ -1,8 +1,9 @@
 // A minimal WebSocket server implementation for Node.js.
 
-/*jslint node, bitwise */
+/*jslint bitwise */
 
-import crypto from "crypto";
+import {Buffer} from "node:buffer";
+import crypto from "node:crypto";
 
 function make_frame(opcode, payload) {
 

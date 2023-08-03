@@ -3,7 +3,7 @@
 
 /*jslint node */
 
-import http from "http";
+import http from "node:http";
 import make_repl from "./repl.js";
 import make_node_cmdl from "./cmdl/node_cmdl.js";
 const loader_url = new URL("./cmdl/node_loader.js", import.meta.url);

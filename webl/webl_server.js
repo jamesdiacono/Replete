@@ -4,8 +4,8 @@
 
 /*jslint node */
 
-import fs from "fs";
-import http from "http";
+import fs from "node:fs";
+import http from "node:http";
 import websocketify from "./websocketify.js";
 const location_of_the_webl_base = new URL("./", import.meta.url);
 

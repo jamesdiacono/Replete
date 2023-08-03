@@ -4,8 +4,8 @@
 
 /*jslint node */
 
-import url from "url";
-import child_process from "child_process";
+import url from "node:url";
+import child_process from "node:child_process";
 import make_cmdl from "./cmdl.js";
 let padawan_url = new URL("./node_padawan.js", import.meta.url);
 

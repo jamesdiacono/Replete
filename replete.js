@@ -3,11 +3,19 @@
 // a starting point: you are encouraged to modify this file, in particular the
 // capability functions, to suit your own needs.
 
-// To start Replete, run
+// The Replete program can be run in either Node.js or Deno, depending on which
+// environment your capabilities require. If you run Replete in Node.js, it
+// will still be possible to evaluate in Deno (and vice versa).
+
+// To start Replete in Node.js v18.6.0+, run
 
 //      $ node --experimental-import-meta-resolve /path/to/replete.js [options]
 
-// from a directory containing your source code. Node.js v18.6.0+ is required.
+// To start Replete in Deno v1.35.3+, run
+
+//      $ deno run --allow-all /path/to/replete.js [options]
+
+// Replete should be run from the directory containing your source code.
 
 // The following options are supported:
 
@@ -21,6 +29,10 @@
 //          browser REPL listens only on localhost. This option may be used to
 //          expose the browser REPL to the network.
 
+//      --which_node=<path>
+//          The path to the Node.js binary ('node'). If this option is omitted,
+//          and Deno is running Replete, the Node.js REPL will not be available.
+
 //      --node_debugger_port=<port>
 //          A Node.js debugger will attempt to listen on the specified port.
 //          This makes it possible to monitor your evaluations using a fully
@@ -29,7 +41,7 @@
 
 //      --which_deno=<path>
 //          The path to the Deno binary ('deno'). If this option is omitted,
-//          the Deno REPL will not be available.
+//          and Node.js is running Replete, the Deno REPL will not be available.
 
 //      --deno_debugger_port=<port>
 //          Like the --node_debugger_port option, but for Deno. Both runtimes
@@ -51,7 +63,7 @@
 //                              V        |
 //          +----------------------------+--------------------+
 //          |                                                 |
-//          |                 Node.js process                 |
+//          |               Node.js/Deno process              |
 //          |                   (replete.js)                  |
 //          |                                                 |
 //          | +--------------+ +--------------+ +-----------+ |
@@ -117,12 +129,13 @@
 //      COMMAND {"platform": "browser", "source": "1 + 1", "id": 42}
 //      RESULT  {"evaluation": "2", "id": 42}
 
-/*jslint node */
+/*jslint node, deno */
 
-import path from "path";
-import url from "url";
-import fs from "fs";
-import readline from "readline";
+import process from "node:process";
+import path from "node:path";
+import url from "node:url";
+import fs from "node:fs";
+import readline from "node:readline";
 import make_node_repl from "./node_repl.js";
 import make_deno_repl from "./deno_repl.js";
 import make_browser_repl from "./browser_repl.js";
@@ -139,20 +152,25 @@ const capabilities = Object.freeze({
         return Promise.resolve(message.source);
     },
     locate(specifier, parent_locator) {
-        if (/^https?:/.test(specifier)) {
+        if (/^(node|https?):/.test(specifier)) {
 
-// Remote specifiers are left for the runtime to resolve.
+// Fully qualified specifiers are left for the runtime to resolve.
 
             return Promise.resolve(specifier);
         }
 
-// These capabilities use regular file URLs as locators for files on disk. This
-// makes it easy to use Node's own file resolution mechanism.
+// These capabilities use regular file URLs as locators for files on disk. If we
+// are running on Node.js, use 'import.meta.resolve' because it will search the
+// node_modules directory. Module resolution in Deno is much simpler.
 
-// The return value of import.meta.resolve is wrapped in a Promise because it
-// became synchronous as of Node.js v20.
+// The return value of import.meta.resolve must be wrapped in a Promise because
+// it became synchronous as of Node.js v20.
 
-        return Promise.resolve(import.meta.resolve(specifier, parent_locator));
+        return Promise.resolve(
+            typeof Deno === "object"
+            ? new URL(specifier, parent_locator).href
+            : import.meta.resolve(specifier, parent_locator)
+        );
     },
     read(locator) {
 
@@ -198,15 +216,21 @@ const capabilities = Object.freeze({
     }
 });
 
-// Parse the command line arguments into an options object.
+// Parse the command line arguments into an options object. Infer the path to
+// the runtime's binary, using that as the default.
 
 let options = Object.create(null);
+if (typeof Deno === "object") {
+    options.which_deno = Deno.execPath();
+} else {
+    options.which_node = process.argv[0];
+}
 process.argv.slice(2).forEach(function (argument) {
     const [ignore, name, value] = argument.match(/^--(\w+)=(.*)$/);
     options[name] = value;
 });
 
-// A separate REPL is configured for each platform. The Deno REPL is optional.
+// A separate REPL is configured for each platform.
 
 const repls = Object.create(null);
 repls.browser = make_browser_repl(
@@ -218,16 +242,18 @@ repls.browser = make_browser_repl(
     ),
     options.browser_hostname
 );
-repls.node = make_node_repl(
-    capabilities,
-    process.argv[0],
-    (
-        options.node_debugger_port !== undefined
-        ? ["--inspect=" + options.node_debugger_port]
-        : []
-    ),
-    process.env
-);
+if (options.which_node !== undefined) {
+    repls.node = make_node_repl(
+        capabilities,
+        options.which_node,
+        (
+            options.node_debugger_port !== undefined
+            ? ["--inspect=" + options.node_debugger_port]
+            : []
+        ),
+        process.env
+    );
+}
 if (options.which_deno !== undefined) {
     repls.deno = make_deno_repl(
         capabilities,
@@ -250,7 +276,11 @@ function on_command(command) {
 // The 'on_command' function relays an incoming 'command' message to the
 // relevant REPL. The REPL's response is relayed back as a result message.
 
-    return repls[command.platform].send(
+    const repl = repls[command.platform];
+    if (repl === undefined) {
+        return on_fail(new Error("Platform unavailable: " + command.platform));
+    }
+    return repl.send(
         command,
         function on_result(evaluation, exception) {
 
@@ -269,23 +299,19 @@ function on_command(command) {
     );
 }
 
-// Start the REPLs. The Deno REPL is optional.
+// Start the REPLs.
 
-repls.browser.start().catch(on_fail);
-repls.node.start().catch(on_fail);
-if (repls.deno !== undefined) {
-    repls.deno.start().catch(on_fail);
-}
+Object.values(repls).forEach(function (repl) {
+    repl.start().catch(on_fail);
+});
 
 // REPLs caught in an infinite loop require explicit termination, otherwise they
 // can survive the death of this process.
 
 function on_exit() {
-    Promise.all(
-        repls.deno !== undefined
-        ? [repls.browser.stop(), repls.node.stop(), repls.deno.stop()]
-        : [repls.browser.stop(), repls.node.stop()]
-    ).then(function () {
+    Promise.all(Object.values(repls).map(function (repl) {
+        return repl.stop();
+    })).then(function () {
         process.exit();
     });
 }

@@ -3,7 +3,7 @@
 
 /*jslint node */
 
-import http from "http";
+import http from "node:http";
 import make_repl from "./repl.js";
 import make_deno_cmdl from "./cmdl/deno_cmdl.js";
 

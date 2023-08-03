@@ -253,7 +253,7 @@
 
 import {parse} from "acorn";
 import {simple} from "acorn-walk";
-import crypto from "crypto";
+import crypto from "node:crypto";
 
 const rx_relative_path = /^\.\.?\//;
 

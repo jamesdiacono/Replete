@@ -4,7 +4,7 @@
 
 /*jslint node */
 
-import child_process from "child_process";
+import child_process from "node:child_process";
 import make_cmdl from "./cmdl.js";
 const padawan_url = new URL("./deno_padawan.js", import.meta.url);
 

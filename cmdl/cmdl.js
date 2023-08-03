@@ -64,8 +64,8 @@
 //                       |                            |
 //                       +----------------------------+
 
-import net from "net";
-import readline from "readline";
+import net from "node:net";
+import readline from "node:readline";
 
 function make_cmdl(spawn_padawan) {
 

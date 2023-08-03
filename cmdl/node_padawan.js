@@ -9,10 +9,10 @@
 
 // Any exceptions that occur outside of evaluation are printed to STDERR.
 
-import net from "net";
-import vm from "vm";
-import util from "util";
-import readline from "readline";
+import net from "node:net";
+import vm from "node:vm";
+import util from "node:util";
+import readline from "node:readline";
 
 function evaluate(script, import_specifiers) {
 
