@@ -596,7 +596,7 @@ const script_template = `
 function make_identifiers_object_literal(variables, imports) {
     const members = [];
 
-// Variables are initialised to undefined.
+// Variables are initialized to undefined.
 
     variables.forEach(function (name) {
         members.push(name + ": undefined");
@@ -631,7 +631,7 @@ function replize(source, tree, analysis, dynamic_specifiers, scope = "") {
 
 // The 'eval' function can not handle import or export statements. The 'replize'
 // function transforms 'source' such that it is safe to eval, wrapping it in a
-// harness to give it the REPL behaviour described at the top of this file. It
+// harness to give it the REPL behavior described at the top of this file. It
 // takes the following parameters:
 
 //      source
@@ -720,14 +720,14 @@ function replize(source, tree, analysis, dynamic_specifiers, scope = "") {
                 const {id, init} = declarator_node;
                 if (init) {
 
-// A variable has been declared and initialised.
+// A variable has been declared and initialized.
 
                     if (id.type === "ObjectPattern") {
                         id.properties.forEach(function (property_node) {
                             variables.push(property_node.key.name);
                         });
 
-// Parenthesise the assignment if it is a destructured assignment, otherwise it
+// Parenthesize the assignment if it is a destructured assignment, otherwise it
 // will be misinterpreted as a naked block.
 
                         alterations.push([
@@ -753,7 +753,7 @@ function replize(source, tree, analysis, dynamic_specifiers, scope = "") {
                     }
                 } else {
 
-// An uninitialised variable has been declared. Reinitialise it as undefined.
+// An uninitialized variable has been declared. Reinitialize it as undefined.
 
                     alterations.push([
                         {
@@ -906,7 +906,7 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
 //              produce_script
 //                  A function that takes an array of dynamic specifiers and
 //                  returns the eval-friendly script string. This provides an
-//                  opportunity to customise the dynamic specifiers.
+//                  opportunity to customize the dynamic specifiers.
 
 //              dynamic_specifiers
 //                  The array of dynamic specifier strings.

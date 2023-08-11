@@ -13,20 +13,24 @@ Replete encourages the development of modules in isolation, rather than in the c
 Replete is in the Public Domain, and does not come with a warranty. It is at least as dangerous as the source code it is asked to import or evaluate, so be careful.
 
 ## Files
-- _replete.js_: A Node.js program. Read this file for instructions on its use.
+- _replete.js_: The Replete program. It can be run with either Node.js or Deno. Read this file for instructions on its use.
 
-- _browser_repl.js_, _node_repl.js_, _deno_repl.js_: Node.js modules, each exporting the constructor for a REPL that is specialised to a particular environment.
+- _browser_repl.js_, _node_repl.js_, _deno_repl.js_: Modules, each exporting a constructor for a REPL specialized to a particular environment.
 
-- _repl.js_: A Node.js module exporting the constructor for a generic REPL. This is the heart of Replete.
+- _repl.js_: A module exporting the constructor for the generic REPL. This is the heart of Replete.
+
+- _node_resolve.js_: A module exporting a function that resolve an import specifier to a file in a "node_modules" directory.
 
 - _webl/_: A directory containing source code for the WEBL, used by the browser REPL. The WEBL is a standalone tool for remotely evaluating source code in the browser. See webl/README.md.
 
-- _cmdl/_: A directory containing the source code for the CMDL, like the WEBL but for command-line runtimes. See cmdl/README.md.
+- _cmdl/_: A directory containing the source code for the CMDL, like the WEBL but for command-line runtimes like Node.js and Deno. See cmdl/README.md.
 
-- _package.json_: The Node.js package manifest. It specifies the Acorn dependency, and tells Node that the above files are modules.
+- _package.json_: A Node.js package manifest. It declares Replete's dependencies and tells Node to interpret the above files as modules.
+
+- _import_map.json_: An import map declaring Replete's dependencies. It is only used when Deno loads _replete.js_ directly from the network.
 
 ## Capabilities
-Replete expects to be provided with several __capability__ functions. These provide a rich opportunity to customise Replete. A minimal set of capabilities is defined for you, in the replete.js file. If you do not find them to be lacking, you may skip this section.
+Replete expects to be provided with several __capability__ functions. These provide a rich opportunity to customize Replete. A minimal set of capabilities is defined for you, in the replete.js file. If you do not find them to be lacking, you may skip this section.
 
 Messages are sent to Replete, generally from a text editor. A __message__ is an object containing the following properties:
 

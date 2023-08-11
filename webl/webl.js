@@ -578,7 +578,7 @@ function make_webl() {
             || message.secret !== secret
         ) {
 
-// We have received an unrecognised message. Ignore it.
+// We have received an unrecognized message. Ignore it.
 
             return;
         }

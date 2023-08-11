@@ -1,4 +1,4 @@
-// A WEBL server runs on Node.js, and serves the WEBL client to the browser. A
+// The WEBL server runs on Node.js, serving the WEBL client to the browser. A
 // persistent connection is maintained between the two. The server can be
 // started, stopped or asked to make new padawans.
 
@@ -7,7 +7,11 @@
 import fs from "node:fs";
 import http from "node:http";
 import websocketify from "./websocketify.js";
-const location_of_the_webl_base = new URL("./", import.meta.url);
+const r2d2_svg_url = new URL("./r2d2.svg", import.meta.url);
+const c3po_svg_url = new URL("./c3po.svg", import.meta.url);
+const webl_js_url = new URL("./webl.js", import.meta.url);
+const webl_client_js_url = new URL("./webl_client.js", import.meta.url);
+const webl_relay_js_url = new URL("./webl_relay.js", import.meta.url);
 
 function make_webl_server(
     on_exception,
@@ -23,7 +27,7 @@ function make_webl_server(
 // The 'on_exception' parameter is a function that is called when the WEBL
 // server itself encounters a problem.
 
-// When the WEBL server receives an unrecognised HTTP request, it invokes the
+// When the WEBL server receives an unrecognized HTTP request, it invokes the
 // optional 'on_unhandled_request' parameter with the req and res objects.
 
 // The 'humainoid' parameter determines the WEBL client's favicon. If true, it
@@ -158,37 +162,45 @@ function make_webl_server(
 
     const server = http.createServer(function on_request(req, res) {
 
-        function serve_file(file_url, mime_type) {
-            return fs.readFile(file_url, "utf8", function (error, data) {
-                if (error) {
-                    on_exception(error);
-                    res.statusCode = 500;
-                    return res.end();
-                }
+        function serve_file(url, mime_type) {
+            if (url.protocol !== "file:") {
+
+// If the current module has been loaded over the network, the file's URL will
+// be an HTTP address. Redirect the browser to it directly, hoping that CORS
+// has been configured.
+
+                res.statusCode = 302;
+                res.setHeader("location", url.href);
+                return res.end();
+            }
+            return fs.promises.readFile(url).then(function (buffer) {
                 res.setHeader("content-type", mime_type);
-                return res.end(data);
+                return res.end(buffer);
+            }).catch(function (error) {
+                on_exception(error);
+                res.statusCode = 500;
+                return res.end();
             });
         }
 
         if (req.url === "/favicon.ico") {
             return serve_file(
-                new URL((
+                (
                     humanoid
-                    ? "./c3po.svg"
-                    : "./r2d2.svg"
-                ), location_of_the_webl_base),
+                    ? c3po_svg_url
+                    : r2d2_svg_url
+                ),
                 "image/svg+xml"
             );
         }
-        if (
-            req.url === "/webl.js" ||
-            req.url === "/webl_client.js" ||
-            req.url === "/webl_relay.js"
-        ) {
-            return serve_file(
-                new URL("." + req.url, location_of_the_webl_base),
-                "text/javascript"
-            );
+        if (req.url === "/webl.js") {
+            return serve_file(webl_js_url, "text/javascript");
+        }
+        if (req.url === "/webl_client.js") {
+            return serve_file(webl_client_js_url, "text/javascript");
+        }
+        if (req.url === "/webl_relay.js") {
+            return serve_file(webl_relay_js_url, "text/javascript");
         }
         if (req.url === "/") {
             res.setHeader("content-type", "text/html");

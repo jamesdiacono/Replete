@@ -4,12 +4,12 @@
 // capability functions, to suit your own needs.
 
 // The Replete program can be run in either Node.js or Deno, depending on which
-// environment your capabilities require. If you run Replete in Node.js, it
+// environment your capabilities prefer. If you run Replete in Node.js, it
 // will still be possible to evaluate in Deno (and vice versa).
 
 // To start Replete in Node.js v18.6.0+, run
 
-//      $ node --experimental-import-meta-resolve /path/to/replete.js [options]
+//      $ node /path/to/replete.js [options]
 
 // To start Replete in Deno v1.35.3+, run
 
@@ -63,13 +63,15 @@
 //                              V        |
 //          +----------------------------+--------------------+
 //          |                                                 |
-//          |               Node.js/Deno process              |
-//          |                   (replete.js)                  |
+//          |                 Replete process                 |
+//          |       (Node.js/Deno running replete.js)         |
 //          |                                                 |
-//          | +--------------+ +--------------+ +-----------+ |
-//          | | Browser REPL | | Node.js REPL | | Deno REPL | |
-//          | +--------------+ +--------------+ +-----------+ |
-//          +-------------------------------------------------+
+//          +---------+----------------+--------------+-------+
+//                    |                |              |
+//                    v                v              v
+//            +--------------+ +--------------+ +-----------+
+//            | Browser REPL | | Node.js REPL | | Deno REPL |
+//            +--------------+ +--------------+ +-----------+
 
 // The process receives "command" messages with the following properties:
 
@@ -82,7 +84,7 @@
 
 //      platform
 //          Either "browser", "node" or "deno". This property determines which
-//          REPL will evaluate the source.
+//          REPL evaluates the source.
 
 //      scope
 //          If defined, this property is the name of the scope as a string.
@@ -132,10 +134,10 @@
 /*jslint node, deno */
 
 import process from "node:process";
-import path from "node:path";
 import url from "node:url";
 import fs from "node:fs";
 import readline from "node:readline";
+import node_resolve from "./node_resolve.js";
 import make_node_repl from "./node_repl.js";
 import make_deno_repl from "./deno_repl.js";
 import make_browser_repl from "./browser_repl.js";
@@ -152,25 +154,35 @@ const capabilities = Object.freeze({
         return Promise.resolve(message.source);
     },
     locate(specifier, parent_locator) {
-        if (/^(node|https?):/.test(specifier)) {
 
-// Fully qualified specifiers are left for the runtime to resolve.
+// Fully qualified specifiers, such as HTTP URLs or absolute paths, are left for
+// the runtime to resolve.
 
+        if (/^\w+:/.test(specifier)) {
             return Promise.resolve(specifier);
         }
 
-// These capabilities use regular file URLs as locators for files on disk. If we
-// are running on Node.js, use 'import.meta.resolve' because it will search the
-// node_modules directory. Module resolution in Deno is much simpler.
+// Relative paths are simply adjoined to the parent module's locator.
 
-// The return value of import.meta.resolve must be wrapped in a Promise because
-// it became synchronous as of Node.js v20.
+        if (parent_locator === undefined) {
+            return Promise.reject(
+                "Can not resolve '" + specifier + "' without parent locator."
+            );
+        }
+        if (specifier.startsWith(".") || specifier.startsWith("/")) {
+            return Promise.resolve(new URL(specifier, parent_locator).href);
+        }
 
-        return Promise.resolve(
-            typeof Deno === "object"
-            ? new URL(specifier, parent_locator).href
-            : import.meta.resolve(specifier, parent_locator)
-        );
+// Any other specifier is assumed to designate a file some "node_modules"
+// directory above the parent module.
+
+// Deno does not expose its machinery for resolving into "node_modules".
+// Node.js does, via 'import.meta.resolve', but in Node.js v20 this function
+// became synchronous, making it a performance hazard.
+
+// So, we do it ourselves.
+
+        return node_resolve(specifier, parent_locator);
     },
     read(locator) {
 

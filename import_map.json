@@ -1,0 +1,6 @@
+{
+    "imports": {
+        "acorn": "npm:acorn",
+        "acorn-walk": "npm:acorn-walk"
+    }
+}

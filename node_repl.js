@@ -6,7 +6,6 @@
 import http from "node:http";
 import make_repl from "./repl.js";
 import make_node_cmdl from "./cmdl/node_cmdl.js";
-const loader_url = new URL("./cmdl/node_loader.js", import.meta.url);
 
 function make_node_repl(
     capabilities,
@@ -22,29 +21,13 @@ function make_node_repl(
             return capabilities.err(buffer.toString());
         },
         which_node,
-        node_args.concat(
-
-// We supply a custom "loader" so that the padawan can import modules via HTTP.
-// An alternative to using a loader would be to use the
-// --experiemental-network-imports flag, which is equivalent except that modules
-// loaded via HTTP are not allowed to import any Node.js built-in modules.
-
-            "--experimental-loader",
-
-// Weirdly, Node.js requires that we supply the path to the loader as a file URL
-// on Windows.
-
-            loader_url.href,
-
-// Suppress the "experimental feature" warnings. We know we are experimenting!
-
-            "--no-warnings"
-        ),
+        node_args,
         env
     );
 
 // The Node.js REPL uses an HTTP server to serve modules to the padawan, which
-// imports them via the dynamic 'import' function.
+// imports them via the dynamic 'import' function. We rely on the loader
+// configured in node_cmdl.js to provide support for HTTP module specifiers.
 
     let http_server;
     let http_server_port;
