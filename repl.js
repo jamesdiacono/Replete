@@ -512,11 +512,19 @@ function all_specifiers(analysis) {
 
 // Return any import and dynamic specifier strings mentioned in the analysis.
 
-    return analysis.imports.map(
-        (the_import) => the_import.node.source.value
-    ).concat(analysis.dynamics.map(
-        (the_dynamic) => the_dynamic.value
-    ));
+    return [
+        ...analysis.imports.map(function (the_import) {
+            return the_import.node.source.value;
+        }),
+        ...analysis.dynamics.map(function (the_dynamic) {
+            return the_dynamic.value;
+        }),
+        ...analysis.exports.filter(function (the_export) {
+            return the_export.source;
+        }).map(function (the_export) {
+            return the_export.source.value;
+        })
+    ];
 }
 
 function blanks(source, range) {
@@ -1150,24 +1158,36 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
 // Modify the source, inserting the resolved and versioned specifiers as string
 // literals.
 
-                return alter_string(
-                    source,
-                    analysis.imports.map(function (the_import, specifier_nr) {
+                const altered = alter_string(source, [
+                    ...analysis.imports.map(function (the_import, nr) {
                         return [
                             the_import.node.source,
-                            "\"" + specifiers[specifier_nr] + "\""
+                            "\"" + specifiers[nr] + "\""
                         ];
-                    }).concat(analysis.dynamics.map(function (the_dynamic, nr) {
-                        const specifier_nr = analysis.imports.length + nr;
+                    }),
+                    ...analysis.dynamics.map(function (the_dynamic, nr) {
                         return [
                             the_dynamic.module,
                             "\""
-                            + specifiers[specifier_nr]
+                            + specifiers[analysis.imports.length + nr]
                             + "\""
                             + blanks(source, the_dynamic.module)
                         ];
-                    }))
-                );
+                    }),
+                    ...analysis.exports.filter(function (the_export) {
+                        return the_export.source;
+                    }).map(function (the_export, nr) {
+                        return [
+                            the_export.source,
+                            "\"" + specifiers[
+                                analysis.imports.length
+                                + analysis.dynamics.length
+                                + nr
+                            ] + "\""
+                        ];
+                    })
+                ]);
+                return altered;
             });
         });
     }
