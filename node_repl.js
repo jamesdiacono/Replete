@@ -32,12 +32,17 @@ function make_node_repl(
     let http_server;
     let http_server_port;
 
+// We are forcing IPv4 because, on Windows, Node.js seems unwilling to connect
+// to Deno over IPv6.
+
+    const http_server_host = "127.0.0.1";
+
     function on_start(serve) {
         http_server = http.createServer(serve);
         return Promise.all([
             new Promise(function start_http_server(resolve, reject) {
                 http_server.on("error", reject);
-                return http_server.listen(function () {
+                return http_server.listen(0, http_server_host, function () {
                     http_server_port = http_server.address().port;
                     return resolve();
                 });
@@ -73,8 +78,7 @@ function make_node_repl(
         return (
             locator.startsWith("file:///")
             ? (
-                "http://localhost:"
-                + http_server_port
+                "http://" + http_server_host + ":" + http_server_port
                 + locator.replace("file://", "")
             )
             : locator

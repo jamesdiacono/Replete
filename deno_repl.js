@@ -37,17 +37,19 @@ function make_deno_repl(
     );
 
 // The Deno REPL uses an HTTP server to serve modules to the padawan, which
-// imports them via the 'import' function.
+// imports them via the 'import' function. It listens on the system's preferred
+// loopback address, with a port number allocated by the system.
 
     let http_server;
     let http_server_port;
+    let http_server_host = "localhost";
 
     function on_start(serve) {
         http_server = http.createServer(serve);
         return Promise.all([
             new Promise(function start_http_server(resolve, reject) {
                 http_server.on("error", reject);
-                return http_server.listen(function () {
+                return http_server.listen(0, http_server_host, function () {
                     http_server_port = http_server.address().port;
                     return resolve();
                 });
@@ -83,8 +85,7 @@ function make_deno_repl(
         return (
             locator.startsWith("file:///")
             ? (
-                "http://localhost:"
-                + http_server_port
+                "http://" + http_server_host + ":" + http_server_port
                 + locator.replace("file://", "")
             )
             : locator

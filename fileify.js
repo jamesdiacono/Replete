@@ -1,7 +1,4 @@
-// The 'fileify' function caches a remote file locally, for offline use.
-
-// Beware! The file is cached for an indefinite period of time, so the remote
-// URL should contain versioning information.
+// The 'fileify' function stores a remote file locally for offline use.
 
 /*jslint deno */
 
@@ -11,18 +8,7 @@ import os from "node:os";
 import path from "node:path";
 import url from "node:url";
 
-function download_file(remote_url, file_path) {
-    return fetch(remote_url).then(function (response) {
-        if (!response.ok) {
-            throw new Error("Failed to download '" + remote_url.href + "'.");
-        }
-        return response.arrayBuffer();
-    }).then(function (array_buffer) {
-        return fs.promises.writeFile(file_path, new Uint8Array(array_buffer));
-    });
-}
-
-function fileify(http_url, force_extension) {
+function fileify(http_url, replace_extension) {
 
 // If the URL is already a file URL, we are done.
 
@@ -30,23 +16,55 @@ function fileify(http_url, force_extension) {
         return Promise.resolve(http_url);
     }
 
-// Construct a temporary path, based on the URL.
+    function versioned_path(vary) {
 
-    const hash = crypto.createHash("md5").update(http_url.href).digest("hex");
-    const extension = path.extname(http_url.pathname);
-    const name = path.basename(http_url.pathname, extension);
-    const file_path = path.join(
-        os.tmpdir(),
-        name + "." + hash.slice(0, 8) + (force_extension ?? extension)
-    );
+// Construct a temporary path for the file, based on the HTTP URL.
 
-// Check if the temporary file already exists. If not, fetch it from the
-// network. If all goes well, produce the temporary file's URL.
+        const extension = path.extname(http_url.pathname);
+        const name = path.basename(http_url.pathname, extension);
+        const version = crypto.createHash(
+            "md5"
+        ).update(
+            vary
+        ).digest(
+            "hex"
+        ).slice(0, 8);
+        return path.join(
+            os.tmpdir(),
+            name + "." + version + (replace_extension ?? extension)
+        );
+    }
 
-    return fs.promises.stat(file_path).catch(function (ignore) {
-        return download_file(http_url, file_path);
+// Check if a cached version of the file is available.
+
+    let tmp = versioned_path(http_url.href);
+    return fs.promises.stat(tmp).catch(function (ignore) {
+
+// The file is not cached, so download it to the filesystem.
+
+        return fetch(http_url).then(function (response) {
+            if (!response.ok) {
+                return Promise.reject(
+                    new Error("Failed to download '" + http_url.href + "'.")
+                );
+            }
+
+// Should the file be cached indefinitely? Only if the Cache-Control header
+// indicates that the file is immutable.
+
+            const immutable = (
+                response.headers.has("cache-control")
+                && response.headers.get("cache-control").includes("immutable")
+            );
+            if (!immutable) {
+                tmp = versioned_path(crypto.randomUUID());
+            }
+            return response.arrayBuffer();
+        }).then(function (array_buffer) {
+            return fs.promises.writeFile(tmp, new Uint8Array(array_buffer));
+        });
     }).then(function () {
-        return url.pathToFileURL(file_path);
+        return url.pathToFileURL(tmp);
     });
 }
 

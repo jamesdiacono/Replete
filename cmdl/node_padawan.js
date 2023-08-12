@@ -54,10 +54,11 @@ function evaluate(script, import_specifiers) {
     });
 }
 
-// Connect to the TCP server on the specified port, and wait for instructions.
+// Connect to the TCP server on the specified port, then wait for instructions.
 
 const socket = net.connect(
     Number.parseInt(process.argv[2]),
+    "127.0.0.1", // match the hostname chosen by cmdl.js
     function on_connect() {
         readline.createInterface({input: socket}).on("line", function (line) {
 
