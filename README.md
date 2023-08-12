@@ -19,7 +19,7 @@ Replete is in the Public Domain, and does not come with a warranty. It is at lea
 
 - _repl.js_: A module exporting the constructor for the generic REPL. This is the heart of Replete.
 
-- _node_resolve.js_: A module exporting a function that resolve an import specifier to a file in a "node_modules" directory.
+- _node_resolve.js_: A module exporting a function that resolves an import specifier to a file in a "node_modules" directory.
 
 - _webl/_: A directory containing source code for the WEBL, used by the browser REPL. The WEBL is a standalone tool for remotely evaluating source code in the browser. See webl/README.md.
 
@@ -27,7 +27,11 @@ Replete is in the Public Domain, and does not come with a warranty. It is at lea
 
 - _package.json_: A Node.js package manifest. It declares Replete's dependencies and tells Node to interpret the above files as modules.
 
-- _import_map.json_: An import map declaring Replete's dependencies. It is only used when Deno loads _replete.js_ directly from the network.
+The following files facilitate Deno's ability to load and run _replete.js_ directly over the network.
+
+- _import_map.json_: A Deno import map declaring Replete's dependencies.
+
+- _fileify.js_: A module exporting a function that downloads files for offline use.
 
 ## Capabilities
 Replete expects to be provided with several __capability__ functions. These provide a rich opportunity to customize Replete. A minimal set of capabilities is defined for you, in the replete.js file. If you do not find them to be lacking, you may skip this section.

@@ -1,4 +1,5 @@
-// Attempts to resolves a specifier string to a file in "node_modules".
+// Attempts to resolves an import specifier to a file in some "node_modules"
+// directory.
 
 /*jslint node */
 
@@ -63,6 +64,14 @@ function glob_map(string, mappings) {
 }
 
 function internalize(external, manifest) {
+
+// Given a parsed package.json object and a file's external relative path
+// (which may be "."), return the file's actual path relative to the
+// package.json, or undefined if the external path can not be resolved.
+
+// The resolution algorithm is based on the loose specification described by
+// nodejs.org/api/packages.html and webpack.js.org/guides/package-exports.
+
     const {exports, main, module} = manifest;
     if (exports !== undefined) {
         return (

@@ -15,6 +15,14 @@
 
 //      $ deno run --allow-all /path/to/replete.js [options]
 
+// or, to skip installation,
+
+//      $ deno run \
+//          --allow-all \
+//          --importmap https://link/to/Replete/import_map.json \
+//          https://link/to/Replete/replete.js \
+//          [options]
+
 // Replete should be run from the directory containing your source code.
 
 // The following options are supported:

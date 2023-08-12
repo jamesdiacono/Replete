@@ -6,6 +6,7 @@
 
 import fs from "node:fs";
 import http from "node:http";
+import fileify from "../fileify.js";
 import websocketify from "./websocketify.js";
 const r2d2_svg_url = new URL("./r2d2.svg", import.meta.url);
 const c3po_svg_url = new URL("./c3po.svg", import.meta.url);
@@ -163,17 +164,9 @@ function make_webl_server(
     const server = http.createServer(function on_request(req, res) {
 
         function serve_file(url, mime_type) {
-            if (url.protocol !== "file:") {
-
-// If the current module has been loaded over the network, the file's URL will
-// be an HTTP address. Redirect the browser to it directly, hoping that CORS
-// has been configured.
-
-                res.statusCode = 302;
-                res.setHeader("location", url.href);
-                return res.end();
-            }
-            return fs.promises.readFile(url).then(function (buffer) {
+            return fileify(url).then(
+                fs.promises.readFile
+            ).then(function (buffer) {
                 res.setHeader("content-type", mime_type);
                 return res.end(buffer);
             }).catch(function (error) {

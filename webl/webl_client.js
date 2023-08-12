@@ -9,20 +9,10 @@ import make_webl from "./webl.js";
 let webl;
 let padawans = Object.create(null);
 
-// Create a Worker to maintain the WebSocket connection. The instantiation
-// should be as simple as
+// Create a Worker that will be responsible for maintaining the WebSocket
+// connection.
 
-//      new Worker("./webl_relay.js")
-
-// but this fails if the request to webl_relay.js is redirected to a different
-// origin by webl_server.js, because Worker scripts must always be same origin.
-// Fortunately, 'importScripts' does not suffer from the same limitation.
-
-const worker_script_url = new URL("./webl_relay.js", window.location.href);
-const worker = new Worker(URL.createObjectURL(new Blob(
-    [`importScripts("${worker_script_url.href}");`],
-    {type: "text/javascript"}
-)));
+const worker = new Worker("./webl_relay.js");
 
 // Inform the worker of the WebSockets endpoint.
 

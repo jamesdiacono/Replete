@@ -6,62 +6,11 @@
 /*jslint node */
 
 import child_process from "node:child_process";
-import crypto from "node:crypto";
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
 import url from "node:url";
+import fileify from "../fileify.js";
 import make_cmdl from "./cmdl.js";
 const loader_url = new URL("./node_loader.js", import.meta.url);
 const padawan_url = new URL("./node_padawan.js", import.meta.url);
-
-function download_file(remote_url, file_path) {
-    return fetch(remote_url).then(function (response) {
-        if (!response.ok) {
-            throw new Error("Failed to download '" + remote_url.href + "'.");
-        }
-        return response.arrayBuffer();
-    }).then(function (array_buffer) {
-        return fs.promises.writeFile(file_path, new Uint8Array(array_buffer));
-    });
-}
-
-function fileify(module_url) {
-
-// The 'fileify' function caches a remote module as a local file. It is
-// necessary because Node.js is not able to import modules via HTTP (unless run
-// with a loader).
-
-// Beware! The file is cached for an indefinite period of time, so the remote
-// URL should contain any relevant versioning information.
-
-// If the URL is already a file URL, we are done.
-
-    if (module_url.protocol === "file:") {
-        return Promise.resolve(module_url);
-    }
-
-// Construct a temporary path, based on the URL. Force Node.js to interpret the
-// source as a module.
-
-    const hash = crypto.createHash("md5").update(module_url.href).digest("hex");
-    const file_path = path.join(
-        os.tmpdir(),
-        path.basename(module_url.pathname).replace(
-            /\.js$/,
-            "." + hash.slice(0, 8) + ".mjs"
-        )
-    );
-
-// Check if the temporary file already exists. If not, fetch it from the
-// network. If all goes well, produce the temporary file's URL.
-
-    return fs.promises.stat(file_path).catch(function (ignore) {
-        return download_file(module_url, file_path);
-    }).then(function () {
-        return url.pathToFileURL(file_path);
-    });
-}
 
 function make_node_cmdl(
 
@@ -86,9 +35,14 @@ function make_node_cmdl(
     env = {}
 ) {
     return make_cmdl(function spawn_node_process(tcp_port) {
+
+// Make sure we have "file:" URLs for the loader and padawan scripts. By
+// default, Node.js is not capable of importing modules over HTTP. We specify a
+// file extension that forces Node.js to interpret the source as a module.
+
         return Promise.all([
-            fileify(loader_url),
-            fileify(padawan_url)
+            fileify(loader_url, ".mjs"),
+            fileify(padawan_url, ".mjs")
         ]).then(function ([
             loader_file_url,
             padawan_file_url
