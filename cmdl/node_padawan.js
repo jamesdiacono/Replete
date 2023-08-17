@@ -7,7 +7,7 @@
 // The 'tcp_port' argument is the port number of a TCP server running on
 // localhost. See cmdl.js for a description of the message protocol.
 
-// Any exceptions that occur outside of evaluation are printed to STDERR.
+// Any exceptions that occur outside of evaluation are printed to stderr.
 
 import net from "node:net";
 import vm from "node:vm";
@@ -75,7 +75,7 @@ const socket = net.connect(
         });
 
 // Uncaught exceptions that occur as a result of, but not during evaluation are
-// non-fatal. They are caught by a global handler and reported to STDERR.
+// non-fatal. They are caught by a global handler and reported to stderr.
 
         process.on("uncaughtException", console.error);
         process.on("unhandledRejection", console.error);

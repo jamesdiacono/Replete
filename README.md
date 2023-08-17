@@ -13,110 +13,222 @@ Replete encourages the development of modules in isolation, rather than in the c
 Replete is in the Public Domain, and does not come with a warranty. It is at least as dangerous as the source code it is asked to import or evaluate, so be careful.
 
 ## Files
-- _replete.js_: The Replete program. It can be run with either Node.js or Deno. Read this file for instructions on its use.
+Replete is distributed as a collection of source files. Each module listed below contains usage instructions, and is compatible with both Node.js and Deno.
 
-- _browser_repl.js_, _node_repl.js_, _deno_repl.js_: Modules, each exporting a constructor for a REPL specialized to a particular environment.
+- [_replete.js_](./replete.js):
+    Replete as a program. It takes command line arguments for basic configuration.
 
-- _repl.js_: A module exporting the constructor for the generic REPL. This is the heart of Replete.
+- [_run.js_](./run.js):
+    Replete as a process. This module exports a function that starts a Replete instance and binds it to the current process's stdin and stdout. Use this module if you wish to configure Replete programmatically.
 
-- _node_resolve.js_: A module exporting a function that resolves an import specifier to a file in a "node_modules" directory.
+- [_make.js_](./make.js):
+    Replete as a module. It exports a function that can be used to create multiple Replete instances. Each instance operates a browser REPL, a Node.js REPL, and a Deno REPL.
 
-- _webl/_: A directory containing source code for the WEBL, used by the browser REPL. The WEBL is a standalone tool for remotely evaluating source code in the browser. See webl/README.md.
+- [_browser_repl.js_](./browser_repl.js),
+  [_node_repl.js_](./node_repl.js),
+  [_deno_repl.js_](./deno_repl.js):
+    Modules, each exporting a constructor for a REPL specialized to a particular environment.
 
-- _cmdl/_: A directory containing the source code for the CMDL, like the WEBL but for command-line runtimes like Node.js and Deno. See cmdl/README.md.
+- [_repl.js_](./repl.js):
+    A module exporting the constructor for a generic REPL. This is the heart of Replete.
 
-- _package.json_: A Node.js package manifest. It declares Replete's dependencies and tells Node to interpret the above files as modules.
+- [_node_resolve.js_](./node_resolve.js):
+    A module exporting a function that resolves an import specifier to a file in a "node_modules" directory.
 
-The following files facilitate Deno's ability to load and run _replete.js_ directly over the network.
+- [_webl/_](./webl/):
+    A directory containing source code for the WEBL, used by the browser REPL. The WEBL is a standalone tool for remotely evaluating source code in the browser. See webl/README.md.
 
-- _import_map.json_: A Deno import map declaring Replete's dependencies.
+- [_cmdl/_](./cmdl/):
+    A directory containing the source code for the CMDL, like the WEBL but for command-line runtimes like Node.js and Deno. See cmdl/README.md.
 
-- _fileify.js_: A module exporting a function that downloads files for offline use.
+- [_package.json_](./package.json):
+    A Node.js package manifest. It declares Replete's dependencies and tells Node to interpret the above files as modules.
 
-## Capabilities
-Replete expects to be provided with several __capability__ functions. These provide a rich opportunity to customize Replete. A minimal set of capabilities is defined for you, in the replete.js file. If you do not find them to be lacking, you may skip this section.
+The following files support Deno's ability to import the above modules over HTTP.
 
-Messages are sent to Replete, generally from a text editor. A __message__ is an object containing the following properties:
+- [_import_map.json_](./import_map.json):
+    A Deno import map declaring Replete's dependencies.
 
-- __source__: The source code to be evaluated. The source may contain import and export statements.
-- __locator__: The locator of the module that contains the source. It is used to resolve the source's imports. More on locators below.
-- __scope__: The name of the scope, which can be any string. If undefined, the default scope `""` is chosen. The scope is created if it does not exist.
+- [_fileify.js_](./fileify.js):
+    A module exporting a function that downloads files for offline use.
 
-A __scope__ holds the value of every variable or function declared during evaluation, allowing them to be used in future evaluations. Distinct scopes provide a degree of isolation, however the same global object is shared by all scopes.
+## Configuration
+Replete can be completely customized, or it can be run with no configuration at all.
 
-The _capabilities_ parameter passed to Replete's constructors is an object with the following methods:
+The function exported by _run.js_ takes a __spec__ object containing the properties listed below, all of which are optional. The _replete.js_ program accepts a subset of these properties as command line arguments.
 
-### capabilities.source(_message_)
-The __source__ capability extracts the source from a _message_ object, before it is evaluated. The returned Promise resolves to a string containing JavaScript source code.
+### spec.browser_port (or `--browser_port`)
+The port number of the browser REPL. If this option is omitted, an unallocated port is chosen automatically. Providing a static port allows any connected tabs to survive a restart of Replete.
 
-    capabilities.source({
+### spec.browser_hostname (or `--browser_hostname`)
+The hostname of the browser REPL. When this option is omitted, the browser REPL listens only on localhost. This option can be used to expose the browser REPL to the network, in which case care must be taken to configure `spec.root_locator` and `spec.mime` such that sensitive files are not leaked.
+
+### spec.which_node (or `--which_node`)
+The path to the Node.js binary (`node`). If `node` is in the `PATH` (see `spec.node_env`), this can just be `"node"`.
+
+If omitted, and Replete is being run in Deno, the Node.js REPL will not be available.
+
+### spec.node_args
+An array of command line arguments provided to the `node` process that runs the Node.js REPL, for example `["--inspect=7227"]`. Run `node --help` for a list of available arguments.
+
+### spec.node_env
+An object containing environment variables made available to the `node` process running the Node.js REPL. If omitted, the environment is inherited from the process running Replete.
+
+### spec.which_deno (or `--which_deno`)
+The path to the Deno binary (`deno`). If `deno` is in the `PATH` (see `spec.deno_env`), this can just be `"deno"`.
+
+If omitted, and Replete is being run in Node.js, the Deno REPL will not be available.
+
+### spec.deno_args
+An array of command line arguments provided to the `deno` process that runs the Deno REPL, for example `["--allow-all"]`. By default, this array is empty and so the Deno REPL runs with no permissions. Run `deno help run` for a list of available arguments.
+
+### spec.deno_env
+Same as `spec.node_env`, but for the Deno REPL.
+
+### spec.root_locator
+The file URL string of the "root" directory. Files inside this directory may be read and served over the network by Replete. Files outside this directory will not be accessible.
+
+For example, suppose `spec.root_locator` was chosen to be
+
+    file:///home/me/code
+
+and then Replete attempted to read the file locators
+
+    file:///etc/passwd
+    file:///etc/config.json
+    file:///home/me/tool.json
+    file:///home/me/code/project/bundle.json
+
+Only the last attempt (bundle.json) could succeed, and only if `spec.mime` recognized JSON files, which it does not do by default.
+
+It is your responsibility to choose `spec.root_locator`, `spec.mime`, and `spec.browser_hostname` such that sensitive files are not exposed.
+
+### spec.source(_message_)
+Extracts the source from a _message_ object, before it is evaluated. The returned Promise resolves to a string containing JavaScript source code.
+
+    spec.source({
         source: "Math.random();",
         locator: "file:///yummy/apple.js"
     });
     -> "Math.random();"
 
-    capabilities.source({
+    spec.source({
         source: "1 < 2 < 3",
         locator: "file:///yummy/cinnamon.coffee"
     });
     -> "(1 < 2 && 2 < 3);"
 
-### capabilities.locate(_specifier_, _parent_locator_)
-The __locate__ capability resolves a module specifier. It is passed a _specifier_ string, specifying a module to be located. It may also be passed a _parent_locator_ parameter, which is the locator of the module that contains the specifier. The returned Promise resolves to the locator.
+### spec.locate(_specifier_, _parent_locator_)
+Resolves a module specifier. The _specifier_ parameter is the specifier string of a module to be located. The _parent_locator_ parameter is the locator of the module that contains the _specifier_, and is optional if _specifier_ is fully qualified. The returned Promise resolves to the locator.
 
 A __specifier__ is the string portion of a module's import statement, for example "../my_module.js".
 
-A __locator__ is a URL string containing sufficient information to locate a file. A locator should begin with `file:///` if it refers to a file on disk, but the structure of the rest of it is completely up to you. If locators for files on disk were structured like `file:///absolute/path/to/file.xyz`, then the `locate` capability might behave like so:
+A __locator__ is a URL string containing sufficient information to locate a file. Locators that refer to a file on disk should begin with a regular file URL, but can be suffixed with arbitrary information such as a query string.
 
-    capabilities.locate("./apple.js", "file:///yummy/orange.js");
+    spec.locate("./apple.js", "file:///yummy/orange.js");
     -> "file:///yummy/apple.js"
 
-    capabilities.locate("fs", "file:///yummy/orange.js");
+    spec.locate("fs", "file:///yummy/orange.js");
     -> "node:fs"
 
-    capabilities.locate("yucky", "file:///yummy/orange.js");
+    spec.locate("yucky", "file:///yummy/orange.js");
     -> "file:///yummy/node_modules/yucky/yucky.js"
 
-    capabilities.locate("https://yum.my/noodles.js", "file:///yummy/orange.js");
+    spec.locate("https://yum.my/noodles.js", "file:///yummy/orange.js");
     -> "https://yum.my/noodles.js"
 
-### capabilities.read(_locator_)
-The __read__ capability reads the contents of a file on disk. It is passed the _locator_ of the file, and returns a Promise that resolves to a Buffer.
+### spec.read(_locator_)
+Reads the contents of a file on disk. The _locator_ is a file URL. The returned Promise resolves to a Uint8Array or a string.
 
-This function should deny access to sensitive files. Otherwise it may be possible for anybody with network access to the browser REPL to read arbitrary files off the disk.
+    spec.read("file:///yummy/apple.js");
+    -> A string containing JavaScript.
 
-    capabilities.read("file:///yummy/apple.js");
-    -> A Buffer containing JavaScript.
+    spec.read("file:///yummy/cinnamon.coffee");
+    -> A string containing JavaScript, transpiled from CoffeeScript.
 
-    capabilities.read("file:///yummy/cinnamon.coffee");
-    -> A Buffer containing JavaScript, transpiled from CoffeeScript.
+    spec.read("file:///yummy/bread.png");
+    -> A Uint8Array containing PNG image data.
 
-    capabilities.read("file:///etc/passwd");
-    -> Rejected!
+### spec.watch(_locator_)
+Detects when a file on disk is modified. The returned Promise resolves when the file designated by _locator_ next changes. This does not trigger any visible action. It simply informs Replete that it should drop the file from its cache.
 
-### capabilities.watch(_locator_)
-The __watch__ capability detects when a file on disk is modified. It is passed the _locator_ of the file, and returns a Promise that resolves when the file next changes. This does not trigger any visible action. It simply informs Replete that it should drop the file from its cache.
+### spec.mime(_locator_)
+Predicts the MIME type of the content produced by `spec.read` when it is called with the file _locator_. It returns a string, or `undefined` if access to the file should be denied.
 
-### capabilities.mime(_locator_)
-The __mime__ capability predicts the MIME type of the Buffer produced by the `read` capability when it is called with the file _locator_. It returns a string, or `undefined` if access to the file should be denied.
+    spec.mime("file:///yummy/apple.js");          // "text/javascript"
+    spec.mime("file:///yummy/cinnamon.coffee");   // "text/javascript"
+    spec.mime("file:///yummy/spaghetti.jpg");     // "image/jpeg"
+    spec.mime("file:///yummy/secret.key");        // undefined
 
-    capabilities.mime("file:///yummy/apple.js");          // "text/javascript"
-    capabilities.mime("file:///yummy/cinnamon.coffee");   // "text/javascript"
-    capabilities.mime("file:///yummy/spaghetti.jpg");     // "image/jpeg"
-    capabilities.mime("file:///yummy/secret.key");        // undefined
+### spec.out(_string_)
+Called with a string representation of any arguments passed to `console.log` or bytes written to stdout.
 
-### capabilities.out(_string_)
-The __out__ capability is called with a string representation of any arguments passed to `console.log` or bytes written to STDOUT.
+### spec.err(_string_)
+Called with a string representation of any exceptions that occur outside of evaluation, or of any bytes written to stderr.
 
-### capabilities.err(_string_)
-The __err__ capability is called with a string representation of any exceptions that occur outside of evaluation, or of any bytes written to STDERR.
+## Communication
+Replete communicates by sending and receiving command and result messages.
 
-## Quotes
-> The liquid pencil of this school is replete with a beauty peculiar to itself.
->   — John Constable
+       +------------------------------------------+
+       |                                          |
+       |               Your program               |
+       |         (such as a text editor)          |
+       |                                          |
+       +----------------+-------------------------+
+                        |        ^
+                        |        |
+       Command messages |        | Result messages
+                        |        |
+                        V        |
+    +----------------------------+--------------------+
+    |                                                 |
+    |                    Replete                      |
+    |                                                 |
+    +---------+----------------+--------------+-------+
+              |                |              |
+              v                v              v
+      +--------------+ +--------------+ +-----------+
+      | Browser REPL | | Node.js REPL | | Deno REPL |
+      +--------------+ +--------------+ +-----------+
 
-> Any mechanism that can decrease the cost of testing and debugging a large program is worth its weight in gold.
->   — Glenford Myers
+Messages are JSON-encodable objects.
+
+A __command__ message is an object with the following properties:
+
+- __source__: The source code to be evaluated, as a string. The source may contain import and export statements.
+- __locator__: The locator of the module containing the source. It is required if the source contains any import statements that are not fully qualified.
+- __platform__: Either `"browser"`, `"node"` or `"deno"`. This property determines which REPL is used to evaluate the source.
+- __scope__: The name of the scope, which can be any string. If undefined, the scope `""` is chosen. The scope is created if it does not exist.
+- __id__: If defined, this property is copied verbatim onto the corresponding result messages. It can be used to associate a result with its command. It can be any value.
+
+A __scope__ holds the value of every variable or function declared during evaluation, allowing them to be used in future evaluations. Distinct scopes provide a degree of isolation, however the same global object is shared by all scopes.
+
+A __result__ message is an object with one of the following properties, each of which is a string representation of a value:
+
+- __evaluation__: The evaluated value, if evaluation was completed successfully.
+- __exception__: The exception, if evaluation failed.
+- __out__: Any arguments passed to console.log, or bytes written to stdout.
+- __err__: An exception that occurred outside of evaluation, or bytes written to stderr.
+
+In addition, a result may contain the __id__ property described above.
+
+Here are some examples of commands and the results they might induce.
+
+    COMMAND {platform: "browser", source: "navigator.vendor"}
+    RESULT  {evaluation: "Google Inc."}
+
+    COMMAND {platform: "node", source: "process.version"}
+    RESULT  {evaluation: "v14.4.0"}
+
+    COMMAND {platform: "browser", source: "process.version"}
+    RESULT  {exception: "ReferenceError: process is not defined..."}
+
+    COMMAND {platform: "deno", source: "console.log(0 / 0, 1 / 0)"}
+    RESULT  {out: "NaN Infinity\n"}
+    RESULT  {evaluation: "undefined"}
+
+    COMMAND {platform: "browser", source: "1 + 1", "id": 42}
+    RESULT  {evaluation: "2", id: 42}
 
 ## Links
 - [Feedback and the REPL](https://www.youtube.com/watch?v=A_JrJekP9tQ&t=706s)

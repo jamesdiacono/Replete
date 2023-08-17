@@ -869,6 +869,7 @@ function digest(...args) {
     return crypto.createHash("sha1").update(args.join()).digest("hex");
 }
 
+const utf8_decoder = new TextDecoder("utf-8", {fatal: true});
 const rx_versioned_locator = /^file:\/\/\/v([^\/]+)\/([^\/]+)(.*)$/;
 
 // Capturing groups:
@@ -971,7 +972,7 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
             delete analyzing[locator];
         }
 
-        reading[locator] = capabilities.read(locator).then(function (buffer) {
+        reading[locator] = capabilities.read(locator).then(function (content) {
 
 // Invalidate the cache next time the file is modified. There is the potential
 // for a race condition here, if the file is modified after it has been read
@@ -990,7 +991,11 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
                 capabilities.err(exception.stack + "\n");
                 return invalidate();
             });
-            return buffer.toString("utf8");
+            return (
+                typeof content === "string"
+                ? content
+                : utf8_decoder.decode(content)
+            );
         }).catch(function on_fail(exception) {
 
 // Do not cache a rejected Promise. That would prevent 'read' from succeeding in

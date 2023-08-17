@@ -30,7 +30,7 @@ function load(url, context, next_load) {
 // Load the module's source code from the network.
 
         return fetch(url).then(function (response) {
-            if (response.status >= 400) {
+            if (!response.ok) {
                 throw new Error("Failed to load " + url + ".");
             }
             return response.text();

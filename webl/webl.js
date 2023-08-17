@@ -280,7 +280,7 @@ const padawan_create_script_template = `
     ));
 
 // The 'console.log' function is commonly used in the browser as the equivalent
-// of printing to STDOUT. Here we apply a wiretap, sending its arguments to the
+// of printing to stdout. Here we apply a wiretap, sending its arguments to the
 // master.
 
     (function (original) {

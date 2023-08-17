@@ -43,7 +43,7 @@ function allow_host(run_args, host) {
 function make_deno_cmdl(
 
 // The 'on_stdout' and 'on_stderr' parameters are functions, called with a
-// Buffer whenever data is written to STDOUT or STDERR.
+// Buffer whenever data is written to stdout or stderr.
 
     on_stdout,
     on_stderr,
@@ -64,19 +64,24 @@ function make_deno_cmdl(
     env = {}
 ) {
     return make_cmdl(function spawn_deno_process(tcp_port) {
-        const subprocess = child_process.spawn(
-            which_deno,
-            [
-                "run",
-                ...allow_host(run_args, "127.0.0.1:" + tcp_port),
-                padawan_url.href,
-                String(tcp_port)
-            ],
-            {env}
-        );
-        subprocess.stdout.on("data", on_stdout);
-        subprocess.stderr.on("data", on_stderr);
-        return Promise.resolve(subprocess);
+        return new Promise(function (resolve, reject) {
+            const subprocess = child_process.spawn(
+                which_deno,
+                [
+                    "run",
+                    ...allow_host(run_args, "127.0.0.1:" + tcp_port),
+                    padawan_url.href,
+                    String(tcp_port)
+                ],
+                {env}
+            );
+            subprocess.on("error", reject);
+            subprocess.on("spawn", function () {
+                subprocess.stdout.on("data", on_stdout);
+                subprocess.stderr.on("data", on_stderr);
+                resolve(subprocess);
+            });
+        });
     });
 }
 

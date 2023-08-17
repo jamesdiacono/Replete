@@ -15,7 +15,7 @@ const padawan_url = new URL("./node_padawan.js", import.meta.url);
 function make_node_cmdl(
 
 // The 'on_stdout' and 'on_stderr' parameters are functions, called with a
-// Buffer whenever data is written to STDOUT or STDERR.
+// Buffer whenever data is written to stdout or stderr.
 
     on_stdout,
     on_stderr,
@@ -47,30 +47,35 @@ function make_node_cmdl(
             loader_file_url,
             padawan_file_url
         ]) {
-            const subprocess = child_process.spawn(
-                which_node,
-                node_args.concat(
+            return new Promise(function (resolve, reject) {
+                const subprocess = child_process.spawn(
+                    which_node,
+                    node_args.concat(
 
 // Imbue the padawan process with the ability to import modules over HTTP. The
 // loader specifier must be a fully qualified URL on Windows.
 
-                    "--experimental-loader",
-                    loader_file_url.href,
+                        "--experimental-loader",
+                        loader_file_url.href,
 
 // Suppress the "experimental feature" warnings. We know we are experimenting!
 
-                    "--no-warnings",
+                        "--no-warnings",
 
 // The program entry point must be specified as a path.
 
-                    url.fileURLToPath(padawan_file_url),
-                    String(tcp_port)
-                ),
-                {env}
-            );
-            subprocess.stdout.on("data", on_stdout);
-            subprocess.stderr.on("data", on_stderr);
-            return subprocess;
+                        url.fileURLToPath(padawan_file_url),
+                        String(tcp_port)
+                    ),
+                    {env}
+                );
+                subprocess.on("error", reject);
+                subprocess.on("spawn", function () {
+                    subprocess.stdout.on("data", on_stdout);
+                    subprocess.stderr.on("data", on_stderr);
+                    resolve(subprocess);
+                });
+            });
         });
     });
 }

@@ -21,18 +21,7 @@ function make_deno_repl(
             return capabilities.err(buffer.toString());
         },
         which_deno,
-        run_args.concat(
-
-// The Deno padawan is run with unlimited permissions. This seems justified for
-// development, where it is not known in advance what the REPL will be asked to
-// do.
-
-// It also has the important side-effect of allowing the padawan access to the
-// HTTP server. This could also be accomplished using the --allow-net argument,
-// but care must be taken that it only appears once.
-
-            "--allow-all"
-        ),
+        run_args,
         Object.assign({NO_COLOR: "1"}, env)
     );
 
