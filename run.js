@@ -16,9 +16,9 @@
 
 // See ./make.js for a description of the message protocol.
 
-// Here is an example program, custom_replete.js, that sets the WEBL port to
-// 3000, allows the Deno REPL to operate with full permissions, and serves CSS
-// files in addition to JavaScript files.
+// Here is an example program, custom_replete.js, that serves the WEBL on port
+// 3000, gives the Deno REPL full permissions, and serves CSS files in addition
+// to JavaScript files.
 
 //      import run from "https://deno.land/x/replete/run.js";
 //      run({
@@ -36,7 +36,10 @@
 
 // It could be run from the command line like
 
-//      $ deno run --allow-all custom_replete.js
+//      $ deno run \
+//          --allow-all \
+//          --importmap https://deno.land/x/replete/import_map.json \
+//          custom_replete.js
 
 /*jslint node, deno */
 

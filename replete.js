@@ -14,12 +14,12 @@
 
 //      $ deno run --allow-all /path/to/replete.js [options]
 
-// or, to skip installation entirely,
+// or, skipping installation entirely,
 
 //      $ deno run \
 //          --allow-all \
-//          --importmap https://link/to/Replete/import_map.json \
-//          https://link/to/Replete/replete.js \
+//          --importmap https://deno.land/x/replete/import_map.json \
+//          https://deno.land/x/replete/replete.js \
 //          [options]
 
 // The following options are supported:
