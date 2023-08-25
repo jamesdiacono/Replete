@@ -1,10 +1,20 @@
 // Attempts to resolves an import specifier to a file in some "node_modules"
-// directory.
+// directory, or to a Node.js builtin like "fs".
 
 /*jslint node */
 
 import fs from "node:fs";
 import url from "node:url";
+
+const node_builtin_modules = [
+    "assert", "async_hooks", "buffer", "child_process", "cluster", "console",
+    "constants", "crypto", "dgram", "diagnostics_channel", "dns", "domain",
+    "events", "fs", "http", "http2", "https", "inspector", "module", "net",
+    "os", "path", "perf_hooks", "process", "punycode", "querystring",
+    "readline", "repl", "stream", "string_decoder", "timers", "tls",
+    "trace_events", "tty", "url", "util", "v8", "vm", "wasi", "worker_threads",
+    "zlib"
+];
 
 function unwrap_export(value) {
 
@@ -109,6 +119,12 @@ function find_manifest(package_name, from_url) {
 }
 
 function node_resolve(specifier, parent_locator) {
+
+// If the specifier is a Node.js builtin, simply qualify it as such.
+
+    if (node_builtin_modules.includes(specifier)) {
+        return Promise.resolve("node:" + specifier);
+    }
 
 // Parse the specifier.
 
