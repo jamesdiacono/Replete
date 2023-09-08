@@ -1,8 +1,8 @@
 // The 'run' function starts a Replete instance, attaching it to the current
 // process's stdin and stdout. It can only be called once per process. It
-// handles SIGTERM and SIGINT signals gracefully. It takes a 'spec' object
-// described in ./README.md and returns an 'exit' function that safely stops
-// Replete and exits the process.
+// handles termination signals gracefully. It takes a 'spec' object described
+// in ./README.md and returns an 'exit' function that safely stops Replete and
+// exits the process.
 
 // Messages are sent in both directions, each occupying a single line. A message
 // is a JSON-encoded object. Command messages are read from stdin, and result
@@ -87,6 +87,7 @@ function run(spec) {
     );
     process.on("SIGTERM", exit);
     process.on("SIGINT", exit);
+    process.on("SIGHUP", exit);
     return exit;
 }
 

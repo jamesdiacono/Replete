@@ -1233,6 +1233,16 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
                 : capabilities.read(locator)
             ).then(function (string_or_buffer) {
                 res.setHeader("content-type", content_type);
+
+// It is possible that the file was requested from a Web Worker whose origin
+// is "null". To satisfy CORS, allow such origins explicitly.
+
+                if (typeof req.headers.origin === "string") {
+                    res.setHeader(
+                        "access-control-allow-origin",
+                        req.headers.origin
+                    );
+                }
                 return res.end(string_or_buffer);
             }).catch(
                 fail
