@@ -57,14 +57,17 @@ function run(spec) {
 
     spec = Object.assign({}, spec);
     spec.on_result = on_result;
-    spec.root_locator ??= url.pathToFileURL(process.cwd()).href;
+    spec.root_locator = (
+        spec.root_locator
+        ?? url.pathToFileURL(process.cwd()).href
+    );
     if (typeof Deno === "object") {
-        spec.which_deno ??= Deno.execPath();
+        spec.which_deno = spec.which_deno ?? Deno.execPath();
     } else {
-        spec.which_node ??= process.argv[0];
+        spec.which_node = spec.which_node ?? process.argv[0];
     }
-    spec.node_env ??= process.env;
-    spec.deno_env ??= process.env;
+    spec.node_env = spec.node_env ?? process.env;
+    spec.deno_env = spec.deno_env ?? process.env;
     const line_reader = readline.createInterface({input: process.stdin});
     const {start, send, stop} = make_replete(spec);
 

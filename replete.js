@@ -3,8 +3,8 @@
 // It exposes a command line interface facilitating basic configuration. If you
 // need more control over Replete, use ./run.js directly.
 
-// This program can be run from the command line in either Node.js or Deno. Even
-// if it is run it in Node.js, a Deno REPL can still be used (and vice versa).
+// This program can be run from the command line in either Node.js or Deno.
+// Even if it is run in Node.js, a Deno REPL can still be used (and vice versa).
 
 // To start Replete in Node.js v18.6.0+, run
 
