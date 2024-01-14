@@ -43,6 +43,7 @@
 
 /*jslint node, deno */
 
+import os from "node:os";
 import process from "node:process";
 import readline from "node:readline";
 import url from "node:url";
@@ -87,7 +88,9 @@ function run(spec) {
     );
     process.on("SIGTERM", exit);
     process.on("SIGINT", exit);
-    process.on("SIGHUP", exit);
+    if (os.platform() !== "win32") {
+        process.on("SIGHUP", exit);
+    }
     return exit;
 }
 
