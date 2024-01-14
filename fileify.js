@@ -6,7 +6,36 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import process from "node:process";
 import url from "node:url";
+
+function user_cache_dir() {
+
+// Returns the path to the user's cache directory, a more permanent alternative
+// to the system's temporary directory which gets cleaned out every few days.
+
+// Platform | Path                            | Example
+// ---------|---------------------------------|---------------------------------
+// Linux    | $XDG_CACHE_HOME or $HOME/.cache | /home/me/.cache
+// macOS    | $HOME/Library/Caches            | /Users/me/Library/Caches
+// Windows  | $LOCALAPPDATA                   | C:\Users\me\AppData\Local
+
+    if (os.platform() === "win32") {
+        return process.env.LOCALAPPDATA;
+    }
+    if (os.platform() === "darwin") {
+        return path.join(process.env.HOME, "Library", "Caches");
+    }
+    return process.env.XDG_CACHE_HOME ?? path.join(process.env.HOME, ".cache");
+}
+
+function replete_cache_dir() {
+    try {
+        return path.join(user_cache_dir(), "replete");
+    } catch (ignore) {
+        return os.tmpdir();
+    }
+}
 
 function fileify(http_url, replace_extension) {
 
@@ -30,15 +59,15 @@ function fileify(http_url, replace_extension) {
             "hex"
         ).slice(0, 8);
         return path.join(
-            os.tmpdir(),
+            replete_cache_dir(),
             name + "." + version + (replace_extension ?? extension)
         );
     }
 
 // Check if a cached version of the file is available.
 
-    let tmp = versioned_path(http_url.href);
-    return fs.promises.stat(tmp).catch(function (ignore) {
+    let file = versioned_path(http_url.href);
+    return fs.promises.stat(file).catch(function (ignore) {
 
 // The file is not cached, so download it to the filesystem.
 
@@ -57,14 +86,23 @@ function fileify(http_url, replace_extension) {
                 && response.headers.get("cache-control").includes("immutable")
             );
             if (!immutable) {
-                tmp = versioned_path(crypto.randomUUID());
+                file = versioned_path(crypto.randomUUID());
             }
             return response.arrayBuffer();
-        }).then(function (array_buffer) {
-            return fs.promises.writeFile(tmp, new Uint8Array(array_buffer));
+        }).then(function ensure_directory(array_buffer) {
+            return fs.promises.mkdir(
+                path.dirname(file),
+                {recursive: true, mode: 0o700}
+            ).then(function create_file() {
+                return fs.promises.writeFile(
+                    file,
+                    new Uint8Array(array_buffer),
+                    {mode: 0o700}
+                );
+            });
         });
     }).then(function () {
-        return url.pathToFileURL(tmp);
+        return url.pathToFileURL(file);
     });
 }
 
