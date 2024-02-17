@@ -14,6 +14,17 @@ const webl_js_url = new URL("./webl.js", import.meta.url);
 const webl_client_js_url = new URL("./webl_client.js", import.meta.url);
 const webl_relay_js_url = new URL("./webl_relay.js", import.meta.url);
 
+// There is at least one Firefox bug that is resolved by including a trailing
+// newline in the HTML source.
+// See https://bugzilla.mozilla.org/show_bug.cgi?id=1880710.
+
+const html = `<!DOCTYPE html>
+<html>
+    <head><script type="module" src="webl_client.js"></script></head>
+    <body></body>
+</html>
+`;
+
 function make_webl_server(
     on_exception,
     on_client_found,
@@ -197,10 +208,7 @@ function make_webl_server(
         }
         if (req.url === "/") {
             res.setHeader("content-type", "text/html");
-            return res.end(
-                "<!DOCTYPE html>\n"
-                + "<script type=module src=webl_client.js></script>"
-            );
+            return res.end(html);
         }
         return on_unhandled_request(req, res);
     });
