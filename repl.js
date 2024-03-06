@@ -1259,10 +1259,10 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
         return Promise.resolve(
             message
         ).then(
-            capabilities.source
+            capabilities.message
         ).then(
-            function (source) {
-                const tree = parse(source, {
+            function (message) {
+                const tree = parse(message.source, {
                     ecmaVersion: "latest",
                     sourceType: "module"
                 });
@@ -1283,7 +1283,7 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
                         on_result,
                         function produce_script(dynamic_specifiers) {
                             return replize(
-                                source,
+                                message.source,
                                 tree,
                                 analysis,
                                 dynamic_specifiers,

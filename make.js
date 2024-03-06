@@ -36,8 +36,17 @@ function make_replete({
 // These are the capabilities given to the REPLs. See README.md for an
 // explanation of each.
 
+// 'source' has been superseded by 'message', but is included for backward
+// compatibility.
+
     source = function default_source(command) {
         return Promise.resolve(command.source);
+    },
+    message = function default_message(command) {
+        return source(command).then(function (string) {
+            command.source = string;
+            return command;
+        });
     },
     read = function default_read(locator) {
         return fs.promises.readFile(new URL(locator));
@@ -111,6 +120,7 @@ function make_replete({
 
     const capabilities = Object.freeze({
         source,
+        message,
         locate,
         read: safe_read,
         watch,
@@ -156,7 +166,7 @@ function make_replete({
     function send(command) {
 
 // Relay the incoming 'command' message to the relevant REPL. The REPL's
-// response is relayed back as a result message.
+// responses are relayed back as result messages.
 
         const repl = repls[command.platform];
         if (repl === undefined) {
