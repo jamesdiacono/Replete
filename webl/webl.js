@@ -10,7 +10,7 @@
 
 /*jslint browser, null */
 
-function inspect(value, maximum_depth = 3) {
+function inspect(value, maximum_depth = 10) {
 
 // The 'inspect' function formats the 'value' as a nice readable string. It is
 // useful for debugging. Values nested within 'value' are inspected no deeper
@@ -122,7 +122,6 @@ function inspect(value, maximum_depth = 3) {
 
 // The value is an object. Print out its properties.
 
-        let keys;
         if (value.constructor === undefined) {
 
 // The object has no prototype. A descriptive prefix might be helpful.
@@ -132,15 +131,13 @@ function inspect(value, maximum_depth = 3) {
                 return;
             }
             write(" ");
-            keys = Object.keys(value);
         } else {
             if (depth >= maximum_depth) {
                 return write("[" + value.constructor.name + "]");
             }
             if (value.constructor !== Object) {
 
-// The object has an unusual prototype, making it a pseudo-classical
-// monstrosity. Prefix it as such.
+// The object has an unusual prototype. Give it a descriptive prefix.
 
                 write("[" + value.constructor.name + "] ");
             }
@@ -150,30 +147,14 @@ function inspect(value, maximum_depth = 3) {
             if (value[Symbol.iterator] !== undefined) {
                 return print(Array.from(value), depth);
             }
-
-// The prototype chain may contain useful methods, so these are included.
-// Object.getOwnPropertyNames is used instead of Object.keys so that
-// non-enumerable properties are included. Methods inherited from the
-// Object prototype are omitted because they are just clutter.
-
-            let flat = Object.create(null);
-            let object_prototype = Object.getPrototypeOf({});
-            keys = (function down(prototype) {
-                Object.getOwnPropertyNames(prototype).forEach(function (key) {
-                    if (key !== "constructor") {
-                        flat[key] = true;
-                    }
-                });
-                prototype = Object.getPrototypeOf(prototype);
-                return (
-                    (prototype && prototype !== object_prototype)
-                    ? down(prototype)
-                    : Object.keys(flat)
-                );
-            }(value));
         }
         write("{");
         indent();
+
+// Non-enumerable properties, such as the innumerable DOM element methods, are
+// omitted because they overwhelm the output.
+
+        const keys = Object.keys(value);
         keys.forEach(function (key, key_nr) {
 
 // It is possible that the property is a getter, and that it will fail when
