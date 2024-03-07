@@ -103,19 +103,21 @@ Only the last attempt (bundle.json) could succeed, and only if `spec.mime` recog
 
 It is your responsibility to choose `spec.root_locator`, `spec.mime`, and `spec.browser_hostname` such that sensitive files are not exposed.
 
-### spec.message(_command_)
-Modify a _command_ message prior to evaluation. It can be used to transform source code or locators. The returned Promise resolves to the modified command message, whose "source" property must contain JavaScript source code.
+### spec.command(_message_)
+Modifies a command _message_ prior to evaluation, for example by transforming its source code or locator. The returned Promise resolves to the modified message, with the "source" property containing JavaScript source code.
 
-    spec.message({
+    spec.command({
         source: "1 < 2 < 3",
-        locator: "file:///yummy/cinnamon.coffee"
+        locator: "file:///yummy/cinnamon.coffee",
+        ...
     });
     -> {
         source: "(1 < 2 && 2 < 3);",
-        locator: "file:///yummy/cinnamon.coffee"
+        locator: "file:///yummy/cinnamon.coffee",
+        ...
     }
 
-It is safe for `spec.message` to mutate its _command_ parameter.
+It is safe for `spec.command` to mutate _message_.
 
 ### spec.locate(_specifier_, _parent_locator_)
 Resolves a module specifier. The _specifier_ parameter is the specifier string of a module to be located. The _parent_locator_ parameter is the locator of the module that contains the _specifier_, and is optional if _specifier_ is fully qualified. The returned Promise resolves to the locator.

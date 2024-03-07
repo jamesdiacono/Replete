@@ -36,16 +36,16 @@ function make_replete({
 // These are the capabilities given to the REPLs. See README.md for an
 // explanation of each.
 
-// 'source' has been superseded by 'message', but is included for backward
+// 'source' has been superseded by 'command', but is included for backward
 // compatibility.
 
-    source = function default_source(command) {
-        return Promise.resolve(command.source);
+    source = function default_source(message) {
+        return Promise.resolve(message.source);
     },
-    message = function default_message(command) {
-        return source(command).then(function (string) {
-            command.source = string;
-            return command;
+    command = function default_command(message) {
+        return source(message).then(function (string) {
+            message.source = string;
+            return message;
         });
     },
     read = function default_read(locator) {
@@ -120,7 +120,7 @@ function make_replete({
 
     const capabilities = Object.freeze({
         source,
-        message,
+        command,
         locate,
         read: safe_read,
         watch,
@@ -163,18 +163,18 @@ function make_replete({
         }));
     }
 
-    function send(command) {
+    function send(message) {
 
-// Relay the incoming 'command' message to the relevant REPL. The REPL's
+// Relay the incoming command message to the relevant REPL. The REPL's
 // responses are relayed back as result messages.
 
-        const repl = repls[command.platform];
+        const repl = repls[message.platform];
         if (repl === undefined) {
             return Promise.reject(new Error(
-                "Platform unavailable: " + command.platform
+                "Platform unavailable: " + message.platform
             ));
         }
-        return repl.send(command, function (evaluation, exception) {
+        return repl.send(message, function (evaluation, exception) {
 
 // The browser REPL may yield multiple results for each command, when multiple
 // tabs are connected. Only one of 'evaluation' and 'exception' is a string,
@@ -183,7 +183,7 @@ function make_replete({
             on_result({
                 evaluation,
                 exception,
-                id: command.id
+                id: message.id
             });
         });
     }

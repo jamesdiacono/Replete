@@ -1259,7 +1259,7 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
         return Promise.resolve(
             message
         ).then(
-            capabilities.message
+            capabilities.command
         ).then(
             function (message) {
                 const tree = parse(message.source, {
