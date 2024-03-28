@@ -945,7 +945,7 @@ function replize(
         ]);
         alterations.push([
             {start: source.length, end: source.length},
-            ";return $value;}());"
+            "\nreturn $value;}());"
         ]);
         top_analysis.values.forEach(function (node) {
             alterations.push([
