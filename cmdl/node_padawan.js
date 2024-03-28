@@ -14,7 +14,7 @@ import vm from "node:vm";
 import util from "node:util";
 import readline from "node:readline";
 
-function evaluate(script, import_specifiers) {
+function evaluate(script, import_specifiers, wait) {
 
 // The 'evaluate' function evaluates the 'script', after resolving any imported
 // modules. It returns a Promise that resolves to a report object.
@@ -30,16 +30,18 @@ function evaluate(script, import_specifiers) {
 // variable.
 
         global.$imports = modules;
-        return {
-            evaluation: util.inspect(vm.runInThisContext(
-                script,
-                {
-                    importModuleDynamically(specifier) {
-                        return import(specifier);
-                    }
-                }
-            ))
-        };
+        const value = vm.runInThisContext(script, {
+            importModuleDynamically(specifier) {
+                return import(specifier);
+            }
+        });
+        return (
+            wait
+            ? Promise.resolve(value).then(util.inspect)
+            : util.inspect(value)
+        );
+    }).then(function (evaluation) {
+        return {evaluation};
     }).catch(function (exception) {
         return {
             exception: (
@@ -66,7 +68,11 @@ const socket = net.connect(
 // a report back to the server.
 
             const command = JSON.parse(line);
-            return evaluate(command.script, command.imports).then(
+            return evaluate(
+                command.script,
+                command.imports,
+                command.wait
+            ).then(
                 function on_evaluated(report) {
                     report.id = command.id;
                     return socket.write(JSON.stringify(report) + "\n");

@@ -51,11 +51,13 @@ function make_deno_repl(
         on_result,
         produce_script,
         dynamic_specifiers,
-        import_specifiers
+        import_specifiers,
+        wait
     ) {
         return cmdl.eval(
             produce_script(dynamic_specifiers),
-            import_specifiers
+            import_specifiers,
+            wait
         ).then(function (report) {
             return on_result(report.evaluation, report.exception);
         });

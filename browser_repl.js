@@ -122,7 +122,8 @@ function make_browser_repl(
         on_result,
         produce_script,
         dynamic_specifiers,
-        import_specifiers
+        import_specifiers,
+        wait
     ) {
 
 // Evaluates the module in many padawans at once. Results are reported back as
@@ -150,7 +151,8 @@ function make_browser_repl(
 
                 return padawans.get(client).eval(
                     produce_script(dynamic_specifiers.map(qualify)),
-                    import_specifiers.map(qualify)
+                    import_specifiers.map(qualify),
+                    wait
                 ).then(function (report) {
                     return on_result(report.evaluation, report.exception);
                 });

@@ -19,6 +19,10 @@
 //          the script is evaluated, and an array of the resultant module
 //          objects will be provided in the '$imports' variable.
 
+//      wait:
+//          Whether to wait for the evaluated value to resolve, if it is a
+//          Promise.
+
 //      id:
 //          A unique identifier for the evaluation. It may be any JSON-encodable
 //          value. It is used to match reports to commands.
@@ -155,11 +159,13 @@ function make_cmdl(spawn_padawan) {
         );
     }
 
-    function eval_module(script, imports) {
+    function eval_module(script, imports, wait) {
         const id = String(Math.random());
         return new Promise(function (resolve) {
             report_callbacks[id] = resolve;
-            return socket.write(JSON.stringify({script, imports, id}) + "\n");
+            return socket.write(
+                JSON.stringify({script, imports, wait, id}) + "\n"
+            );
         });
     }
 

@@ -79,7 +79,9 @@ function run(spec) {
     }
 
     function on_error(error) {
-        on_result({err: error.stack + "\n"});
+        on_result({
+            err: (error.stack ?? error) + "\n"
+        });
     }
 
     start().then(function () {

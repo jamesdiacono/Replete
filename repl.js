@@ -249,10 +249,48 @@
 // debugging information, such as line numbers and function names. Replete
 // attempts to preserve the integrity of both of these.
 
+// +-------------+
+// | Eventuality |
+// +-------------+
+
+// JavaScript's 'await' keyword magically suspends execution whilst a Promise is
+// fulfilled. REPL support for 'await' at the top level makes ad hoc scripting
+// a bit more convenient, but is tricky to implement because 'eval' throws when
+// it encounters a top-level 'await'.
+
+// The only way to evaluate source containing 'await' is to wrap the source in
+// an async function and call it, then wait for the returned Promise to
+// resolve. The difficulty here is that we lose eval's intrinsic ability to
+// return its trailing value. We emulate this behavior by assigning every
+// value-producing statement to the '$value' variable and returning it.
+
+// Thus, source like
+
+//      let response;
+//      if (do_fetch) {
+//          response = await fetch("https://site.com");
+//          await response.json();
+//      } else {
+//          console.log("Skipping.");
+//      }
+
+// becomes
+
+//      (async function () {
+//          let response;
+//          if (do_fetch) {
+//              $value = response = await fetch("https://site.com");
+//              $value = await response.json();
+//          } else {
+//              $value = console.log("Skipping.");
+//          }
+//          return $value;
+//      }());
+
 /*jslint node */
 
 import {parse} from "acorn";
-import {simple} from "acorn-walk";
+import {simple, recursive} from "acorn-walk";
 import crypto from "node:crypto";
 
 const rx_relative_path = /^\.\.?\//;
@@ -294,11 +332,15 @@ function alter_string(string, alterations) {
     );
 }
 
+function parse_module(source) {
+    return parse(source, {ecmaVersion: "latest", sourceType: "module"});
+}
+
 function analyze_module(tree) {
 
 // The 'analyze_module' function statically analyzes a module to find any
-// imports, exports and dynamic specifiers within it. The 'tree' parameter is
-// the module's parsed source code.
+// imports, exports, and dynamic specifiers. The 'tree' parameter is the
+// module's parsed source code.
 
 // An analysis object is returned, containing the following properties:
 
@@ -410,7 +452,8 @@ function analyze_module(tree) {
     let exports = [];
     let dynamics = [];
 
-// Walk the tree.
+// Walk the whole tree, examining every statement and expression. This is
+// necessary because 'import.meta' can appear basically anywhere.
 
     simple(tree, {
         ImportDeclaration(node) {
@@ -508,18 +551,53 @@ function analyze_module(tree) {
     return {imports, exports, dynamics};
 }
 
-function all_specifiers(analysis) {
+function analyze_top(tree) {
+
+// The 'analyze_top' function statically analyzes the top-level scope of a
+// module to find any await expressions or expression statements.
+
+// An analysis object is returned, containing the following properties:
+
+//      values
+//          An array of top-level value-producing statement nodes. The evaluated
+//          value is always the last of these to be executed.
+
+//      wait
+//          Whether the module contains any top-level await expressions. Just
+//          one of these is sufficient to prevent immediate evaluation.
+
+    let values = [];
+    let wait = false;
+
+// Walk the top level only, skipping the contents of function bodies.
+
+    recursive(tree, undefined, {
+        Function() {
+            return;
+        },
+        ExpressionStatement(node, ignore, c) {
+            values.push(node);
+            c(node.expression);
+        },
+        AwaitExpression() {
+            wait = true;
+        }
+    });
+    return {values, wait};
+}
+
+function all_specifiers(module_analysis) {
 
 // Return any import and dynamic specifier strings mentioned in the analysis.
 
     return [
-        ...analysis.imports.map(function (the_import) {
+        ...module_analysis.imports.map(function (the_import) {
             return the_import.node.source.value;
         }),
-        ...analysis.dynamics.map(function (the_dynamic) {
+        ...module_analysis.dynamics.map(function (the_dynamic) {
             return the_dynamic.value;
         }),
-        ...analysis.exports.filter(function (the_export) {
+        ...module_analysis.exports.filter(function (the_export) {
             return the_export.source;
         }).map(function (the_export) {
             return the_export.source.value;
@@ -627,7 +705,14 @@ function make_identifiers_object_literal(variables, imports) {
     return "{" + members.join(", ") + "}";
 }
 
-function replize(source, tree, analysis, dynamic_specifiers, scope = "") {
+function replize(
+    source,
+    tree,
+    module_analysis,
+    top_analysis,
+    dynamic_specifiers,
+    scope = ""
+) {
 
 // The 'eval' function can not handle import or export statements. The 'replize'
 // function transforms 'source' such that it is safe to eval, wrapping it in a
@@ -640,8 +725,11 @@ function replize(source, tree, analysis, dynamic_specifiers, scope = "") {
 //      tree
 //          The module's source as a parsed tree.
 
-//      analysis
+//      module_analysis
 //          An object returned by the 'analyze_module' function.
+
+//      top_analysis
+//          An object returned by the 'analyze_top' function.
 
 //      dynamic_specifiers
 //          An array containing the dynamic specifiers to be injected.
@@ -674,10 +762,10 @@ function replize(source, tree, analysis, dynamic_specifiers, scope = "") {
 // are turned into assignments to $default. Dynamic specifiers are injected as
 // string literals.
 
-    analysis.imports.forEach(function ({node}) {
+    module_analysis.imports.forEach(function ({node}) {
         return alterations.push([node, blanks(source, node)]);
     });
-    analysis.exports.forEach(function (node) {
+    module_analysis.exports.forEach(function (node) {
         return alterations.push(
             node.type === "ExportDefaultDeclaration"
             ? [
@@ -690,7 +778,7 @@ function replize(source, tree, analysis, dynamic_specifiers, scope = "") {
             : [node, blanks(source, node)]
         );
     });
-    analysis.dynamics.forEach(function (dynamic, dynamic_nr) {
+    module_analysis.dynamics.forEach(function (dynamic, dynamic_nr) {
         return alterations.push([
             dynamic.script,
             "\""
@@ -846,12 +934,32 @@ function replize(source, tree, analysis, dynamic_specifiers, scope = "") {
             }
         }
     );
+
+// If a top-level await is present, the module must be evaluated within an async
+// function. The function returns its trailing value.
+
+    if (top_analysis.wait) {
+        alterations.unshift([
+            {start: 0, end: 0},
+            "(async function () {"
+        ]);
+        alterations.push([
+            {start: source.length, end: source.length},
+            ";return $value;}());"
+        ]);
+        top_analysis.values.forEach(function (node) {
+            alterations.push([
+                {start: node.start, end: node.start},
+                "$value = "
+            ]);
+        });
+    }
     return fill(
         script_template,
         {
             identifiers_object_literal: make_identifiers_object_literal(
                 variables,
-                analysis.imports
+                module_analysis.imports
             ),
             scope_name_string: JSON.stringify(scope),
             payload_script_string: JSON.stringify(alter_string(
@@ -895,7 +1003,8 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
 //          on_result,
 //          produce_script,
 //          dynamic_specifiers,
-//          import_specifiers
+//          import_specifiers,
+//          wait
 //      )
 //          A function that evaluates the script in each connected padawan. It
 //          takes the following parameters:
@@ -914,6 +1023,10 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
 
 //              import_specifiers
 //                  The array of import specifier strings.
+
+//              wait
+//                  Whether to wait for the evaluated value to resolve, if it is
+//                  a Promise.
 
 //          The returned Promise rejects if there was a problem communicating
 //          with any of the padawans.
@@ -1016,10 +1129,7 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
             return analyzing[locator];
         }
         analyzing[locator] = read(locator).then(function (source) {
-            return analyze_module(parse(source, {
-                ecmaVersion: "latest",
-                sourceType: "module"
-            }));
+            return analyze_module(parse_module(source));
         });
         return analyzing[locator];
     }
@@ -1062,9 +1172,9 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
 // it is cheaper.
 
             hash_source(locator),
-            analyze(locator).then(function (analysis) {
+            analyze(locator).then(function (module_analysis) {
                 return Promise.all(
-                    all_specifiers(analysis).map(function (specifier) {
+                    all_specifiers(module_analysis).map(function (specifier) {
                         return locate(specifier, locator).then(hash);
                     })
                 );
@@ -1146,12 +1256,12 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
         return Promise.all([
             read(locator),
             analyze(locator)
-        ]).then(function ([source, analysis]) {
+        ]).then(function ([source, module_analysis]) {
 
 // Resolve and version the specifiers.
 
             return Promise.all(
-                all_specifiers(analysis).map(function (specifier) {
+                all_specifiers(module_analysis).map(function (specifier) {
                     return locate(specifier, locator).then(
                         versionize
                     ).then(
@@ -1164,29 +1274,29 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
 // literals.
 
                 const altered = alter_string(source, [
-                    ...analysis.imports.map(function (the_import, nr) {
+                    ...module_analysis.imports.map(function (the_import, nr) {
                         return [
                             the_import.node.source,
                             "\"" + specifiers[nr] + "\""
                         ];
                     }),
-                    ...analysis.dynamics.map(function (the_dynamic, nr) {
+                    ...module_analysis.dynamics.map(function (the_dynamic, nr) {
                         return [
                             the_dynamic.module,
                             "\""
-                            + specifiers[analysis.imports.length + nr]
+                            + specifiers[module_analysis.imports.length + nr]
                             + "\""
                             + blanks(source, the_dynamic.module)
                         ];
                     }),
-                    ...analysis.exports.filter(function (the_export) {
+                    ...module_analysis.exports.filter(function (the_export) {
                         return the_export.source;
                     }).map(function (the_export, nr) {
                         return [
                             the_export.source,
                             "\"" + specifiers[
-                                analysis.imports.length
-                                + analysis.dynamics.length
+                                module_analysis.imports.length
+                                + module_analysis.dynamics.length
                                 + nr
                             ] + "\""
                         ];
@@ -1262,13 +1372,12 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
             capabilities.command
         ).then(
             function (message) {
-                const tree = parse(message.source, {
-                    ecmaVersion: "latest",
-                    sourceType: "module"
-                });
-                const analysis = analyze_module(tree);
+                const tree = parse_module(message.source);
+                const top_analysis = analyze_top(tree);
+                const module_analysis = analyze_module(tree);
+                const nr_dynamic = module_analysis.imports.length;
                 return Promise.all(
-                    all_specifiers(analysis).map(function (specifier) {
+                    all_specifiers(module_analysis).map(function (specifier) {
                         return locate(
                             specifier,
                             message.locator
@@ -1285,13 +1394,15 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
                             return replize(
                                 message.source,
                                 tree,
-                                analysis,
+                                module_analysis,
+                                top_analysis,
                                 dynamic_specifiers,
                                 message.scope
                             );
                         },
-                        resolved_specifiers.slice(analysis.imports.length),
-                        resolved_specifiers.slice(0, analysis.imports.length)
+                        resolved_specifiers.slice(nr_dynamic),
+                        resolved_specifiers.slice(0, nr_dynamic),
+                        top_analysis.wait
                     );
                 });
             }

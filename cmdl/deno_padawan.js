@@ -11,7 +11,7 @@
 // exceptions or unhandled promise rejections. This is because Deno does not
 // provide global handlers for errors.
 
-function evaluate(script, import_specifiers) {
+function evaluate(script, import_specifiers, wait) {
 
 // The 'evaluate' function evaluates the 'script', after resolving any imported
 // modules. It returns a Promise that resolves to a report object.
@@ -26,20 +26,22 @@ function evaluate(script, import_specifiers) {
 // any local variables. The imported modules are provided as a global variable.
 
         window.$imports = modules;
-        return {
 
-// The script is evaluated using an "indirect" eval, meaning it does not have
-// access to the local scope.
+// The script is evaluated using an "indirect" eval, depriving it of access to
+// the local scope.
 
-            evaluation: Deno.inspect(window.eval(script))
-        };
+        const value = window.eval(script);
+        return (
+            wait
+            ? Promise.resolve(value).then(Deno.inspect)
+            : Deno.inspect(value)
+        );
+    }).then(function (evaluation) {
+        return {evaluation};
     }).catch(function (exception) {
         return {
             exception: (
-                (
-                    exception
-                    && typeof exception.stack === "string"
-                )
+                typeof exception?.stack === "string"
                 ? exception.stack
                 : "Exception: " + Deno.inspect(exception)
             )
@@ -66,7 +68,11 @@ function consume() {
 
 // Evaluate the script, eventually sending a report back to the server.
 
-    evaluate(command.script, command.imports).then(function (report) {
+    evaluate(
+        command.script,
+        command.imports,
+        command.wait
+    ).then(function (report) {
         report.id = command.id;
         return connection.write(
             new TextEncoder().encode(

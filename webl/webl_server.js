@@ -73,7 +73,7 @@ function make_webl_server(
 //          create()
 //              See ./webl.js.
 
-//          eval(script, imports)
+//          eval(script, imports, wait)
 //              See ./webl.js.
 
 //          destroy()
@@ -147,12 +147,13 @@ function make_webl_server(
                 );
             }
 
-            function eval_module(script, imports = []) {
+            function eval_module(script, imports, wait) {
                 return request(
                     "eval_module",
                     {
                         script,
                         imports,
+                        wait,
                         padawan_name: name
                     }
                 );

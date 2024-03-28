@@ -70,7 +70,7 @@ const message_handlers = {
             }
         );
     },
-    eval_module(id, {script, imports, padawan_name}) {
+    eval_module(id, {script, imports, wait, padawan_name}) {
 
 // Give a padawan some source code to evaluate, then transmit the
 // resulting value to the server.
@@ -86,7 +86,7 @@ const message_handlers = {
                 }
             });
         }
-        return padawan.eval(script, imports).then(
+        return padawan.eval(script, imports, wait).then(
             function on_success(report) {
                 return worker.postMessage({
                     type: "response",

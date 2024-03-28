@@ -302,12 +302,7 @@ const padawan_create_script_template = `
 // 'padawan_eval_script_template'.
 
     self.onmessage = function (event) {
-
-// Regrettably, the 'event' argument is made available to the eval scope. In a
-// total fluke, the argument's value is identical to the global 'event'
-// variable, so we can ignore this infraction.
-
-        return eval(event.data);
+        return window.eval(event.data);
     };
 
 // Finally, inform the master that the padawan is ready for instruction.
@@ -319,9 +314,9 @@ const padawan_create_script_template = `
 `;
 
 // An "eval script" is sent to the padawan for evaluation. Upon evaluation, it
-// resolves some importations and then evaluates a payload script, informing the
-// master of the result. The importations are added to the local scope. This
-// makes them accessible to the payload script during its evaluation.
+// resolves some importations and then evaluates a payload script, informing
+// the master of the result. The importations are added to the global scope,
+// making them accessible to the payload script as it is indirectly evaluated.
 
 // The payload script is encoded as a JSON string because this is an easy way to
 // escape newlines.
@@ -333,12 +328,18 @@ const padawan_eval_script_template = `
     Promise.all([
         <import_expressions>
     ]).then(function ($imports) {
+        self.$imports = $imports;
+        const value = window.eval(<payload_script_json>);
+        return (
+            <wait>
+            ? Promise.resolve(value).then($webl.inspect)
+            : $webl.inspect(value)
+        );
+    }).then(function (evaluation) {
         return $webl.send({
             name: "evaluation",
             eval_id: "<eval_id>",
-            value: {
-                evaluation: $webl.inspect(eval(<payload_script_json>))
-            }
+            value: {evaluation}
         });
     }).catch(function (exception) {
         return $webl.send({
@@ -514,7 +515,7 @@ function make_webl() {
 //              exist. It returns a Promise that resolves once the padawan is
 //              ready to perform evaluation.
 
-//          eval(script, imports)
+//          eval(script, imports, wait)
 //              The 'eval' method evaluates a script within the padawan.
 
 //              The 'script' parameter should be a string containing JavaScript
@@ -524,6 +525,9 @@ function make_webl() {
 //              are to be imported prior to the scripts evaluation. A
 //              corresponding array of module objects is made available to the
 //              script via the "$imports" variable.
+
+//              The 'wait' parameter controls whether to wait for the evaluated
+//              value to resolve, if it is a Promise.
 
 //              It returns a Promise that resolves to a report object. If the
 //              evaluation was successful, the report contains an 'evaluation'
@@ -640,7 +644,7 @@ function make_webl() {
             });
         }
 
-        function eval_module(script, imports = []) {
+        function eval_module(script, imports = [], wait = false) {
             const id = String(eval_count);
             eval_count += 1;
             return new Promise(function (resolve) {
@@ -659,7 +663,8 @@ function make_webl() {
                         ).join(
                             ",\n    "
                         ),
-                        payload_script_json: JSON.stringify(script)
+                        payload_script_json: JSON.stringify(script),
+                        wait
                     }
                 ));
             });
