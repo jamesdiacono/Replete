@@ -17,7 +17,7 @@ function allow_host(run_args, host) {
 // Deno only permits the --allow-net argument to appear once in its list of run
 // arguments. This means we need to jump thru hoops to avoid any duplication.
 
-    if (run_args.includes("--allow-net")) {
+    if (run_args.includes("--allow-all") || run_args.includes("--allow-net")) {
 
 // All hosts are already allowed.
 

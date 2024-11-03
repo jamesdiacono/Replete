@@ -1,4 +1,4 @@
-// The padawan program for the Deno and Bun CMDLs. See cmdl.js.
+// The padawan program for the Node.js and Bun CMDLs. See cmdl.js.
 
 //  $ node /path/to/node_padawan.js <tcp_port>
 //  $ bun run /path/to/node_padawan.js <tcp_port>
