@@ -19,7 +19,7 @@ import readline from "node:readline";
 
 const rx_any = /./;
 const rx_http = /^https?:\/\//;
-const rx_relative_path = /^\.\.?\//;
+const rx_path = /^\.*\//;
 
 function load_http_module(href) {
     return fetch(href).then(function (response) {
@@ -39,7 +39,7 @@ if (typeof Bun === "object") {
     Bun.plugin({
         name: "http_imports",
         setup(build) {
-            build.onResolve({filter: rx_relative_path}, function (args) {
+            build.onResolve({filter: rx_path}, function (args) {
                 if (rx_http.test(args.importer)) {
                     return {path: new URL(args.path, args.importer).href};
                 }
