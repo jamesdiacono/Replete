@@ -84,7 +84,7 @@ let options = {
 // development, where it is not known in advance what the REPL may be asked to
 // do.
 
-    deno_args: ["--allow-all"],
+    deno_args: ["--allow-all", "--no-lock"],
     bun_args: []
 };
 

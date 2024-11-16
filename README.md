@@ -2,14 +2,14 @@
 
 Replete brings interactive programming to JavaScript. It is an evaluator for JavaScript modules, supporting a variety of environments including the browser, Node.js, Deno, Bun, and Txiki.
 
+- [Try it online](https://repletejs.org/play/)
+- [Browse the text editor plugins](https://github.com/jamesdiacono/Replete/issues/5)
+
 Once integrated with your text editor, Replete becomes part of your development environment. Source code is sent directly from your editor to Replete, where it is evaluated. Anything from a mere expression to a whole file may be evaluated at a time. The resulting value (or an exception) is reported back for perusal.
 
 ![](https://james.diacono.com.au/talks/feedback_and_the_repl/replete.gif)
 
 Replete encourages the development of modules in isolation, rather than in the context of a running application. Modules written in this way tend to be more independent and hence more reusable, more testable and hence more robust.
-
-- [Try it online](https://repletejs.org/play/)
-- [Browse the text editor plugins](https://github.com/jamesdiacono/Replete/issues/5)
 
 Replete is in the Public Domain, and does not come with a warranty. It is at least as dangerous as the source code it is asked to import or evaluate, so be careful.
 
@@ -187,7 +187,7 @@ Like Node.js, [Deno](https://deno.com) is a command-line runtime based on V8, bu
 The path to the Deno binary, `deno`. If Deno is in the `PATH` (see `options.deno_env`), this can simply be `"deno"`. Not required if Deno is hosting Replete.
 
 #### options.deno_args
-An array of command line arguments to follow `deno run`, for example `["--allow-all"]`. By default, this array is empty and so the Deno REPL runs with no permissions. Run `deno help run` for a list of available arguments.
+An array of command line arguments to follow `deno run`, for example `["--allow-all", "--no-lock"]`. By default, this array is empty and so the Deno REPL runs with no permissions. Run `deno help run` for a list of available arguments.
 
 #### options.deno_env
 Same as `options.node_env`, but for the Deno REPL.

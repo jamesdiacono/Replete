@@ -23,7 +23,7 @@
 //      import run from "https://deno.land/x/replete/run.js";
 //      run({
 //          browser_port: 3000,
-//          deno_args: ["--allow-all"],
+//          deno_args: ["--allow-all", "--no-lock"],
 //          headers(locator) {
 //              if (locator.endsWith(".js")) {
 //                  return {"Content-Type": "text/javascript"};
