@@ -1059,13 +1059,32 @@ function replize(
             alterations.push([node, blanks(source, node)]);
         },
         ExportDefaultDeclaration(node) {
-            alterations.push([
-                {
-                    start: node.start,
-                    end: node.declaration.start
-                },
-                "$default = "
-            ]);
+            const declaration_handler = handlers[node.declaration.type];
+            if (declaration_handler !== undefined && node.declaration.id) {
+
+// The default export is a named class or function declaration. Function
+// declarations are subject to hoisting.
+
+                declaration_handler(node.declaration);
+                alterations.push([
+                    {
+                        start: node.start,
+                        end: node.declaration.start
+                    },
+                    "$default = " + node.declaration.id.name + ";"
+                ]);
+            } else {
+
+// The default export is an expression or an anonymous function declaration.
+
+                alterations.push([
+                    {
+                        start: node.start,
+                        end: node.declaration.start
+                    },
+                    "$default = "
+                ]);
+            }
         },
         ExportNamedDeclaration(node) {
             if (node.declaration) {
@@ -1157,7 +1176,11 @@ function replize(
     );
 }
 
-function run_replize(source, scope, dynamic_specifiers = []) {
+function run_replize(
+    source,
+    scope = String(Math.random()),
+    dynamic_specifiers = []
+) {
     const tree = parse_module(source);
     return replize(
         source,
@@ -1233,40 +1256,32 @@ function test_replize_delayed_assignment() {
 }
 
 function test_replize_strict_mode() {
-    const scope = String(Math.random());
-    let ok = false;
+    let did_throw = false;
     try {
-        globalThis.eval(run_replize(
-            `
-                (function () {
-                    x = true;
-                }());
-            `,
-            scope
-        ));
+        globalThis.eval(run_replize(`
+            (function () {
+                x = true;
+            }());
+        `));
     } catch (_) {
-        ok = true;
+        did_throw = true;
     }
-    if (!ok) {
+    if (!did_throw) {
         throw new Error("FAIL");
     }
 }
 
 function test_replize_top_level_await() {
-    const scope = String(Math.random());
     const timer = setTimeout(function () {
         throw new Error("FAIL timeout");
     });
-    globalThis.eval(run_replize(
-        `
-            if (true) {
-                let a;
-                a = await 42;
-                a + 1;
-            }
-        `,
-        scope
-    )).then(function (value) {
+    globalThis.eval(run_replize(`
+        if (true) {
+            let a;
+            a = await 42;
+            a + 1;
+        }
+    `)).then(function (value) {
         clearTimeout(timer);
         if (value !== 43) {
             throw new Error("FAIL");
@@ -1275,33 +1290,55 @@ function test_replize_top_level_await() {
 }
 
 function test_replize_main() {
-    const scope = String(Math.random());
-    const value = globalThis.eval(run_replize(
-        `
-            if (import.meta.main) {
-                "OK"
-            }
-        `,
-        scope
-    ));
+    const value = globalThis.eval(run_replize(`
+        if (import.meta.main) {
+            "OK"
+        }
+    `));
     if (value !== "OK") {
         throw new Error("FAIL");
     }
 }
 
 function test_replize_exports() {
-    const scope = String(Math.random());
-    const value = globalThis.eval(run_replize(
-        `
-            const a = 1;
-            export {a};
-            export const b = a + 1;
-            export {c} from "./c.js";
-            export * from "./d.js";
-        `,
-        scope
-    ));
-    if (value !== 2) {
+    const value = globalThis.eval(run_replize(`
+        const a = 1;
+        export {a};
+        export const b = a + e();
+        export {c} from "./c.js";
+        export * from "./d.js";
+        export default function e() {
+            return 2;
+        }
+        b + 3
+    `));
+    if (value !== 6) {
+        throw new Error("FAIL");
+    }
+}
+
+function test_replize_export_default_anonymous_function() {
+    const value = globalThis.eval(run_replize(`
+        export default function () {
+            return 1;
+        }
+        $default()
+    `));
+    if (value !== 1) {
+        throw new Error("FAIL");
+    }
+}
+
+function test_replize_export_default_anonymous_class() {
+    const value = globalThis.eval(run_replize(`
+        export default class {
+            a() {
+                return 1;
+            }
+        }
+        new $default().a()
+    `));
+    if (value !== 1) {
         throw new Error("FAIL");
     }
 }
@@ -1815,6 +1852,8 @@ if (import.meta.main) {
     test_replize_top_level_await();
     test_replize_main();
     test_replize_exports();
+    test_replize_export_default_anonymous_function();
+    test_replize_export_default_anonymous_class();
 }
 
 export default Object.freeze(make_repl);
