@@ -5,6 +5,7 @@
 /*jslint browser */
 
 import make_webl from "./webl.js";
+const webl_relay_url = new URL("./webl_relay.js", import.meta.url);
 
 let webl;
 let padawans = Object.create(null);
@@ -12,7 +13,7 @@ let padawans = Object.create(null);
 // Create a Worker that will be responsible for maintaining the WebSocket
 // connection.
 
-const worker = new Worker("./webl_relay.js");
+const worker = new Worker(webl_relay_url);
 
 // Inform the worker of the WebSockets endpoint.
 
