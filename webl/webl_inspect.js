@@ -137,10 +137,13 @@ function inspect(value, maximum_depth = 10) {
                 write("[" + value.constructor.name + "] ");
             }
 
-// Some kinds of objects are better represented as an array.
+// Some kinds of objects are better represented as an array, but only if the
+// iterator is well behaved.
 
             if (value[Symbol.iterator] !== undefined) {
-                return print(Array.from(value), depth, weakmaps);
+                try {
+                    return print(Array.from(value), depth, weakmaps);
+                } catch (_) {}
             }
         }
         write("{");
@@ -185,9 +188,12 @@ if (import.meta.main) {
     globalThis.console.log(inspect(Math.random));
     const not_circular = {};
     globalThis.console.log(inspect([not_circular, not_circular]));
-    const circular = Object.create(null);
+    let circular = Object.create(null);
     circular.self = circular;
     globalThis.console.log(inspect(circular));
+    let bad_iterator = {};
+    bad_iterator[Symbol.iterator] = "BOOM";
+    globalThis.console.log(inspect(bad_iterator));
 }
 
 export default Object.freeze(inspect);
