@@ -1617,15 +1617,16 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
 
     let unguessable;
 
-    function versionize(locator) {
+    function versionize(locator, parent_locator) {
 
 // The 'versionize' function produces a versioned form of the 'locator', where
 // necessary.
 
-        if (!is_module(locator)) {
+        if (!is_module(locator) || locator === parent_locator) {
 
 // Only modules require versioning, because only they are subject to the
-// runtime's module cache.
+// runtime's module cache. If a module attempts to resolve itself via
+// 'import.meta.resolve', however, versioning is omitted to avoid datalock.
 
             return Promise.resolve(locator);
         }
@@ -1679,9 +1680,12 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
 
             return Promise.all(
                 all_specifiers(module_analysis).map(function (specifier) {
-                    return locate(specifier, locator).then(
-                        versionize
-                    ).then(
+                    return locate(
+                        specifier,
+                        locator
+                    ).then(function (sublocator) {
+                        return versionize(sublocator, locator);
+                    }).then(
                         specify
                     );
                 })
@@ -1797,9 +1801,9 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
                         return locate(
                             specifier,
                             message.locator
-                        ).then(
-                            versionize
-                        ).then(
+                        ).then(function (locator) {
+                            return versionize(locator, message.locator);
+                        }).then(
                             specify
                         );
                     })
