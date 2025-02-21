@@ -1560,18 +1560,21 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
         return source_hashing[locator];
     }
 
-    function module_hash(locator) {
+    function module_hash(locator, parent_locator) {
 
-// The 'module_hash' function produces a hash string for a module. It produces
-// undefined if the 'locator' does not refer to a module on disk. The resulting
-// hash is tentatively cached.
+// The 'module_hash' function produces a hash string for a module, or if the
+// 'locator' is not hashable. The resulting hash is tentatively cached.
 
 // The hash is dependent on:
 
 //  a) the source of the module itself, and
 //  b) the hashes of any modules it imports.
 
-        if (!is_module(locator)) {
+// Only modules stored on disk require versioning, because only they are subject
+// to the runtime's module cache. If a module attempts to resolve itself via
+// 'import.meta.resolve', however, a hash must be omitted to avoid datalock.
+
+        if (!is_module(locator) || locator === parent_locator) {
             return Promise.resolve();
         }
 
@@ -1593,7 +1596,12 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
             analyze(locator).then(function (module_analysis) {
                 return Promise.all(
                     all_specifiers(module_analysis).map(function (specifier) {
-                        return locate(specifier, locator).then(module_hash);
+                        return locate(
+                            specifier,
+                            locator
+                        ).then(function (sublocator) {
+                            return module_hash(sublocator, locator);
+                        });
                     })
                 );
             })
@@ -1622,15 +1630,7 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
 // The 'versionize' function produces a versioned form of the 'locator', where
 // necessary.
 
-        if (!is_module(locator) || locator === parent_locator) {
-
-// Only modules require versioning, because only they are subject to the
-// runtime's module cache. If a module attempts to resolve itself via
-// 'import.meta.resolve', however, versioning is omitted to avoid datalock.
-
-            return Promise.resolve(locator);
-        }
-        return module_hash(locator).then(function (the_hash) {
+        return module_hash(locator, parent_locator).then(function (the_hash) {
             if (the_hash === undefined) {
                 return locator;
             }
