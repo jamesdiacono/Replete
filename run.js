@@ -49,17 +49,26 @@ import readline from "node:readline";
 import url from "node:url";
 import make_replete from "./make.js";
 
+const rx_drive_letter = /^[a-z]:/;
+
 function run(options) {
 
     function on_result(message) {
         process.stdout.write(JSON.stringify(message) + "\n");
     }
 
+// Drive letters in Windows paths are canonically represented as uppercase, but
+// process.cwd() can produce lowercase drive letters. Here we normalize the
+// drive letter case to avoid path comparison bugs.
+
+    const cwd = process.cwd().replace(rx_drive_letter, function (letter) {
+        return letter.toUpperCase();
+    });
     options = Object.assign({}, options);
     options.on_result = on_result;
     options.root_locator = (
         options.root_locator
-        ?? url.pathToFileURL(process.cwd()).href
+        ?? url.pathToFileURL(cwd).href
     );
     if (typeof Deno === "object") {
         options.which_deno = options.which_deno ?? Deno.execPath();
