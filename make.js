@@ -135,11 +135,17 @@ function make_replete({
 // To avoid inadvertently exposing sensitive files to the network, we refuse to
 // read any files outside the 'root_locator'.
 
-        const locator_url = new URL(locator);
+        const locator_href = new URL(locator).href;
 
 // Ensure a trailing slash.
 
-        if (!locator_url.href.startsWith(root_locator.replace(/\/?$/, "/"))) {
+        const root_href = root_locator.replace(/\/?$/, "/");
+
+// Ensure that the locator points to a file within the root directory. We are
+// forced to ignore case due to the case-insensitive nature of Windows drive
+// letters.
+
+        if (!locator_href.toLowerCase().startsWith(root_href.toLowerCase())) {
             return Promise.reject(new Error("Forbidden: " + locator));
         }
         return read(locator);

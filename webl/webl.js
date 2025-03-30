@@ -296,7 +296,7 @@ function make_worker_padawan(name, secret, on_message) {
     const worker_src = URL.createObjectURL(
         new Blob(
             [fill(padawan_create_script_template, {name, secret})],
-            {type: "application/javascript"}
+            {type: "text/javascript"}
         )
     );
     const worker = new Worker(worker_src);
