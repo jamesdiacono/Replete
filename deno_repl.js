@@ -5,10 +5,6 @@
 
 /*jslint node */
 
-import child_process from "node:child_process";
-import console from "node:console";
-import process from "node:process";
-import make_cmdl from "./cmdl.js";
 import make_cmdl_repl from "./cmdl_repl.js";
 const padawan_url = new URL("./deno_padawan.js", import.meta.url);
 
@@ -44,51 +40,20 @@ function allow_host(run_args, host) {
     );
 }
 
-function spawn_deno_padawan(tcp_port, which, args = [], env = {}) {
-    return Promise.resolve(child_process.spawn(
-        which,
-        [
-            "run",
-            ...allow_host(args, "127.0.0.1:" + tcp_port),
-            padawan_url.href,
-            String(tcp_port)
-        ],
-        {
-            env: Object.assign({NO_COLOR: "1"}, env)
-        }
-    ));
-}
-
-function make_deno_repl(capabilities, which, args, env) {
-    return make_cmdl_repl(capabilities, function spawn_padawan(tcp_port) {
-        return spawn_deno_padawan(tcp_port, which, args, env);
-    });
-}
-
-if (import.meta.main) {
-    const cmdl = make_cmdl(
-        function spawn_padawan(tcp_port) {
-            return spawn_deno_padawan(
-                tcp_port,
-                "deno",
-                ["--allow-net=deno.land"]
-            );
+function make_deno_repl(capabilities, which, args = [], env = {}) {
+    return make_cmdl_repl(
+        capabilities,
+        function make_command(tcp_host) {
+            return Promise.resolve([
+                which,
+                "run",
+                ...allow_host(args, tcp_host),
+                padawan_url.href,
+                tcp_host
+            ]);
         },
-        function on_stdout(chunk) {
-            return process.stdout.write(chunk);
-        },
-        function on_stderr(chunk) {
-            return process.stderr.write(chunk);
-        }
+        Object.assign({NO_COLOR: "1"}, env)
     );
-    cmdl.create().then(function () {
-        return cmdl.eval(
-            `$imports[0].basename("/a/b/c.d")`,
-            ["https://deno.land/std@0.117.0/path/mod.ts"]
-        ).then(
-            console.log
-        );
-    }).then(cmdl.destroy);
 }
 
 export default Object.freeze(make_deno_repl);

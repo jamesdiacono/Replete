@@ -1,6 +1,6 @@
 // The padawan program for a Deno CMDL. See cmdl.js.
 
-//  $ deno run /path/to/deno_padawan.js <tcp_port>
+//  $ deno run /path/to/deno_padawan.js <tcp_hostname>:<tcp_port>
 
 /*jslint deno, global, null */
 
@@ -105,12 +105,11 @@ function read() {
     });
 }
 
-// Connect to the TCP server on the specified port, and wait for instructions.
+// Connect to the TCP server and wait for instructions.
 
-Deno.connect({
-    hostname: "127.0.0.1", // match the hostname chosen by cmdl.js
-    port: Number.parseInt(Deno.args[0])
-}).then(function (the_connection) {
+const [hostname, port_string] = Deno.args[0].split(":");
+const port = parseInt(port_string);
+Deno.connect({hostname, port}).then(function (the_connection) {
     connection = the_connection;
     addEventListener("unhandledrejection", function (event) {
         event.preventDefault();

@@ -7,16 +7,12 @@ import http from "node:http";
 import make_cmdl from "./cmdl.js";
 import make_repl from "./repl.js";
 
-function make_cmdl_repl(capabilities, spawn_padawan) {
-    const cmdl = make_cmdl(
-        spawn_padawan,
-        function on_stdout(buffer) {
-            return capabilities.out(buffer.toString());
-        },
-        function on_stderr(buffer) {
-            return capabilities.err(buffer.toString());
-        }
-    );
+// This should be "localhost", but we force IPv4 because, on Windows, Node.js
+// seems unwilling to connect to Deno over IPv6.
+
+const http_server_hostname = "127.0.0.1";
+
+function make_cmdl_repl(capabilities, make_command, env) {
     let repl;
 
 // An HTTP server serves modules to the padawan, which imports them via the
@@ -26,10 +22,20 @@ function make_cmdl_repl(capabilities, spawn_padawan) {
     let http_server;
     let http_server_port;
 
-// This should be "localhost", but we are forcing IPv4 because, on Windows,
-// Node.js seems unwilling to connect to Deno over IPv6.
-
-    const http_server_host = "127.0.0.1";
+    const cmdl = make_cmdl(
+        function spawn_padawan(tcp_host) {
+            const http_host = http_server_hostname + ":" + http_server_port;
+            return make_command(tcp_host, http_host).then(function (command) {
+                return capabilities.spawn(command, env, [tcp_host, http_host]);
+            });
+        },
+        function on_stdout(buffer) {
+            return capabilities.out(buffer.toString());
+        },
+        function on_stderr(buffer) {
+            return capabilities.err(buffer.toString());
+        }
+    );
 
     function on_start() {
         http_server = http.createServer(function (req, res) {
@@ -50,7 +56,7 @@ function make_cmdl_repl(capabilities, spawn_padawan) {
         return Promise.all([
             new Promise(function start_http_server(resolve, reject) {
                 http_server.on("error", reject);
-                return http_server.listen(0, http_server_host, function () {
+                return http_server.listen(0, http_server_hostname, function () {
                     http_server_port = http_server.address().port;
                     return resolve();
                 });
@@ -88,7 +94,7 @@ function make_cmdl_repl(capabilities, spawn_padawan) {
         return (
             locator.startsWith("file:///")
             ? (
-                "http://" + http_server_host + ":" + http_server_port
+                "http://" + http_server_hostname + ":" + http_server_port
                 + locator.replace("file://", "")
             )
             : locator

@@ -53,7 +53,7 @@
 
 //      stop()
 //          Stops the REPL. It returns a Promise that resolves once the system
-//          resources in use by the REPL are released.
+//          resources in use by the REPL have been released.
 
 // Discussed below are several expectations that a programmer might reasonably
 // have of a JavaScript REPL.

@@ -1,10 +1,8 @@
 // The padawan program for a Txiki CMDL. See cmdl.js.
 
-//  $ tjs run /path/to/tjs_padawan.js <tcp_port>
+//  $ tjs run /path/to/tjs_padawan.js <tcp_hostname>:<tcp_port>
 
 /*jslint tjs, global, null */
-
-import webl_inspect from "./webl/webl_inspect.js";
 
 function reason(exception) {
     try {
@@ -14,7 +12,7 @@ function reason(exception) {
                 + "\n" + exception.stack
             );
         }
-        return "Exception: " + webl_inspect(exception);
+        return "Exception: " + tjs.inspect(exception);
     } catch (_) {
         return "Exception";
     }
@@ -30,8 +28,8 @@ function evaluate(script, import_specifiers, wait) {
         const value = globalThis.eval(script);
         return (
             wait
-            ? Promise.resolve(value).then(webl_inspect)
-            : webl_inspect(value)
+            ? Promise.resolve(value).then(tjs.inspect)
+            : tjs.inspect(value)
         );
     }).then(function (evaluation) {
         return {evaluation};
@@ -90,8 +88,9 @@ function read() {
 
 // Connect to the TCP server on the specified port, and wait for instructions.
 
-const port = Number.parseInt(tjs.args.slice().pop());
-tjs.connect("tcp", "127.0.0.1", port).then(function (the_connection) {
+const [hostname, port_string] = tjs.args.slice().pop().split(":");
+const port = parseInt(port_string);
+tjs.connect("tcp", hostname, port).then(function (the_connection) {
     connection = the_connection;
     return read();
 });

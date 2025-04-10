@@ -3,6 +3,7 @@
 
 /*jslint node, deno, bun */
 
+import child_process from "node:child_process";
 import fs from "node:fs";
 import node_resolve from "./node_resolve.js";
 import make_browser_repl from "./browser_repl.js";
@@ -52,13 +53,10 @@ function make_replete({
 // These are the capabilities given to the REPLs. See README.md for an
 // explanation of each.
 
-// 'source' has been superseded by 'command', but is included for backward
-// compatibility.
+// The 'source' option has been superseded by the 'command' option, but is
+// included for backward compatibility.
 
     source = function default_source(message) {
-
-// Deprecated. Use 'command' instead.
-
         return Promise.resolve(message.source);
     },
     command = function default_command(message) {
@@ -127,6 +125,9 @@ function make_replete({
     },
     err = function default_err(string) {
         on_result({err: string});
+    },
+    spawn = function default_spawn(command, env) {
+        return child_process.spawn(command[0], command.slice(1), {env});
     }
 }) {
 
@@ -161,7 +162,8 @@ function make_replete({
         watch,
         headers,
         out,
-        err
+        err,
+        spawn
     });
     const repls = Object.create(null);
     if (browser_port !== undefined) {

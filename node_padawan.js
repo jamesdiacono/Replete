@@ -1,7 +1,7 @@
 // The padawan program for the Node.js and Bun CMDLs. See cmdl.js.
 
-//  $ node /path/to/node_padawan.js <tcp_port>
-//  $ bun run /path/to/node_padawan.js <tcp_port>
+//  $ node /path/to/node_padawan.js <tcp_hostname>:<tcp_port>
+//  $ bun run /path/to/node_padawan.js <tcp_hostname>:<tcp_port>
 
 // Exceptions that occur outside of evaluation are printed to stderr.
 
@@ -84,12 +84,10 @@ function evaluate(script, import_specifiers, wait) {
     });
 }
 
-// Connect to the TCP server on the specified port, then wait for instructions.
+// Connect to the TCP server and wait for instructions.
 
-const socket = net.connect(
-    Number.parseInt(process.argv[2]),
-    "127.0.0.1" // match the hostname chosen by cmdl.js
-);
+const [hostname, port_string] = process.argv[2].split(":");
+const socket = net.connect(parseInt(port_string), hostname);
 socket.once("connect", function () {
     readline.createInterface({input: socket}).on("line", function (line) {
 

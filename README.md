@@ -317,6 +317,17 @@ Only the last attempt (bundle.json) could succeed, and only if `options.headers`
 
 It is your responsibility to choose `options.root_locator`, `options.headers`, and `options.browser_hostname` such that sensitive files are not exposed.
 
+#### options.spawn(_command_, _env_, _hosts_)
+Spawns a command line REPL process. The returned Promise resolves to a Node.js `ChildProcess` instance.
+
+The _command_ parameter is an array of string arguments, the first of which is the path to the executable (such as `/bin/deno`).
+
+The _hosts_ parameter is an array of local network endpoints, formatted like `"<hostname>:<port>"`, that the REPL process will depend on. If the REPL process is to be spawned on a remote machine, each of these hosts must be tunnelled via a reverse proxy or similar.
+
+For example, the following SSH command tunnels the hosts and spawns a REPL process on a remote machine. Notice how _command_ and _hosts_ are incorporated into the resulting command. The `-tt` argument ensures that the REPL process is correctly killed once it is no longer needed.
+
+    ssh [-R <host>:<host>]+ -tt user@server <command> <args>
+
 ## Links
 - [The REPL is not a toy](https://www.youtube.com/watch?v=6hMOtPnVr3A)
 - [What makes a REPL?](https://ericnormand.me/podcast/what-makes-a-repl)

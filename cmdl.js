@@ -88,6 +88,11 @@
 import net from "node:net";
 import readline from "node:readline";
 
+// This should be "localhost", but we force IPv4 because, on Windows, Node.js
+// seems unwilling to connect to Deno over IPv6.
+
+const tcp_hostname = "127.0.0.1";
+
 function make_cmdl(spawn_padawan, on_stdout, on_stderr) {
 
 // The 'spawn_padawan' parameter is the function responsible for starting a
@@ -163,8 +168,9 @@ function make_cmdl(spawn_padawan, on_stdout, on_stderr) {
             });
         }
 
+        const tcp_host = tcp_hostname + ":" + tcp_server.address().port;
         return Promise.all([
-            spawn_padawan(tcp_server.address().port).then(register),
+            spawn_padawan(tcp_host).then(register),
             wait_for_connection()
         ]);
     }
@@ -177,10 +183,9 @@ function make_cmdl(spawn_padawan, on_stdout, on_stderr) {
             function start_tcp_server(resolve, reject) {
                 tcp_server.on("error", reject);
 
-// The TCP server is allocated a port number by the system. We are forcing IPv4
-// because, on Windows, Node.js seems unwilling to connect to Deno over IPv6.
+// The TCP server is allocated an unused port number by the system.
 
-                return tcp_server.listen(0, "127.0.0.1", resolve);
+                return tcp_server.listen(0, tcp_hostname, resolve);
             }
         ).then(
             start_padawan
