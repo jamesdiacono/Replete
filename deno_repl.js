@@ -8,12 +8,12 @@
 import make_cmdl_repl from "./cmdl_repl.js";
 const padawan_url = new URL("./deno_padawan.js", import.meta.url);
 
-function allow_host(run_args, host) {
+function allow_host(run_args, host, permission) {
 
 // Deno only permits the --allow-net argument to appear once in its list of run
 // arguments. This means we need to jump thru hoops to avoid any duplication.
 
-    if (run_args.includes("--allow-all") || run_args.includes("--allow-net")) {
+    if (run_args.includes("--allow-all") || run_args.includes(permission)) {
 
 // All hosts are already allowed.
 
@@ -25,7 +25,7 @@ function allow_host(run_args, host) {
 
     run_args = run_args.map(function (arg) {
         return (
-            arg.startsWith("--allow-net=")
+            arg.startsWith(permission + "=")
             ? arg + "," + host
             : arg
         );
@@ -34,8 +34,8 @@ function allow_host(run_args, host) {
 // Otherwise we add the --allow-net.
 
     return (
-        !run_args.some((arg) => arg.startsWith("--allow-net="))
-        ? run_args.concat("--allow-net=" + host)
+        !run_args.some((arg) => arg.startsWith(permission + "="))
+        ? run_args.concat(permission + "=" + host)
         : run_args
     );
 }
@@ -43,11 +43,15 @@ function allow_host(run_args, host) {
 function make_deno_repl(capabilities, which, args = [], env = {}) {
     return make_cmdl_repl(
         capabilities,
-        function make_command(tcp_host) {
+        function make_command(tcp_host, http_host) {
+            let run_args = args;
+            run_args = allow_host(run_args, tcp_host, "--allow-net");
+            run_args = allow_host(run_args, http_host, "--allow-import");
+            run_args = allow_host(run_args, padawan_url.host, "--allow-import");
             return Promise.resolve([
                 which,
                 "run",
-                ...allow_host(args, tcp_host),
+                ...run_args,
                 padawan_url.href,
                 tcp_host
             ]);
