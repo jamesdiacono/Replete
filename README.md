@@ -324,9 +324,11 @@ The _command_ parameter is an array of string arguments, the first of which is t
 
 The _hosts_ parameter is an array of local network endpoints, formatted like `"<hostname>:<port>"`, that the REPL process will depend on. If the REPL process is to be spawned on a remote machine, each of these hosts must be tunnelled via a reverse proxy or similar.
 
-For example, the following SSH command tunnels the hosts and spawns a REPL process on a remote machine. Notice how _command_ and _hosts_ are incorporated into the resulting command. The `-tt` argument ensures that the REPL process is correctly killed once it is no longer needed.
+For example, an SSH command based on the following pattern both spawns the REPL process on a remote machine and tunnels the necessary endpoints:
 
-    ssh [-R <host>:<host>]+ -tt user@server <command> <args>
+    ssh [-R <host>:<host>]+ -tt user@server <command>
+
+Notice how _command_ and _hosts_ are incorporated into the resulting command. The `-tt` argument ensures that the REPL process is correctly killed when the time comes.
 
 ## Links
 - [The REPL is not a toy](https://www.youtube.com/watch?v=6hMOtPnVr3A)
