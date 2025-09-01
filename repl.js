@@ -1562,8 +1562,8 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
 
     function module_hash(locator, parent_locator) {
 
-// The 'module_hash' function produces a hash string for a module, or if the
-// 'locator' is not hashable. The resulting hash is tentatively cached.
+// The 'module_hash' function produces a hash string for a module, or undefined
+// if the 'locator' is not hashable. The resulting hash is tentatively cached.
 
 // The hash is dependent on:
 
@@ -1795,7 +1795,7 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
                 const tree = parse_module(message.source);
                 const top_analysis = analyze_top(tree);
                 const module_analysis = analyze_module(tree);
-                const nr_dynamic = module_analysis.imports.length;
+                const dynamic_nr = module_analysis.imports.length;
                 return Promise.all(
                     all_specifiers(module_analysis).map(function (specifier) {
                         return locate(
@@ -1823,8 +1823,8 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
                                 message.scope
                             );
                         },
-                        resolved_specifiers.slice(nr_dynamic),
-                        resolved_specifiers.slice(0, nr_dynamic),
+                        resolved_specifiers.slice(dynamic_nr),
+                        resolved_specifiers.slice(0, dynamic_nr),
                         top_analysis.wait
                     );
                 });

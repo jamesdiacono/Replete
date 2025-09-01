@@ -147,7 +147,9 @@ function make_replete({
 // letters.
 
         if (!locator_href.toLowerCase().startsWith(root_href.toLowerCase())) {
-            return Promise.reject(new Error("Forbidden: " + locator));
+            return Promise.reject(new Error(
+                "Forbidden: " + locator + " is outside " + root_href
+            ));
         }
         return read(locator);
     }
@@ -245,6 +247,11 @@ function make_replete({
             on_result({
                 evaluation,
                 exception,
+                id: message.id
+            });
+        }).catch(function (error) {
+            on_result({
+                exception: error.stack,
                 id: message.id
             });
         });

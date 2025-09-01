@@ -82,19 +82,13 @@ function run(options) {
         });
     }
 
-    function on_error(error) {
-        on_result({
-            err: (error.stack ?? error) + "\n"
-        });
-    }
-
     start().then(function () {
         line_reader.on("line", function (line) {
-            send(JSON.parse(line)).catch(on_error);
+            send(JSON.parse(line));
         });
-    }).catch(
-        on_error
-    );
+    }).catch(function (error) {
+        on_result({err: error.stack + "\n"});
+    });
     process.on("SIGTERM", exit);
     process.on("SIGINT", exit);
     if (os.platform() !== "win32") {
