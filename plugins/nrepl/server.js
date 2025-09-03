@@ -1,7 +1,7 @@
 // An nREPL server for Replete. See ./README.md for instructions.
 
-//  $ node nrepl.js [port]          # using Node.js
-//  $ deno run -A nrepl.js [port]   # using Deno
+//  $ node server.js [port]          # using Node.js
+//  $ deno run -A server.js [port]   # using Deno
 
 import {Buffer} from "node:buffer";
 import child_process from "node:child_process";

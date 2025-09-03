@@ -4,18 +4,18 @@ This is an nREPL server for Replete (https://repletejs.org), a REPL facilitating
 
 The source code is in the Public Domain.
 
-# Experimental
+# Bugs
 
-nREPL integration is currently experimental, due to some limitations in most nREPL clients such as CIDER. Output that is not a direct result of evaluation may not appear in the output buffer.
+nREPL integration is currently buggy, due to some limitations in most nREPL clients including CIDER. Output and errors that are not a direct result of evaluation may not appear in the output buffer.
 
 - https://docs.cider.mx/cider/platforms/overview.html
 - https://github.com/clojure-emacs/cider/discussions/3422
 
 # Usage (server)
 
-Firstly, install Deno (https://deno.com). Then run
+Install [Deno](https://deno.com) then run
 
-    deno run --allow-all https://deno.land/x/replete/plugins/nrepl/nrepl.js [port]
+    deno run --allow-all https://deno.land/x/replete/plugins/nrepl/server.js [port]
 
 from the root directory of your project. If no port number is specified, an unused port will be chosen at random. You will see a message like this written to stdout:
 
@@ -23,13 +23,19 @@ from the root directory of your project. If no port number is specified, an unus
 
 The nREPL server will spawn Replete using the command from the _replete.json_ file in the current directory, if it is present.
 
-It listens on an unused TCP port and starts a Replete process (preferring to use the command from ./replete.json) then relays messages translating between the Replete and nREPL protocols as necessary.
+It listens on an unused TCP port and starts a Replete process (preferring to use the command from _replete.json_) then relays messages translating between the Replete and nREPL protocols as necessary.
 
-On startup it writes the TCP port number to ./.nrepl-port.
+On startup it writes the TCP port number to the _.nrepl-port_ file in the current directory.
 
 # Usage (client)
 
-To connect using CIDER for Emacs, for example, do the following:
+The most compatible nREPL client appears to be [CIDER](https://cider.mx/), but it assumes a Clojure VM and tries to evaluate Clojure expressions at the beginning of a session. You may need to update your `~/.emacs` file with the following:
+
+    (custom-set-variables
+     '(package-selected-packages '(cider))
+     '(cider-repl-init-code ""))
+
+To connect, do the following:
 
     $ M-x cider-connect <RET>
     > Host: <RET>

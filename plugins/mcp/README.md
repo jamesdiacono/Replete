@@ -4,11 +4,13 @@ A [Model Context Protocol](https://modelcontextprotocol.io/) server for [Replete
 
 The source code for this server is in the Public Domain.
 
+## Warning
+
+Code evaluated in any platform other than the browser (such as Deno) has uninhibited access to the filesystem, network, etc. Allowing your LLM to evaluate code using Replete is equivalent to giving it access to your terminal. To ensure LLM activity is properly sandboxed, Replete can be configured with only the browser REPL by passing  [`--which_deno=""`](https://github.com/jamesdiacono/Replete?tab=readme-ov-file#optionswhich_deno---which_deno) (assuming Replete is hosted by Deno, as it is by default).
+
 ## Installation
 
-Make sure you have [Deno](https://deno.com) installed.
-
-Configure your editor to start the MCP server using this command:
+Install [Deno](https://deno.com) then configure your editor to start the MCP server using this command:
 
     deno run --allow-all https://deno.land/x/replete/plugins/mcp/server.js
 
@@ -47,11 +49,5 @@ The _evaluate_ tool evaluates code and reports the result, providing Replete is 
 - `locator`: the `file://` URL of the file containing the source (required only if the source contains relative imports)
 
 When evaluating code in the browser, you may need your LLM to observe and interact with the page. This can be accomplished by installing the [Playwright MCP server](https://github.com/microsoft/playwright-mcp) or similar and using it to navigate to and interact with the WEBL.
-
-## Security
-
-By default, every Replete platform other than the browser (such as Deno) has uninhibited access to the filesystem and network. You may want to maintain a separate Replete configuration with limited capabilities specifically for the MCP server.
-
-## Configuration
 
 Configuration of Replete is described [here](https://github.com/jamesdiacono/Replete?tab=readme-ov-file#configuration).

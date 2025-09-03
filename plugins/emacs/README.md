@@ -2,13 +2,11 @@
 
 This is an Emacs plugin for Replete, a REPL facilitating interactive programming in JavaScript.
 
-The source code in this file is derived from Raf's work (https://github.com/anonimitoraf/skerrick), making it subject to the GPL v3.0 licence.
+The source code in this file is derived from [Skerrick](https://github.com/anonimitoraf/skerrick), making it subject to the GPL v3.0 licence.
 
 ## Installation
 
-First install [Deno](https://deno.com), ensuring `deno` is in your `PATH`.
-
-Run `(load-file "/path/to/replete.el")`, adjusting the path as necessary.
+Install [Deno](https://deno.com), ensuring `deno` is in your `PATH`, then run `(load-file "/path/to/replete.el")` (adjusting the path as necessary).
 
 By default, Replete will not let you import modules located outside of the directory in which Emacs was started.
 

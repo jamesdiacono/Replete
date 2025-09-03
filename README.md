@@ -199,7 +199,7 @@ When exposing the browser REPL to the network, care should be taken to configure
 [Node.js](https://nodejs.org) is a command-line runtime based on Google's V8 JavaScript engine.
 
 #### options.which_node, `--which_node`
-The path to the Node.js binary, `node`. If Node.js is in the `PATH` (see `options.node_env`), this can simply be `"node"`. Not required if Node.js is hosting Replete.
+The path to the Node.js binary, `node`. If Node.js is in the `PATH` (see `options.node_env`), this can simply be `"node"`. Automatically inferred if Node.js is hosting Replete, though the Node.js REPL can be explicitly disabled by passing `""`.
 
 #### options.node_args
 An array of command line arguments provided to the `node` process running the Node.js REPL, for example `["--inspect=7227"]`. Run `node --help` for a list of available arguments.
@@ -211,7 +211,7 @@ An object containing environment variables made available to the Node.js REPL. I
 Like Node.js, [Deno](https://deno.com) is a command-line runtime based on V8, but it aims to behave more like a browser.
 
 #### options.which_deno, `--which_deno`
-The path to the Deno binary, `deno`. If Deno is in the `PATH` (see `options.deno_env`), this can simply be `"deno"`. Not required if Deno is hosting Replete.
+The path to the Deno binary, `deno`. If Deno is in the `PATH` (see `options.deno_env`), this can simply be `"deno"`. Automatically inferred if Deno is hosting Replete, though the Deno REPL can be explicitly disabled by passing `""`.
 
 #### options.deno_args
 An array of command line arguments to follow `deno run`, for example `["--allow-all", "--no-lock"]`. By default, this array is empty and so the Deno REPL runs with no permissions. Run `deno help run` for a list of available arguments.
@@ -225,7 +225,7 @@ Same as `options.node_env`, but for the Deno REPL.
 The Bun REPL restarts whenever an unhandled exception or Promise rejection occurs outside of evaluation.
 
 #### options.which_bun, `--which_bun`
-The path to the Bun binary, `bun`. If Bun is in the `PATH` (see `options.bun_env`), this can simply be `"bun"`. Not required if Bun is hosting Replete.
+The path to the Bun binary, `bun`. If Bun is in the `PATH` (see `options.bun_env`), this can simply be `"bun"`. Automatically inferred if Bun is hosting Replete, though the Bun REPL can be explicitly disabled by passing `""`.
 
 #### options.bun_args
 An array of command line arguments to follow `bun run`, for example `["--smol"]`. Run `bun --help` for a list of available arguments.

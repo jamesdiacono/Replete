@@ -6,15 +6,13 @@ The source code for this package is in the Public Domain.
 
 ## Installation
 
-First install [Deno](https://deno.com).
-
-Next, move the directory containing this file (README.md) into Sublime's "Packages" directory, which may need to be created.
+Install [Deno](https://deno.com) then move the directory containing this file (README.md) into Sublime's "Packages" directory, which may need to be created:
 
 OS      | Package directory
 --------|------------------
-Linux   | ~/.config/sublime-text/Packages/Replete
-macOS   | ~/Library/Application Support/Sublime Text/Packages/Replete
-Windows | %AppData%\\Sublime Text\\Packages\\Replete
+Linux   | `~/.config/sublime-text/Packages/Replete`
+macOS   | `~/Library/Application Support/Sublime Text/Packages/Replete`
+Windows | `%AppData%\Sublime Text\Packages\Replete`
 
 You may need to provide explicit paths for the directories holding your runtime binaries, such as `deno`. To do so, go to
 

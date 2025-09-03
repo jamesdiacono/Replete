@@ -16,13 +16,13 @@ Make sure you have [Deno](https://deno.com) installed. In VSCode, go to
 
 and search for "Replete". Press "Install".
 
-To install the plugin manually, move the directory containing this file (README.md) into VSCode's extensions directory (naming it `vscode_replete`) and restart VSCode.
+To install the plugin manually, move the directory containing this file (README.md) into VSCode's extensions directory (naming it "vscode_replete") and restart VSCode.
 
 OS      | Extensions directory
 --------|----------------------
-Linux   | ~/.vscode/extensions/vscode_replete
-maxOS   | ~/.vscode/extensions/vscode_replete
-Windows | %UserProfile%\\.vscode\\extensions\\vscode_replete
+Linux   | `~/.vscode/extensions/vscode_replete`
+maxOS   | `~/.vscode/extensions/vscode_replete`
+Windows | `%UserProfile%\.vscode\extensions\vscode_replete`
 
 ## Usage
 

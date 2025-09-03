@@ -6,15 +6,13 @@ The code for this plugin is [MIT licenced](https://opensource.org/licenses/MIT),
 
 ## Installation
 
-First install [Deno](https://deno.com), ensuring `deno` is in your `PATH`.
-
-Move the directory containing this file (README.md) into Neovim's autostart directory, which may need to be created.
+Install [Deno](https://deno.com), ensuring `deno` is in your `PATH`, then move the directory containing this file (README.md) into Neovim's autostart directory (which may need to be created).
 
 OS      | Autostart directory
 --------|---------------------
-Linux   | ~/.local/share/nvim/site/pack/plugins/start/
-macOS   | ~/.local/share/nvim/site/pack/plugins/start/
-Windows | %LocalAppData%\\share\\nvim\\site\\pack\\plugins\\start\\
+Linux   | `~/.local/share/nvim/site/pack/plugins/start/`
+macOS   | `~/.local/share/nvim/site/pack/plugins/start/`
+Windows | `%LocalAppData%\share\nvim\site\pack\plugins\start\`
 
 Restart nvim.
 
@@ -40,9 +38,9 @@ Although per-project configuration is recommended, the plugin may also be config
 
 OS      | Config file
 --------|------------------
-Linux   | ~/.config/nvim/init.vim
-macOS   | ~/.config/nvim/init.vim
-Windows | %LocalAppData%\\nvim\\init.vim
+Linux   | `~/.config/nvim/init.vim`
+macOS   | `~/.config/nvim/init.vim`
+Windows | `%LocalAppData%\nvim\init.vim`
 
 and adjusting the values as necessary:
 

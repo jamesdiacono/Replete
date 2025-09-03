@@ -61,12 +61,23 @@ function run(options) {
         options.root_locator
         ?? url.pathToFileURL(process.cwd()).href
     );
-    if (typeof Deno === "object") {
-        options.which_deno = options.which_deno ?? Deno.execPath();
-    } else if (typeof Bun === "object") {
-        options.which_bun = options.which_bun ?? process.argv[0];
-    } else {
-        options.which_node = options.which_node ?? process.argv[0];
+    if (
+        typeof Deno === "object"
+        && options.which_deno === undefined
+        && options.which_deno !== ""
+    ) {
+        options.which_deno = Deno.execPath();
+    } else if (
+        typeof Bun === "object"
+        && options.which_bun === undefined
+        && options.which_bun !== ""
+    ) {
+        options.which_bun = process.argv[0];
+    } else if (
+        options.which_node === undefined
+        && options.which_node !== ""
+    ) {
+        options.which_node = process.argv[0];
     }
     options.node_env = options.node_env ?? process.env;
     options.deno_env = options.deno_env ?? process.env;
