@@ -10,6 +10,7 @@ VSCode          |[Source](plugins/vscode/) [Marketplace](https://marketplace.vis
 Sublime Text 4  |[Source](plugins/sublime/)
 Emacs           |[Source](plugins/emacs/)
 Neovim          |[Source](plugins/neovim/)
+nREPL           |[Source](plugins/nrepl/)
 MCP             |[Source](plugins/mcp/)
 
 Once integrated with your text editor, Replete becomes part of your development environment. Source code is sent directly from your editor to Replete, where it is evaluated. Anything from a mere expression to a whole file may be evaluated at a time. The resulting value (or an exception) is reported back for perusal.

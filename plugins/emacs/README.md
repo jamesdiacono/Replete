@@ -6,7 +6,7 @@ The source code in this file is derived from Raf's work (https://github.com/anon
 
 ## Installation
 
-First install [Deno](https://docs.deno.com/runtime/getting_started/installation/) v1.35.3+, ensuring `deno` is in your `PATH`.
+First install [Deno](https://deno.com), ensuring `deno` is in your `PATH`.
 
 Run `(load-file "/path/to/replete.el")`, adjusting the path as necessary.
 

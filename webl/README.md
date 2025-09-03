@@ -5,7 +5,7 @@
 
 The WEBL (expansion forthcoming) provides a means of evaluating JavaScript source code in isolated execution contexts, or __padawans__, in the browser. See webl.js for usage instructions.
 
-The WEBL is in the public domain.
+The WEBL is in the Public Domain.
 
 # The WEBL server
 

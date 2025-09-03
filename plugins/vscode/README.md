@@ -1,6 +1,6 @@
 # Replete VSCode plugin
 
-[Replete](https://github.com/jamesdiacono/Replete) brings interactive programming to JavaScript. It is an evaluator for JavaScript modules, supporting a variety of environments including the browser, Node.js, Deno, Bun, and Txiki.
+[Replete](https://repletejs.org) brings interactive programming to JavaScript. It is an evaluator for JavaScript modules, supporting a variety of environments including the browser, Node.js, Deno, Bun, and Txiki.
 
 ![](https://james.diacono.com.au/talks/feedback_and_the_repl/replete.gif)
 
@@ -10,7 +10,7 @@ The source code for this extension is in the Public Domain.
 
 ## Installation
 
-Make sure you have [Deno](https://docs.deno.com/runtime/getting_started/installation/) v1.35.3+ installed. In VSCode, go to
+Make sure you have [Deno](https://deno.com) installed. In VSCode, go to
 
     View -> Extensions
 

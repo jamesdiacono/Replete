@@ -1,12 +1,12 @@
 # Replete MCP server
 
-A [Model Context Protocol](https://modelcontextprotocol.io/) server for [Replete](https://github.com/jamesdiacono/Replete). It provides LLMs with tools to evaluate JavaScript in a variety of platforms, including Deno, Node.js, and the browser.
+A [Model Context Protocol](https://modelcontextprotocol.io/) server for [Replete](https://repletejs.org). It provides LLMs with tools to evaluate JavaScript in a variety of platforms including Deno, Node.js, and the browser.
 
 The source code for this server is in the Public Domain.
 
 ## Installation
 
-Make sure you have [Deno](https://docs.deno.com/runtime/getting_started/installation/) v1.35.3+ installed.
+Make sure you have [Deno](https://deno.com) installed.
 
 Configure your editor to start the MCP server using this command:
 

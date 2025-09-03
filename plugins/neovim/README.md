@@ -1,12 +1,12 @@
 # Replete NeoVim plugin
 
-This is a Neovim plugin for Replete, a REPL facilitating interactive programming in JavaScript.
+This is a Neovim plugin for [Replete](https://repletejs.org), a REPL facilitating interactive programming in JavaScript.
 
 The code for this plugin is [MIT licenced](https://opensource.org/licenses/MIT), as is its dependency [json.lua](https://github.com/rxi/json.lua).
 
 ## Installation
 
-First install [Deno](https://docs.deno.com/runtime/getting_started/installation/) v1.35.3+, ensuring `deno` is in your `PATH`.
+First install [Deno](https://deno.com), ensuring `deno` is in your `PATH`.
 
 Move the directory containing this file (README.md) into Neovim's autostart directory, which may need to be created.
 

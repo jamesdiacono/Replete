@@ -1,12 +1,12 @@
 # Replete Sublime plugin
 
-This is a Sublime Text 4 package for Replete, a REPL facilitating interactive programming in JavaScript.
+This is a Sublime Text 4 package for [Replete](https://repletejs.org), a REPL facilitating interactive programming in JavaScript.
 
 The source code for this package is in the Public Domain.
 
 ## Installation
 
-First install [Deno](https://docs.deno.com/runtime/getting_started/installation/) v1.35.3+.
+First install [Deno](https://deno.com).
 
 Next, move the directory containing this file (README.md) into Sublime's "Packages" directory, which may need to be created.
 
