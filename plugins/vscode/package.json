@@ -1,0 +1,167 @@
+{
+    "name": "Replete",
+    "description": "Interactive JavaScript",
+    "version": "0.0.15",
+    "publisher": "jamesdiacono",
+    "homepage": "https://repletejs.org",
+    "repository": "https://github.com/jamesdiacono/Replete",
+    "engines": {
+        "vscode": "^1.32.0"
+    },
+    "categories": [
+        "Notebooks",
+        "Education",
+        "Testing",
+        "Other"
+    ],
+    "keywords": [
+        "REPL",
+        "JavaScript",
+        "interactive",
+        "RDD",
+        "eval"
+    ],
+    "icon": "./r2d2.png",
+    "main": "./extension.js",
+    "activationEvents": [
+        "onCommand:replete_start",
+        "onCommand:replete_stop",
+        "onCommand:replete_clear",
+        "onCommand:replete_browser",
+        "onCommand:replete_node",
+        "onCommand:replete_deno",
+        "onCommand:replete_tjs",
+        "onCommand:replete_bun"
+    ],
+    "contributes": {
+        "commands": [
+            {
+                "command": "replete_start",
+                "title": "Replete: Start"
+            },
+            {
+                "command": "replete_stop",
+                "title": "Replete: Stop"
+            },
+            {
+                "command": "replete_clear",
+                "title": "Replete: Clear output"
+            },
+            {
+                "command": "replete_browser",
+                "title": "Replete: Evaluate selection in a browser"
+            },
+            {
+                "command": "replete_node",
+                "title": "Replete: Evaluate selection in Node.js"
+            },
+            {
+                "command": "replete_deno",
+                "title": "Replete: Evaluate selection in Deno"
+            },
+            {
+                "command": "replete_bun",
+                "title": "Replete: Evaluate selection in Bun"
+            },
+            {
+                "command": "replete_tjs",
+                "title": "Replete: Evaluate selection in Txiki"
+            }
+        ],
+        "keybindings": [
+            {
+                "command": "replete_start",
+                "key": "alt+r",
+                "mac": "ctrl+r"
+            },
+            {
+                "command": "replete_stop",
+                "key": "alt+s",
+                "mac": "ctrl+s"
+            },
+            {
+                "command": "replete_clear",
+                "key": "alt+l",
+                "mac": "ctrl+l"
+            },
+            {
+                "command": "replete_browser",
+                "key": "alt+b",
+                "mac": "ctrl+b",
+                "when": " editorTextFocus"
+            },
+            {
+                "command": "replete_node",
+                "key": "alt+n",
+                "mac": "ctrl+n",
+                "when": " editorTextFocus"
+            },
+            {
+                "command": "replete_deno",
+                "key": "alt+d",
+                "mac": "ctrl+d",
+                "when": " editorTextFocus"
+            },
+            {
+                "command": "replete_bun",
+                "key": "alt+u",
+                "mac": "ctrl+u",
+                "when": " editorTextFocus"
+            },
+            {
+                "command": "replete_tjs",
+                "key": "alt+t",
+                "mac": "ctrl+t",
+                "when": " editorTextFocus"
+            }
+        ],
+        "configuration": {
+            "title": "Replete",
+            "properties": {
+                "replete.env": {
+                    "type": "object",
+                    "scope": "window",
+                    "default": {},
+                    "description": "Environment variables provided to the command. You may need to specify a PATH pointing to your runtime binaries, such as 'deno'."
+                },
+                "replete.command": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "scope": "window",
+                    "default": [
+                        "deno",
+                        "run",
+                        "--allow-all",
+                        "--importmap",
+                        "https://deno.land/x/replete/import_map.json",
+                        "https://deno.land/x/replete/replete.js",
+                        "--browser_port=9325",
+                        "--content_type=js:text/javascript",
+                        "--content_type=mjs:text/javascript",
+                        "--content_type=css:text/css",
+                        "--content_type=html:text/html; charset=utf-8",
+                        "--content_type=wasm:application/wasm",
+                        "--content_type=woff2:font/woff2",
+                        "--content_type=svg:image/svg+xml",
+                        "--content_type=png:image/png",
+                        "--content_type=webp:image/webp"
+                    ],
+                    "description": "Refer to https://github.com/jamesdiacono/Replete/blob/trunk/replete.js for a full list of supported arguments."
+                }
+            }
+        }
+    },
+    "__metadata": {
+        "id": "ff3db9b8-fba5-44a6-94c5-984c67d4633d",
+        "publisherId": "4fcffd0d-5f13-4efa-9c47-a88b48bb7c12",
+        "publisherDisplayName": "James Diacono",
+        "targetPlatform": "undefined",
+        "isApplicationScoped": false,
+        "updated": true,
+        "isPreReleaseVersion": false,
+        "installedTimestamp": 1691836523401,
+        "preRelease": false
+    }
+}

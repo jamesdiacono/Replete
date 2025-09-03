@@ -2,8 +2,14 @@
 
 Replete brings interactive programming to JavaScript. It is an evaluator for JavaScript modules, supporting a variety of environments including the browser, Node.js, Deno, Bun, and Txiki.
 
-- [Try it online](https://repletejs.org/play/)
-- [Browse the text editor plugins](https://github.com/jamesdiacono/Replete/issues/5)
+[Try it online](https://repletejs.org/play/) or install one of the plugins:
+
+Text editor     | Plugin
+----------------|--------------------
+VSCode          |[Source](plugins/vscode/) [Marketplace](https://marketplace.visualstudio.com/items?itemName=jamesdiacono.Replete)
+Sublime Text 4  |[Source](plugins/sublime/)
+Emacs           |[Source](plugins/emacs/)
+Neovim          |[Source](plugins/neovim/)
 
 Once integrated with your text editor, Replete becomes part of your development environment. Source code is sent directly from your editor to Replete, where it is evaluated. Anything from a mere expression to a whole file may be evaluated at a time. The resulting value (or an exception) is reported back for perusal.
 
@@ -121,6 +127,25 @@ Replete is distributed as a collection of source files. The modules listed below
 
 ## Configuration
 The function exported by [_run.js_](./run.js) takes an __options__ object containing any of the properties listed below. The [_replete.js_](./replete.js) program accepts a subset of these options as command line arguments.
+
+Most plugins support configuration on a per-project basis. Simply create a _replete.json_ file in the project's root directory and specify a command like so:
+
+    {
+        "command": [
+            "deno",
+            "run",
+            "--allow-all",
+            "--importmap",
+            "https://deno.land/x/replete/import_map.json",
+            "https://deno.land/x/replete/replete.js",
+            "--browser_port=9325",
+            "--content_type=js:text/javascript",
+            "--content_type=css:text/css",
+            "--content_type=svg:image/svg+xml"
+        ]
+    }
+
+Additional configuration, including [transpilation](https://github.com/jamesdiacono/Replete/issues/6), can be achieved via Replete's programmatic interface. See [run.js](./run.js) for an example.
 
 ### Browser REPL
 The browser REPL evaluates code in a browser tab. All modern browsers are supported. When multiple tabs are connected, the same code is evaluated in all tabs concurrently.

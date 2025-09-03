@@ -1,0 +1,35 @@
+[
+    {
+        "caption": "Replete: Start",
+        "command": "replete"
+    },
+    {
+        "caption": "Replete: Clear output",
+        "command": "replete_clear"
+    },
+    {
+        "caption": "Replete: Evaluate selection in the browser",
+        "command": "replete_send",
+        "args": {"platform": "browser"}
+    },
+    {
+        "caption": "Replete: Evaluate selection in Node.js",
+        "command": "replete_send",
+        "args": {"platform": "node"}
+    },
+    {
+        "caption": "Replete: Evaluate selection in Deno",
+        "command": "replete_send",
+        "args": {"platform": "deno"}
+    },
+    {
+        "caption": "Replete: Evaluate selection in Bun",
+        "command": "replete_send",
+        "args": {"platform": "bun"}
+    },
+    {
+        "caption": "Replete: Evaluate selection in Txiki",
+        "command": "replete_send",
+        "args": {"platform": "tjs"}
+    }
+]

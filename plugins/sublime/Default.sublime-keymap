@@ -1,0 +1,35 @@
+[
+    {
+        "keys": ["ctrl+alt+shift+r"],
+        "command": "replete"
+    },
+    {
+        "keys": ["ctrl+alt+shift+l"],
+        "command": "replete_clear"
+    },
+    {
+        "keys": ["ctrl+alt+shift+b"],
+        "command": "replete_send",
+        "args": {"platform": "browser"}
+    },
+    {
+        "keys": ["ctrl+alt+shift+n"],
+        "command": "replete_send",
+        "args": {"platform": "node"}
+    },
+    {
+        "keys": ["ctrl+alt+shift+d"],
+        "command": "replete_send",
+        "args": {"platform": "deno"}
+    },
+    {
+        "keys": ["ctrl+alt+shift+u"],
+        "command": "replete_send",
+        "args": {"platform": "bun"}
+    },
+    {
+        "keys": ["ctrl+alt+shift+t"],
+        "command": "replete_send",
+        "args": {"platform": "tjs"}
+    }
+]

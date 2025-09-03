@@ -1,0 +1,27 @@
+[{
+    "id": "preferences",
+    "children": [{
+        "id": "package-settings",
+        "children": [{
+            "caption": "Replete",
+            "children": [
+                {
+                    "caption": "Settings",
+                    "command": "edit_settings",
+                    "args": {
+                        "base_file": "${packages}/Replete/Replete.sublime-settings",
+                        "default": "{}"
+                    },
+                },
+                {
+                    "caption": "Key Bindings",
+                    "command": "edit_settings",
+                    "args": {
+                        "base_file": "${packages}/Replete/Default.sublime-keymap",
+                        "default": "[]"
+                    },
+                },
+            ]
+        }]
+    }]
+}]
