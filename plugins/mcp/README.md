@@ -36,9 +36,9 @@ If you have problems, try running the server with the
 
 ## Usage
 
-Tools provided include _start_, _stop_, and _evaluate_.
+Tools provided include _restart_, _stop_, _evaluate_, and _output_.
 
-The _start_ tool starts Replete, or restarts it if it is already running. It takes a `cwd` parameter, which is the absolute path to your project's root directory. This is where the server will look for a _replete.json_ file (see below).
+The _restart_ tool starts Replete, or restarts it if it is already running. It takes a `cwd` parameter, which is the absolute path to your project's root directory. This is where the server will look for a _replete.json_ file (see below).
 
 The _stop_ tool stops Replete.
 
@@ -47,6 +47,8 @@ The _evaluate_ tool evaluates code and reports the result, providing Replete is 
 - `source`: the source code to be evaluated (required)
 - `platform`: one of `"browser"`, `"deno"`,`"node"`, etc. (required)
 - `locator`: the `file://` URL of the file containing the source (required only if the source contains relative imports)
+
+The _output_ tool reports any logs and errors that have occurred since the last call to _output_ or _evaluate_. When evaluated code is expected to run over many turns, this tool must be called to discover the result.
 
 When evaluating code in the browser, you may need your LLM to observe and interact with the page. This can be accomplished by installing the [Playwright MCP server](https://github.com/microsoft/playwright-mcp) or similar and using it to navigate to and interact with the WEBL.
 

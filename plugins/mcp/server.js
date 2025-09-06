@@ -12,7 +12,7 @@ import path from "node:path";
 import process from "node:process";
 import readline from "node:readline";
 
-const log_levels = Object.freeze([
+const log_levels = [
     "debug",
     "info",
     "notice",
@@ -21,7 +21,7 @@ const log_levels = Object.freeze([
     "critical",
     "alert",
     "emergency"
-]);
+];
 const default_command = [
     "deno",
     "run",
@@ -43,7 +43,11 @@ const default_command = [
 const tools = [
     {
         name: "evaluate",
-        description: "Evaluates code. Replete must already be running.",
+        description: (
+            "Evaluates code. Replete must already be running."
+            + " All logs and errors that occur during evaluation are reported"
+            + " back."
+        ),
         inputSchema: {
             type: "object",
             required: ["source", "platform"],
@@ -76,7 +80,17 @@ const tools = [
         }
     },
     {
-        name: "start",
+        name: "output",
+        description: (
+            "Polls for any logs and errors that have occurred since the last"
+            + " call to Output or Evaluate. When evaluated code is expected to"
+            + " run over many turns, this tool is necessary to discover the"
+            + " result."
+        ),
+        inputSchema: {type: "object"}
+    },
+    {
+        name: "restart",
         description: "Starts Replete, or restarts if already running.",
         inputSchema: {
             type: "object",
@@ -99,6 +113,8 @@ const tools = [
 ];
 const in_reader = readline.createInterface({input: process.stdin});
 
+let err = "";
+let out = "";
 let log_level = "notice";
 let out_reader;
 let subprocess;
@@ -125,22 +141,52 @@ function notify(params) {
     }
 }
 
+function indent(string) {
+    return string.split("\n").map(function (line) {
+        return "    " + line;
+    }).join("\n");
+}
+
 function on_result(message) {
     if (message.out !== undefined) {
+        out += message.out;
         return notify({level: "notice", data: "Output: " + message.out});
     }
     if (message.err !== undefined) {
+        err += message.err;
         return notify({level: "notice", data: "Error: " + message.err});
     }
-    if (message.evaluation !== undefined) {
-        return respond(message.id, {
-            content: [{type: "text", text: "Value: " + message.evaluation}],
-            isError: false
-        });
-    }
-    if (message.exception !== undefined) {
-        return respond(message.id, {
-            content: [{type: "text", text: "Exception: " + message.exception}],
+    if (message.evaluation !== undefined || message.exception !== undefined) {
+        const request = message.id;
+        let report = (
+            (
+                message.exception !== undefined
+                ? (
+                    "# Status"
+                    + "\n\nEvaluation failed with an exception."
+                    + "\n\n# Exception\n\n"
+                    + indent(message.exception)
+                )
+                : (
+                    "# Status"
+                    + "\n\nEvaluation succeeded."
+                    + "\n\n# Value\n\n"
+                    + indent(message.evaluation)
+                )
+            )
+            + "\n\n# Log output\n\n"
+            + indent(out)
+            + "\n\n# Error output\n\n"
+            + indent(err)
+            + "\n\n# Platform\n\n"
+            + request.params.arguments.platform
+            + "\n\n# Evaluated source\n\n"
+            + indent(request.params.arguments.source)
+        );
+        err = "";
+        out = "";
+        return respond(request.id, {
+            content: [{type: "text", text: report}],
             isError: false
         });
     }
@@ -161,7 +207,7 @@ function stop() {
     }
 }
 
-function start(cwd) {
+function restart(cwd) {
     stop();
     return fs.promises.readFile(
         path.join(cwd, "replete.json"),
@@ -230,14 +276,30 @@ function on_request(message) {
                 });
             }
             const command = Object.assign(
-                {id: message.id},
+                {id: message},
                 message.params.arguments
             );
+            err = "";
+            out = "";
             return subprocess.stdin.write(JSON.stringify(command) + "\n");
         }
-        if (message.params.name === "start") {
+        if (message.params.name === "output") {
+            const report = (
+                "# Log output\n\n"
+                + indent(out)
+                + "\n\n# Error output\n\n"
+                + indent(err)
+            );
+            err = "";
+            out = "";
+            return respond(message.id, {
+                content: [{type: "text", text: report}],
+                isError: false
+            });
+        }
+        if (message.params.name === "restart") {
             const cwd = message.params.arguments.cwd ?? process.cwd();
-            return start(cwd).then(function () {
+            return restart(cwd).then(function () {
                 respond(message.id, {
                     content: [{
                         type: "text",
