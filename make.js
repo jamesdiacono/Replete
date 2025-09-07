@@ -249,11 +249,6 @@ function make_replete({
                 exception,
                 id: message.id
             });
-        }).catch(function (error) {
-            on_result({
-                exception: error.stack,
-                id: message.id
-            });
         });
     }
 
