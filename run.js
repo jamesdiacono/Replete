@@ -50,7 +50,13 @@ import url from "node:url";
 import make_replete from "./make.js";
 
 function run(options) {
+
+    function on_result(message) {
+        process.stdout.write(JSON.stringify(message) + "\n");
+    }
+
     options = Object.assign({}, options);
+    options.on_result = on_result;
     options.root_locator = (
         options.root_locator
         ?? url.pathToFileURL(process.cwd()).href
@@ -79,10 +85,6 @@ function run(options) {
     options.tjs_env = options.tjs_env ?? process.env;
     const line_reader = readline.createInterface({input: process.stdin});
     const {start, send, stop} = make_replete(options);
-
-    function on_result(message) {
-        process.stdout.write(JSON.stringify(message) + "\n");
-    }
 
     function exit() {
         line_reader.close();
