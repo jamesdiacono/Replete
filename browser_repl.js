@@ -141,7 +141,7 @@ function make_browser_repl(
 // they arrive.
 
         if (clients.length === 0) {
-            capabilities.err("No WEBLs connected.\n");
+            return Promise.reject(new Error("No WEBLs connected."));
         }
         return Promise.all(
             clients.map(function (client) {

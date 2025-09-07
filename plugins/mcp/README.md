@@ -1,12 +1,12 @@
 # Replete MCP server
 
-A [Model Context Protocol](https://modelcontextprotocol.io/) server for [Replete](https://repletejs.org). It provides LLMs with tools to evaluate JavaScript in a variety of platforms including Deno, Node.js, and the browser.
+A [Model Context Protocol](https://modelcontextprotocol.io/) server for [Replete](https://repletejs.org). It provides LLM agents with tools to evaluate JavaScript in a variety of platforms including Deno, Node.js, and the browser.
 
 The source code for this server is in the Public Domain.
 
 ## Warning
 
-Code evaluated in any platform other than the browser (such as Deno) has uninhibited access to the filesystem, network, etc. Allowing your LLM to evaluate code using Replete is equivalent to giving it access to your terminal. To ensure LLM activity is properly sandboxed, Replete can be configured with only the browser REPL by passing  [`--which_deno=""`](https://github.com/jamesdiacono/Replete?tab=readme-ov-file#optionswhich_deno---which_deno) (assuming Replete is hosted by Deno, as it is by default).
+Code evaluated in any platform other than the browser (such as Deno) has uninhibited access to the filesystem, network, etc. Allowing your agent to evaluate code using Replete is equivalent to giving it access to your terminal. To ensure agent activity is properly sandboxed, Replete can be configured with only the browser REPL by passing  [`--which_deno=""`](https://github.com/jamesdiacono/Replete?tab=readme-ov-file#optionswhich_deno---which_deno) (assuming Replete is hosted by Deno, as it is by default).
 
 ## Installation
 
@@ -50,6 +50,6 @@ The _evaluate_ tool evaluates code and reports the result, providing Replete is 
 
 The _output_ tool reports any logs and errors that have occurred since the last call to _output_ or _evaluate_. When evaluated code is expected to run over many turns, this tool must be called to discover the result.
 
-When evaluating code in the browser, you may need your LLM to observe and interact with the page. This can be accomplished by installing the [Playwright MCP server](https://github.com/microsoft/playwright-mcp) or similar and using it to navigate to and interact with the WEBL.
+When evaluating code in the browser, you may want your agent to observe and interact with the page. This can be accomplished by installing the [Playwright MCP server](https://github.com/microsoft/playwright-mcp) or similar and using it to navigate to and interact with the WEBL.
 
 Configuration of Replete is described [here](https://github.com/jamesdiacono/Replete?tab=readme-ov-file#configuration).
