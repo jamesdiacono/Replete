@@ -692,6 +692,18 @@ function analyze_top(tree) {
             values.push(node);
             c(node.expression);
         },
+        VariableDeclaration(variable_node, _, c) {
+
+// Variable declarations become expression statements once transformed into
+// assignments.
+
+            variable_node.declarations.forEach(function (declarator_node) {
+                if (declarator_node.init) {
+                    values.push(declarator_node.init);
+                }
+                c(declarator_node);
+            });
+        },
         AwaitExpression() {
             wait = true;
         },
@@ -713,13 +725,15 @@ function test_analyze_top_immediate() {
             e;
         }
         f;
+        const [g] = [h];
     `);
     if (
         analysis.wait !== false
-        || analysis.values.length !== 3
+        || analysis.values.length !== 4
         || range(analysis.values[0]) !== "b(async c => await d);"
         || range(analysis.values[1]) !== "e;"
         || range(analysis.values[2]) !== "f;"
+        || range(analysis.values[3]) !== "[h]"
     ) {
         throw new Error("FAIL");
     }
@@ -736,13 +750,30 @@ function test_analyze_top_eventual() {
             f();
         }
         g;
+        let h = i;
+        let j = await k;
     `);
     if (
         analysis.wait !== true
-        || analysis.values.length !== 3
+        || analysis.values.length !== 5
         || range(analysis.values[0]) !== "b(await c);"
         || range(analysis.values[1]) !== "d;"
         || range(analysis.values[2]) !== "g;"
+        || range(analysis.values[3]) !== "i"
+        || range(analysis.values[4]) !== "await k"
+    ) {
+        throw new Error("FAIL");
+    }
+}
+
+function test_analyze_top_eventual_default() {
+    const [analysis, range] = run_analyzer(analyze_top, `
+        let [a = await b] = c;
+    `);
+    if (
+        analysis.wait !== true
+        || analysis.values.length !== 1
+        || range(analysis.values[0]) !== "c"
     ) {
         throw new Error("FAIL");
     }
@@ -1293,6 +1324,23 @@ function test_replize_top_level_await() {
     `)).then(function (value) {
         clearTimeout(timer);
         if (value !== 43) {
+            throw new Error("FAIL");
+        }
+    });
+}
+
+function test_replize_declare_await() {
+    const timer = setTimeout(function () {
+        throw new Error("FAIL timeout");
+    });
+    globalThis.eval(run_replize(`
+        let a = await 1;
+        let [b = await 2] = [];
+        let {c = await 3} = {};
+        a + b + c;
+    `)).then(function (value) {
+        clearTimeout(timer);
+        if (value !== 6) {
             throw new Error("FAIL");
         }
     });
@@ -1859,10 +1907,12 @@ if (import.meta.main) {
     test_analyze_module();
     test_analyze_top_immediate();
     test_analyze_top_eventual();
+    test_analyze_top_eventual_default();
     test_replize_continuity();
     test_replize_delayed_assignment();
     test_replize_strict_mode();
     test_replize_top_level_await();
+    test_replize_declare_await();
     test_replize_main();
     test_replize_exports();
     test_replize_export_default_anonymous_function();
