@@ -867,6 +867,14 @@ function make_identifiers_object_literal(variables, imports) {
     return "{" + members.join(", ") + "}";
 }
 
+function pattern_name(node) {
+    return (
+        node.type === "AssignmentPattern"
+        ? node.left.name    // let [a = 42] = ...
+        : node.name         // let [a] = ...
+    );
+}
+
 function replize(
     source,
     tree,
@@ -964,9 +972,11 @@ function replize(
 // A variable has been declared and initialized.
 
                     if (id.type === "ObjectPattern") {
-                        id.properties.forEach(function (property_node) {
-                            variables.push(property_node.key.name);
-                        });
+                        variables.push(
+                            ...id.properties.map(function (property_node) {
+                                return pattern_name(property_node.key);
+                            })
+                        );
 
 // Parenthesize the assignment if it is a destructured assignment, otherwise it
 // will be misinterpreted as a naked block.
@@ -986,9 +996,7 @@ function replize(
                             ")"
                         ]);
                     } else if (id.type === "ArrayPattern") {
-                        id.elements.forEach(function (identifier_node) {
-                            variables.push(identifier_node.name);
-                        });
+                        variables.push(...id.elements.map(pattern_name));
                     } else {
                         variables.push(id.name);
                     }
@@ -1218,10 +1226,11 @@ function test_replize_continuity() {
             return "f";
         }
         export const g = "g";
+        let {h = "h"} = {};
     `;
     const gather = `
         (function () {
-            return [x, y, z(), a, b, c, d, e, f(), g];
+            return [x, y, z(), a, b, c, d, e, f(), g, h];
         }());
     `;
     const scope = String(Math.random());
@@ -1231,7 +1240,7 @@ function test_replize_continuity() {
         );
     });
     if (results.some(function (array) {
-        return array.join(" ") !== "x y z a b a b e f g";
+        return array.join(" ") !== "x y z a b a b e f g h";
     })) {
         throw new Error("FAIL");
     }
