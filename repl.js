@@ -205,17 +205,16 @@
 // Evaluation should be instantaneous, or close to it. That is the best possible
 // feedback loop, greatly improving the programmer's productivity and sense of
 // wellbeing. Replete tries to satisfy the expectations of both speed and
-// freshness, but it is not pretty. That is because the two expectations are
-// not really compatible.
+// freshness, but it is not pretty because they conflict.
 
 // Usually, the vast majority of evaluation time is spent importing modules.
 // Consider the following module tree:
 
 //      source -> a.js -> b.js -> c.js
 
-// The padawan will perform between zero and three roundtrips whilst evaluating
-// the source, depending on the state of the module cache. The module tree is
-// traversed from top to bottom.
+// The padawan will perform between zero and three network roundtrips whilst
+// evaluating the source, depending on the state of the module cache. The
+// module tree is traversed from top to bottom.
 
 // Within the Replete process, however, the module tree is traversed from bottom
 // to top. This is because a module's specifier depends on its descendants, as
@@ -293,8 +292,8 @@
 // +-----------+
 
 // A module should be able to demonstrate its own correctness. To do so, parts
-// of it can be written as an executable program. It is imperative, however,
-// that a module not exhibit side effects when imported by another module. So
+// of it can be written as an executable program. It is poor form, however,
+// for module to exhibit side effects when imported by another module and so
 // some mechanism must be used to conditionally enable some of the module's
 // functionality.
 
@@ -313,8 +312,8 @@
 //          console.log(check_thing());
 //      }
 
-// Though 'import.meta.main' is not yet standardized, it is supported by at
-// least two runtimes.
+// The 'import.meta.main' property is informally standardized as part of
+// WinterCG, and is supported by at least two runtimes.
 
 /*jslint web, global */
 

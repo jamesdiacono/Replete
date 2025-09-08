@@ -1,6 +1,6 @@
 # REPL-driven development
 
-This document describes a methodology for developing JavaScript modules using REPL-driven development. It involves frequent use of [Replete](https://repletejs.org), a text-editor integrated, multi-platform JavaScript REPL, to evaluate expressions, statements, and whole files. This not only provides feedback on the behavior of code as it is written, but also lets us conveniently test modules in total isolation.
+This document describes a methodology for developing JavaScript modules using REPL-driven development. It involves using [Replete](https://repletejs.org), a multi-platform JavaScript REPL, to frequently evaluate expressions, statements, and whole files. This not only provides feedback on the behavior of code as it is written, but also lets us conveniently test modules in total isolation.
 
 Unlike most JavaScript REPLs, Replete supports the evaluation of import statements and other module syntax. This means that, in general, it is possible to evaluate the entire text of compatible JavaScript modules without error on at least one platform (Deno, Node.js, the browser, etc.). For example, user interface components can only be evaluated in the browser, whereas modules that export pure functions can be evaluated in any platform.
 
@@ -79,6 +79,8 @@ and then evaluate it and examine the result (in Replete's output or in the WEBL)
 When modifying an existing module, first run its demo to get a feel for the current and expected behavior.
 
 ## Common misunderstandings
+
+To run a module's demo, for example `my_module.js`, there is no need to devise a harness script such as `import "./my_module.js";` or similar. Rather, just evaluate the source code of the entire file verbatim.
 
 In demos, there is no need to catch errors and log them. Leave exceptions and Promise rejections uncaught, thereby failing more loudly.
 

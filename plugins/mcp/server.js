@@ -153,7 +153,6 @@ let out_at = out.length;
 let err_subscribed = false;
 let out_subscribed = false;
 let log_level = "notice";
-let in_reader;
 let out_reader;
 let subprocess;
 
@@ -369,9 +368,9 @@ function on_request(message) {
     if (message.method === "tools/list") {
         return ok(message.id, {
             tools: [
+                restart_tool,
                 evaluate_tool,
                 output_tool,
-                restart_tool,
                 stop_tool
             ]
         });
@@ -447,7 +446,6 @@ function on_request(message) {
 }
 
 function exit() {
-    in_reader.close();
     stop();
     process.exit();
 }
@@ -456,7 +454,7 @@ fetch(methodology_href).then(function (response) {
     return (
         response.ok
         ? response.text()
-        : Promise.reject(response.status)
+        : Promise.reject(new Error(response.status))
     );
 }).catch(function (error) {
     return "Failed to load " + methodology_href + ": " + error.message;
@@ -467,10 +465,11 @@ fetch(methodology_href).then(function (response) {
         + " introduction to that methodology.\n\n"
         + methodology_text
     );
-    in_reader = readline.createInterface({input: process.stdin});
-    in_reader.on("close", stop);
+    const in_reader = readline.createInterface({input: process.stdin});
+    in_reader.on("close", exit);
     in_reader.on("line", function (line) {
-        on_request(JSON.parse(line));
+        const message = JSON.parse(line);
+        on_request(message);
     });
 });
 process.on("SIGTERM", exit);

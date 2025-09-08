@@ -2,6 +2,10 @@
 
 Replete brings interactive programming to JavaScript. It is an evaluator for JavaScript modules, supporting a variety of environments including the browser, Node.js, Deno, Bun, and Txiki.
 
+Once integrated with your text editor, Replete becomes part of your development environment. Source code is sent directly from your editor to Replete, where it is evaluated. Anything from a mere expression to a whole file may be evaluated at a time. The resulting value (or an exception) is reported back for perusal.
+
+![](https://james.diacono.com.au/talks/feedback_and_the_repl/replete.gif)
+
 [Try it online](https://repletejs.org/play/) or install one of the plugins:
 
 Text editor     | Plugin
@@ -12,10 +16,6 @@ Emacs           |[Source](plugins/emacs/)
 Neovim          |[Source](plugins/neovim/)
 nREPL           |[Source](plugins/nrepl/)
 MCP             |[Source](plugins/mcp/)
-
-Once integrated with your text editor, Replete becomes part of your development environment. Source code is sent directly from your editor to Replete, where it is evaluated. Anything from a mere expression to a whole file may be evaluated at a time. The resulting value (or an exception) is reported back for perusal.
-
-![](https://james.diacono.com.au/talks/feedback_and_the_repl/replete.gif)
 
 Replete encourages the development of modules in isolation, rather than in the context of a running application. Modules written in this way tend to be more independent and hence more reusable, more testable and hence more robust.
 

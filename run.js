@@ -83,17 +83,21 @@ function run(options) {
     options.deno_env = options.deno_env ?? process.env;
     options.bun_env = options.bun_env ?? process.env;
     options.tjs_env = options.tjs_env ?? process.env;
-    const line_reader = readline.createInterface({input: process.stdin});
     const {start, send, stop} = make_replete(options);
 
     function exit() {
-        line_reader.close();
         stop().then(function () {
             process.exit();
         });
     }
 
     start().then(function () {
+        const line_reader = readline.createInterface({input: process.stdin});
+
+// The closure of stdin is a reliable way to detect unclean termination of the
+// parent process, for example via SIGKILL, allowing us to avoid zombification.
+
+        line_reader.on("close", exit);
         line_reader.on("line", function (line) {
             const message = JSON.parse(line);
             send(message).catch(function (error) {
