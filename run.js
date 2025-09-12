@@ -57,10 +57,14 @@ function run(options) {
 
     options = Object.assign({}, options);
     options.on_result = on_result;
-    options.root_locator = (
-        options.root_locator
-        ?? url.pathToFileURL(process.cwd()).href
-    );
+    if (options.root_locator === undefined) {
+        const cwd_href = url.pathToFileURL(process.cwd()).href;
+        options.root_locator = (
+            cwd_href.endsWith("/")
+            ? cwd_href
+            : cwd_href + "/"
+        );
+    }
     if (
         typeof Deno === "object"
         && options.which_deno === undefined
@@ -79,10 +83,18 @@ function run(options) {
     ) {
         options.which_node = process.argv[0];
     }
-    options.node_env = options.node_env ?? process.env;
-    options.deno_env = options.deno_env ?? process.env;
-    options.bun_env = options.bun_env ?? process.env;
-    options.tjs_env = options.tjs_env ?? process.env;
+    if (options.node_env === undefined) {
+        options.node_env = process.env;
+    }
+    if (options.deno_env === undefined) {
+        options.deno_env = process.env;
+    }
+    if (options.bun_env === undefined) {
+        options.bun_env = process.env;
+    }
+    if (options.tjs_env === undefined) {
+        options.tjs_env = process.env;
+    }
     const {start, send, stop} = make_replete(options);
 
     function exit() {

@@ -327,11 +327,11 @@ Called with a string representation of any arguments passed to `console.log` or 
 Called with a string representation of any exceptions that occur outside of evaluation, or of any bytes written to stderr.
 
 #### options.root_locator, `--root_locator`
-The file URL string of the "root" directory. Files inside this directory may be read and served over the network by Replete. Files outside this directory will not be accessible. Defaults to the current working directory of the Replete process if not specified.
+The file URL string of the "root" directory, with a trailing slash. Files inside this directory may be read and served over the network by Replete. Files outside this directory will not be accessible. Defaults to the current working directory of the Replete process if not specified.
 
 For example, suppose `options.root_locator` was chosen to be
 
-    file:///home/me/code
+    file:///home/me/code/
 
 and then Replete attempted to read the file locators
 

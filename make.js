@@ -87,7 +87,15 @@ function make_replete({
             return {"Content-Type": type};
         }
     },
-    locate = function default_locate(specifier, parent_locator) {
+    locate = function default_locate(
+        specifier,
+
+// When the parent module's locator is omitted, as is the case when an import
+// statement is evaluated from within an unsaved editor buffer, resolving from
+// the root is better than nothing.
+
+        parent_locator = root_locator
+    ) {
 
 // Fully qualified specifiers, such as HTTP URLs or absolute paths, are left for
 // the runtime to resolve.
@@ -138,17 +146,17 @@ function make_replete({
 
         const locator_href = new URL(locator).href;
 
-// Ensure a trailing slash.
-
-        const root_href = root_locator.replace(/\/?$/, "/");
-
 // Ensure that the locator points to a file within the root directory. We are
 // forced to ignore case due to the case-insensitive nature of Windows drive
 // letters.
 
-        if (!locator_href.toLowerCase().startsWith(root_href.toLowerCase())) {
+        if (
+            !locator_href.toLowerCase().startsWith(
+                root_locator.toLowerCase()
+            )
+        ) {
             return Promise.reject(new Error(
-                "Forbidden: " + locator + " is outside " + root_href
+                "Forbidden: " + locator + " is outside " + root_locator
             ));
         }
         return read(locator);
@@ -252,6 +260,9 @@ function make_replete({
         });
     }
 
+    if (!root_locator.endsWith("/")) {
+        throw new Error("Missing trailing slash in 'root_locator'.");
+    }
     return Object.freeze({start, send, stop});
 }
 
