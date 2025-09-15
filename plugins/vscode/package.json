@@ -1,7 +1,8 @@
 {
-    "name": "Replete",
-    "description": "Interactive JavaScript",
-    "version": "0.0.15",
+    "name": "replete",
+    "displayName": "Replete",
+    "description": "REPL-driven development in JavaScript",
+    "version": "0.0.16",
     "publisher": "jamesdiacono",
     "homepage": "https://repletejs.org",
     "repository": "https://github.com/jamesdiacono/Replete",
@@ -153,16 +154,5 @@
                 }
             }
         }
-    },
-    "__metadata": {
-        "id": "ff3db9b8-fba5-44a6-94c5-984c67d4633d",
-        "publisherId": "4fcffd0d-5f13-4efa-9c47-a88b48bb7c12",
-        "publisherDisplayName": "James Diacono",
-        "targetPlatform": "undefined",
-        "isApplicationScoped": false,
-        "updated": true,
-        "isPreReleaseVersion": false,
-        "installedTimestamp": 1691836523401,
-        "preRelease": false
     }
 }

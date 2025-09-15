@@ -161,7 +161,11 @@ function evaluate(platform) {
 
     replete.stdin.write(JSON.stringify({
         source,
-        locator: url.pathToFileURL(editor.document.fileName),
+        locator: (
+            !editor.document.isUntitled
+            ? url.pathToFileURL(editor.document.fileName)
+            : undefined
+        ),
         scope: editor.document.fileName,
         platform
     }) + "\n");
