@@ -111,7 +111,15 @@ function run(options) {
 
         line_reader.on("close", exit);
         line_reader.on("line", function (line) {
-            const message = JSON.parse(line);
+            if (line.trim() === "") {
+                return;
+            }
+            let message;
+            try {
+                message = JSON.parse(line);
+            } catch (exception) {
+                return on_result({err: exception.stack + "\n"});
+            }
             send(message).catch(function (error) {
                 on_result({
                     exception: error.stack,
