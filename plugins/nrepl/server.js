@@ -37,6 +37,7 @@ const default_command = [
     "--browser_port=9325",
     "--content_type=js:text/javascript",
     "--content_type=mjs:text/javascript",
+    "--content_type=map:application/json",
     "--content_type=css:text/css",
     "--content_type=html:text/html; charset=utf-8",
     "--content_type=wasm:application/wasm",
