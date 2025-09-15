@@ -832,6 +832,16 @@ const script_template = `
 
     var $scope = $scopes[<scope_name_string>];
 
+// Check that the imported modules exported the requested identifiers.
+
+    <imports_array_literal>.forEach(function ([import_nr, specifier, name]) {
+        if (!Object.hasOwn($imports[import_nr], name)) {
+            throw new Error(
+                "Module " + specifier + " does not export '" + name + "'."
+            );
+        }
+    });
+
 // Populate the scope with the script's declared identifiers. Every identifier,
 // including those from previous evaluations, are simulated as local variables.
 // This means that scripts are free to shadow global variables, without risk of
@@ -862,6 +872,25 @@ const script_template = `
         }());
     }
 `;
+
+function make_imports_array_literal(imports) {
+    let elements = [];
+    imports.forEach(function (the_import, import_nr) {
+        if (the_import.default !== undefined) {
+            elements.push([import_nr, the_import.node.source.value, "default"]);
+        }
+        if (typeof the_import.names === "object") {
+            Object.keys(the_import.names).forEach(function (name) {
+                elements.push([
+                    import_nr,
+                    the_import.node.source.value,
+                    the_import.names[name]
+                ]);
+            });
+        }
+    });
+    return JSON.stringify(elements, undefined, "    ");
+}
 
 function make_identifiers_object_literal(variables, imports) {
     const members = [];
@@ -1201,6 +1230,9 @@ function replize(
     return fill(
         script_template,
         {
+            imports_array_literal: make_imports_array_literal(
+                module_analysis.imports
+            ),
             identifiers_object_literal: make_identifiers_object_literal(
                 variables,
                 module_analysis.imports
