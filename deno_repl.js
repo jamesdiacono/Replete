@@ -41,13 +41,15 @@ function allow_host(run_args, host, permission) {
 }
 
 function make_deno_repl(capabilities, which, args = [], env = {}) {
+    if (padawan_url.protocol !== "file:") {
+        args = allow_host(args, padawan_url.host, "--allow-import");
+    }
     return make_cmdl_repl(
         capabilities,
         function make_command(tcp_host, http_host) {
             let run_args = args;
             run_args = allow_host(run_args, tcp_host, "--allow-net");
             run_args = allow_host(run_args, http_host, "--allow-import");
-            run_args = allow_host(run_args, padawan_url.host, "--allow-import");
             return Promise.resolve([
                 which,
                 "run",
