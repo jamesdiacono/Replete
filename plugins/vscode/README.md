@@ -1,6 +1,6 @@
-# Replete VSCode plugin
+# Replete VSCode extension
 
-[Replete](https://repletejs.org) brings interactive programming to JavaScript. It is an evaluator for JavaScript modules, supporting a variety of environments including the browser, Node.js, Deno, Bun, and Txiki.
+This is a VSCode extension for [Replete](https://repletejs.org), a multi-platform JavaScript REPL.
 
 ![](https://james.diacono.com.au/talks/feedback_and_the_repl/replete.gif)
 

@@ -1,6 +1,6 @@
 # Replete nREPL server
 
-This is an nREPL server for Replete (https://repletejs.org), a REPL facilitating interactive programming in JavaScript.
+This is an nREPL server for Replete (https://repletejs.org), a multi-platform JavaScript REPL.
 
 The source code is in the Public Domain.
 

@@ -889,7 +889,7 @@ function make_imports_array_literal(imports) {
             });
         }
     });
-    return JSON.stringify(elements, undefined, "    ");
+    return JSON.stringify(elements);
 }
 
 function make_identifiers_object_literal(variables, imports) {

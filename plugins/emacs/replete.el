@@ -1,4 +1,4 @@
-(defvar replete-command
+(defvar replete-default-command
   (list "deno"
         "run"
         "--allow-all"
@@ -16,10 +16,31 @@
         "--content_type=svg:image/svg+xml"
         "--content_type=png:image/png"
         "--content_type=webp:image/webp"))
-(defvar replete-cwd default-directory)
 (defvar replete-buffer "*replete*")
 (defvar replete-process nil)
 (defvar replete-remnant "")
+
+(defun replete-get-config (filename)
+
+; Read and parse the project-specific configuration file.
+
+  (json-parse-string
+   (with-temp-buffer
+     (insert-file-contents filename)
+     (buffer-string))
+   :object-type
+   'hash-table
+   :array-type
+   'list))
+
+(defun replete-get-command (filename)
+
+; Infer the Replete command, preferring the project-specific command where
+; available.
+
+  (if (file-exists-p filename)
+      (gethash "command" (replete-get-config filename))
+    replete-default-command))
 
 (defun replete-errorize (value)
 
@@ -34,7 +55,7 @@
 ; always scrolled to the end of the output.
 
   (with-current-buffer replete-buffer
-    (set (make-local-variable 'window-point-insertion-type) t)
+    (setq-local window-point-insertion-type t)
     (goto-char (point-max))
     (insert value after)))
 
@@ -102,20 +123,21 @@
   (if (process-live-p replete-process)
       (kill-process replete-process)))
 
-(defun replete-start ()
+(defun replete-start (directory)
 
-; Starts (or restarts) the Replete process.
+; Starts (or restarts) the Replete process in the given directory.
 
-  (interactive)
+  (interactive "Ddirectory: ")
   (if (process-live-p replete-process)
       (replete-stop))
   (setq replete-process
-    (let ((default-directory replete-cwd))
+    (let ((default-directory directory)
+          (config-filename (expand-file-name "replete.json" directory)))
       (make-process :name "replete"
                     :buffer replete-buffer
                     :connection-type 'pipe
                     :filter #'replete-chunk
-                    :command replete-command))))
+                    :command (replete-get-command config-filename)))))
 
 (defun replete-eval (platform)
 

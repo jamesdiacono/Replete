@@ -1,6 +1,6 @@
 # Replete NeoVim plugin
 
-This is a Neovim plugin for [Replete](https://repletejs.org), a REPL facilitating interactive programming in JavaScript.
+This is a Neovim plugin for [Replete](https://repletejs.org), a multi-platform JavaScript REPL.
 
 The code for this plugin is [MIT licenced](https://opensource.org/licenses/MIT), as is its dependency [json.lua](https://github.com/rxi/json.lua).
 

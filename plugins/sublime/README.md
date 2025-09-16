@@ -1,6 +1,6 @@
 # Replete Sublime plugin
 
-This is a Sublime Text 4 package for [Replete](https://repletejs.org), a REPL facilitating interactive programming in JavaScript.
+This is a Sublime Text 4 package for [Replete](https://repletejs.org), a multi-platform JavaScript REPL.
 
 The source code for this package is in the Public Domain.
 
