@@ -174,26 +174,43 @@ function inspect(value, maximum_depth = 10) {
 }
 
 if (import.meta.main) {
-    globalThis.console.log(inspect());
-    globalThis.console.log(inspect(null));
-    globalThis.console.log(inspect(123));
-    globalThis.console.log(inspect(Infinity));
-    globalThis.console.log(inspect(NaN));
-    globalThis.console.log(inspect([1, {"2": [3, 4]}]));
-    globalThis.console.log(inspect([1, {"2": [3, 4]}], 1));
-    globalThis.console.log(inspect(new Uint8Array([0, 255])));
+    const not_circular = {};
+    let circular = Object.create(null);
+    circular.self = circular;
+    let bad_iterator = {};
+    bad_iterator[Symbol.iterator] = "BOOM";
+    if (
+        inspect() !== "undefined"
+        || inspect(null) !== "null"
+        || inspect(123) !== "123"
+        || inspect(Infinity) !== "Infinity"
+        || inspect(NaN) !== "NaN"
+        || inspect([1, {"2": [3, 4]}]) !== `[
+    1,
+    {
+        2: [3, 4]
+    }
+]`
+        || inspect([1, {"2": [3, 4]}], 1) !== `[
+    1,
+    [Object]
+]`
+        || inspect(new Uint8Array([0, 255])) !== "[Uint8Array] [0, 255]"
+        || inspect(Math.random) !== "[Function: random]"
+        || inspect([not_circular, not_circular]) !== `[
+    {},
+    {}
+]`
+        || inspect(circular) !== `[Object: null prototype] {
+    self: [Circular]
+}`
+        || inspect(bad_iterator) !== "{}"
+    ) {
+        throw new Error("FAIL");
+    }
     if (typeof document === "object") {
         globalThis.console.log(inspect(document.body));
     }
-    globalThis.console.log(inspect(Math.random));
-    const not_circular = {};
-    globalThis.console.log(inspect([not_circular, not_circular]));
-    let circular = Object.create(null);
-    circular.self = circular;
-    globalThis.console.log(inspect(circular));
-    let bad_iterator = {};
-    bad_iterator[Symbol.iterator] = "BOOM";
-    globalThis.console.log(inspect(bad_iterator));
 }
 
 export default Object.freeze(inspect);
