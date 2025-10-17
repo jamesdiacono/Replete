@@ -1,20 +1,22 @@
 // Format any value as a nice readable string. Useful for debugging.
 
 // Values nested within 'value' are inspected no deeper than 'maximum_depth'
-// levels. The contents of identical objects and arrays appear at most once
-// unless 'repeat_duplicates' is true.
+// levels.
+
+// The inspected depth is automatically constrained such that the returned
+// string is no longer than 'maximum_length'.
 
 /*jslint browser, global, null */
 
-function inspect(value, maximum_depth = 10, repeat_duplicates = false) {
+function inspect(value, maximum_depth = 10, maximum_length = 65536) {
 
     function is_primitive(value) {
         return (
-            typeof value === "string"
-            || typeof value === "number"
-            || typeof value === "boolean"
+            value === undefined
             || value === null
-            || value === undefined
+            || typeof value === "boolean"
+            || typeof value === "number"
+            || typeof value === "string"
         );
     }
 
@@ -36,7 +38,10 @@ function inspect(value, maximum_depth = 10, repeat_duplicates = false) {
         string += fragment;
     }
 
-    let duplicates = new WeakMap();
+    function too_long() {
+        return string.length > maximum_length;
+    }
+
     (function print(value, depth = 0, ancestors = []) {
         if (typeof value === "function") {
             return write("[Function: " + (value.name || "(anonymous)") + "]");
@@ -47,37 +52,32 @@ function inspect(value, maximum_depth = 10, repeat_duplicates = false) {
 
             return write(JSON.stringify(value));
         }
-        if (is_primitive(value) || value.constructor === RegExp) {
+        if (
+            is_primitive(value)
+            || value.constructor === RegExp
+            || value.constructor === Symbol
+        ) {
             return write(String(value));
         }
-        if (value.constructor === Date) {
-            return write("[Date: " + value.toJSON() + "]");
-        }
-        if (ancestors.includes(value)) {
-            return write("[Circular]");
-        }
-        const terminate = (
-            depth >= maximum_depth
-            || (!repeat_duplicates && duplicates.has(value))
-        );
+        if (typeof value !== "object") {
 
-// We keep track of object-like values that have already been (or are being)
-// printed, otherwise we would be at risk of entering an infinite loop.
+// BigInt, etc.
 
-        ancestors = [...ancestors, value];
-
-// Attempting to store the value in a WeakMap serves two purporses, depending on
-// the outcome. If successful, we can later recall that the value has been
-// printed in full. If an exception is thrown, we learn that the value is some
-// kind of freaky primitive, like Symbol or BigInt.
-
-        try {
-            duplicates.set(value);
-        } catch (_) {
             return write(
                 "[" + value.constructor.name + ": " + String(value) + "]"
             );
         }
+        if (value.constructor === Date) {
+            return write("[Date: " + value.toJSON() + "]");
+        }
+
+// We keep track of object-like values that have already been (or are being)
+// printed, otherwise we would be at risk of entering an infinite loop.
+
+        if (ancestors.includes(value)) {
+            return write("[Circular]");
+        }
+        ancestors = [...ancestors, value];
 
         function print_member(key, value, compact, last) {
 
@@ -103,20 +103,28 @@ function inspect(value, maximum_depth = 10, repeat_duplicates = false) {
             }
         }
 
+        const leaf = depth >= maximum_depth;
         if (Array.isArray(value)) {
-            if (terminate) {
+            if (leaf) {
                 return write("[Array]");
             }
             const compact = value.length < 3 && value.every(is_primitive);
             write("[");
             indent();
-            value.forEach(function (element, element_nr) {
+            value.every(function (element, element_nr) {
+
+// Exiting early prevents memory exhaustion when inspecting enormous values.
+
+                if (too_long()) {
+                    return false;
+                }
                 print_member(
                     undefined,
                     element,
                     compact,
                     element_nr === value.length - 1
                 );
+                return true;
             });
             outdent();
             return write("]");
@@ -129,12 +137,12 @@ function inspect(value, maximum_depth = 10, repeat_duplicates = false) {
 // The object has no prototype. A descriptive prefix might be helpful.
 
             write("[Object: null prototype]");
-            if (terminate) {
+            if (leaf) {
                 return;
             }
             write(" ");
         } else {
-            if (terminate) {
+            if (leaf) {
                 return write("[" + value.constructor.name + "]");
             }
             if (value.constructor !== Object) {
@@ -160,24 +168,33 @@ function inspect(value, maximum_depth = 10, repeat_duplicates = false) {
 // omitted because they overwhelm the output.
 
         const keys = Object.keys(value);
-        keys.forEach(function (key, key_nr) {
+        keys.every(function (key, key_nr) {
+            if (too_long()) {
+                return false;
+            }
 
 // It is possible that the property is a getter, and that it will fail when
 // accessed. Omit any malfunctioning properties without affecting the others.
 
+            let property_value;
             try {
-                print_member(
-                    key,
-                    value[key],
-                    keys.length === 1 && is_primitive(value[key]),
-                    key_nr === keys.length - 1
-                );
+                property_value = value[key];
             } catch (_) {}
+            print_member(
+                key,
+                property_value,
+                keys.length === 1 && is_primitive(property_value),
+                key_nr === keys.length - 1
+            );
+            return true;
         });
         outdent();
         return write("}");
     }(value));
-    return string;
+    if (too_long() && maximum_depth > 0) {
+        return inspect(value, maximum_depth - 1, maximum_length);
+    }
+    return string.slice(0, maximum_length);
 }
 
 if (import.meta.main) {
@@ -198,17 +215,19 @@ if (import.meta.main) {
         2: [3, 4]
     }
 ]`
-        || inspect([1, {"2": [3, 4]}], 1) !== `[
+        || inspect(["a", {"b": "c"}], 1) !== `[
+    "a",
+    [Object]
+]`
+        || inspect([1, 2], 0) !== "[Array]"
+        || inspect([1, {"2": [3, 4]}], 2, 30) !== `[
     1,
     [Object]
 ]`
+        || inspect([1, {"2": [3, 4]}], 2, 5) !== "[Arra"
         || inspect(new Uint8Array([0, 255])) !== "[Uint8Array] [0, 255]"
         || inspect(Math.random) !== "[Function: random]"
         || inspect([not_circular, not_circular]) !== `[
-    {},
-    [Object]
-]`
-        || inspect([not_circular, not_circular], undefined, true) !== `[
     {},
     {}
 ]`
@@ -219,9 +238,15 @@ if (import.meta.main) {
     ) {
         throw new Error("FAIL");
     }
-    if (typeof document === "object") {
-        globalThis.console.log(inspect(document.body));
-    }
+    const huge = (function array_bomb(depth = 20, cache = []) {
+        if (cache[depth] === undefined) {
+            cache[depth] = new Array(depth).fill().map(function () {
+                return array_bomb(depth - 1, cache);
+            });
+        }
+        return cache[depth];
+    }());
+    inspect(huge); // requires correctly functioning early exit
 }
 
 export default Object.freeze(inspect);
