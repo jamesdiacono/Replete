@@ -1,11 +1,12 @@
 // Format any value as a nice readable string. Useful for debugging.
 
 // Values nested within 'value' are inspected no deeper than 'maximum_depth'
-// levels.
+// levels. The contents of identical objects and arrays appear at most once
+// unless 'repeat_duplicates' is true.
 
 /*jslint browser, global, null */
 
-function inspect(value, maximum_depth = 10) {
+function inspect(value, maximum_depth = 10, repeat_duplicates = false) {
 
     function is_primitive(value) {
         return (
@@ -35,7 +36,8 @@ function inspect(value, maximum_depth = 10) {
         string += fragment;
     }
 
-    (function print(value, depth = 0, weakmaps = []) {
+    let duplicates = new WeakMap();
+    (function print(value, depth = 0, ancestors = []) {
         if (typeof value === "function") {
             return write("[Function: " + (value.name || "(anonymous)") + "]");
         }
@@ -51,23 +53,27 @@ function inspect(value, maximum_depth = 10) {
         if (value.constructor === Date) {
             return write("[Date: " + value.toJSON() + "]");
         }
-        if (weakmaps.some(function (seen) {
-            return seen.has(value);
-        })) {
+        if (ancestors.includes(value)) {
             return write("[Circular]");
         }
-        try {
+        const terminate = (
+            depth >= maximum_depth
+            || (!repeat_duplicates && duplicates.has(value))
+        );
 
 // We keep track of object-like values that have already been (or are being)
 // printed, otherwise we would be at risk of entering an infinite loop.
 
-            let seen = new WeakMap();
-            seen.set(value, true);
-            weakmaps = weakmaps.concat(seen);
+        ancestors = [...ancestors, value];
+
+// Attempting to store the value in a WeakMap serves two purporses, depending on
+// the outcome. If successful, we can later recall that the value has been
+// printed in full. If an exception is thrown, we learn that the value is some
+// kind of freaky primitive, like Symbol or BigInt.
+
+        try {
+            duplicates.set(value);
         } catch (_) {
-
-// The value must be some kind of freaky primitive, like Symbol or BigInt.
-
             return write(
                 "[" + value.constructor.name + ": " + String(value) + "]"
             );
@@ -84,7 +90,7 @@ function inspect(value, maximum_depth = 10) {
             if (key !== undefined) {
                 write(key + ": ");
             }
-            print(value, depth + 1, weakmaps);
+            print(value, depth + 1, ancestors);
             if (!last) {
                 return write(
                     compact
@@ -96,8 +102,9 @@ function inspect(value, maximum_depth = 10) {
                 return write("\n" + dent.slice(4));
             }
         }
+
         if (Array.isArray(value)) {
-            if (depth >= maximum_depth) {
+            if (terminate) {
                 return write("[Array]");
             }
             const compact = value.length < 3 && value.every(is_primitive);
@@ -122,12 +129,12 @@ function inspect(value, maximum_depth = 10) {
 // The object has no prototype. A descriptive prefix might be helpful.
 
             write("[Object: null prototype]");
-            if (depth >= maximum_depth) {
+            if (terminate) {
                 return;
             }
             write(" ");
         } else {
-            if (depth >= maximum_depth) {
+            if (terminate) {
                 return write("[" + value.constructor.name + "]");
             }
             if (value.constructor !== Object) {
@@ -142,7 +149,7 @@ function inspect(value, maximum_depth = 10) {
 
             if (value[Symbol.iterator] !== undefined) {
                 try {
-                    return print(Array.from(value), depth, weakmaps);
+                    return print(Array.from(value), depth, ancestors);
                 } catch (_) {}
             }
         }
@@ -198,6 +205,10 @@ if (import.meta.main) {
         || inspect(new Uint8Array([0, 255])) !== "[Uint8Array] [0, 255]"
         || inspect(Math.random) !== "[Function: random]"
         || inspect([not_circular, not_circular]) !== `[
+    {},
+    [Object]
+]`
+        || inspect([not_circular, not_circular], undefined, true) !== `[
     {},
     {}
 ]`
