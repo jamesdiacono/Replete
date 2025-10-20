@@ -1632,6 +1632,10 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
         }
         analyzing[locator] = read(locator).then(function (source) {
             return analyze_module(parse_module(source));
+        }).catch(function (error) {
+            return Promise.reject(new Error(
+                "Unparseable " + locator + ": " + error.message
+            ));
         });
         return analyzing[locator];
     }
