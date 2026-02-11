@@ -133,12 +133,17 @@ const padawan_create_script_template = `
         return globalThis.onunhandledrejection({reason: args[4] ?? args[0]});
     };
 
-// Padawans receive only one kind of message, containing the fulfillment of the
-// 'padawan_eval_script_template'. We use an indirect eval to avoid exposing our
-// local variables.
+// Padawans should receive only one kind of message, containing the fulfillment
+// of the 'padawan_eval_script_template', but it is possible for other code to
+// call 'postMessage' so we must verify.
 
     globalThis.onmessage = function (event) {
-        return globalThis.eval(event.data);
+        if (event.data?.secret === <secret>) {
+
+// Using indirect eval avoids exposing our local variables.
+
+            globalThis.eval(event.data.code);
+        }
     };
 
 // Finally, inform the master that the padawan is ready for instruction.
@@ -514,21 +519,24 @@ function make_webl() {
                     delete eval_callbacks[id];
                     return resolve(report);
                 };
-                return padawans[name].send(fill(
-                    padawan_eval_script_template,
-                    {
-                        eval_id: id,
-                        import_expressions: imports.map(
-                            function (specifier) {
-                                return "import(\"" + specifier + "\")";
-                            }
-                        ).join(
-                            ",\n    "
-                        ),
-                        payload_script_json: JSON.stringify(script),
-                        wait
-                    }
-                ));
+                return padawans[name].send({
+                    secret,
+                    code: fill(
+                        padawan_eval_script_template,
+                        {
+                            eval_id: id,
+                            import_expressions: imports.map(
+                                function (specifier) {
+                                    return "import(\"" + specifier + "\")";
+                                }
+                            ).join(
+                                ",\n    "
+                            ),
+                            payload_script_json: JSON.stringify(script),
+                            wait
+                        }
+                    )
+                });
             });
         }
 
