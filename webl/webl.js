@@ -142,7 +142,7 @@ const padawan_create_script_template = `
 
 // Using indirect eval avoids exposing our local variables.
 
-            globalThis.eval(event.data.code);
+            globalThis.eval(event.data.script);
         }
     };
 
@@ -521,7 +521,7 @@ function make_webl() {
                 };
                 return padawans[name].send({
                     secret,
-                    code: fill(
+                    script: fill(
                         padawan_eval_script_template,
                         {
                             eval_id: id,
@@ -584,9 +584,7 @@ if (import.meta.main) {
     padawan.create().then(
         function on_created() {
             return padawan.eval(`
-                const btn = document.createElement("button");
-                btn.innerText = "Foo";
-                document.body.appendChild(btn);
+                document.body.innerText = "OK";
             `, []);
         }
     ).then(
