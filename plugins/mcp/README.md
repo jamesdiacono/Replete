@@ -12,9 +12,9 @@ Code evaluated in any platform other than the browser (such as Deno) has uninhib
 
 Install [Deno](https://deno.com) then configure your editor to start the MCP server using this command:
 
-    deno run --allow-all https://deno.land/x/replete/plugins/mcp/server.js
+    deno run --allow-all https://deno.land/x/replete/plugins/mcp/server.js [replete_command...]
 
-MCP messages are read from stdin and written to stdout.
+MCP messages are read from stdin and written to stdout. If a `replete_command` is provided, it is used to start the Replete process (instead of using the default command or reading the command from replete.json).
 
 To configure the Cursor editor, for example, go to Settings -> Cursor Settings -> MCP & Integrations -> New MCP Server and paste the following:
 

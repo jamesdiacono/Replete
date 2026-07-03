@@ -35,7 +35,7 @@ const default_command = [
     "--importmap",
     "https://deno.land/x/replete/import_map.json",
     "https://deno.land/x/replete/replete.js",
-    "--browser_port=9325",
+    "--browser_port=9326", // avoid collision with human's WEBL
     "--content_type=js:text/javascript",
     "--content_type=mjs:text/javascript",
     "--content_type=map:application/json",
@@ -279,7 +279,11 @@ function restart(cwd) {
     ).then(function (text) {
         return JSON.parse(text).command;
     }).catch(function () {
-        return default_command;
+        return (
+            process.argv.length > 2
+            ? process.argv.slice(2)
+            : default_command
+        );
     }).then(function (command) {
         subprocess = child_process.spawn(
             command[0],
