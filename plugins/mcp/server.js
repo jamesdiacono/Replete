@@ -359,11 +359,11 @@ function on_request(message) {
     if (message.method === "resources/subscribe") {
         if (message.params.uri === out_resource.uri) {
             out_subscribed = true;
-            return;
+            return ok(message.id, {});
         }
         if (message.params.uri === err_resource.uri) {
             err_subscribed = true;
-            return;
+            return ok(message.id, {});
         }
         return resource_not_found(message.id, message.params.uri);
     }
