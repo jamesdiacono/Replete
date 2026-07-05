@@ -127,7 +127,13 @@ let output_tool = {
 };
 let restart_tool = {
     name: "restart",
-    description: "Starts Replete, or restarts if already running.",
+    description: (
+        "Starts Replete, or restarts it if already running. It is not necessary"
+        + " to restart Replete between every evaluation.\n\n"
+        + "Restarting Replete automatically restarts all REPLs (including the"
+        + " WEBL), but this should only be necessary once an unrecoverable"
+        + " state (stray timers, bound ports, infinite loops, etc.) is reached."
+    ),
     inputSchema: {
         type: "object",
         properties: {
