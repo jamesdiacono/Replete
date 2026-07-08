@@ -36,7 +36,7 @@ const default_command = [
     "--importmap",
     "https://deno.land/x/replete/import_map.json",
     "https://deno.land/x/replete/replete.js",
-    "--browser_port=9326", // avoid collision with human's WEBL
+    "--browser_port=0", // prevent collision with the human's WEBL
     "--content_type=js:text/javascript",
     "--content_type=mjs:text/javascript",
     "--content_type=map:application/json",
@@ -249,7 +249,6 @@ function on_result(message) {
         return;
     }
     if (message.evaluation !== undefined || message.exception !== undefined) {
-        const request = message.id;
         let report = (
             (
                 message.exception !== undefined
@@ -273,7 +272,7 @@ function on_result(message) {
         );
         err_at = err.length;
         out_at = out.length;
-        return ok(request.id, {
+        return ok(message.id, {
             content: [{type: "text", text: report}],
             isError: false
         });
@@ -422,7 +421,7 @@ function on_request(message) {
                 });
             }
             const command = Object.assign(
-                {id: message},
+                {id: message.id},
                 message.params.arguments
             );
             err_at = err.length;

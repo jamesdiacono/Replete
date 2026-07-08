@@ -16,19 +16,19 @@ Install [Deno](https://deno.com) then configure your editor to start the MCP ser
 
 MCP messages are read from stdin and written to stdout. Optionally, a debug log with all message traffic between the parent process, the server, and Replete can be written.
 
-It is possible to configure the MCP server with its own Replete command by specifying the `plugins.mcp.command` array in replete.json. This can be desirable to avoid WEBL port conflicts with other Replete processes:
+It is possible to configure the MCP server with its own Replete command by specifying the `plugins.mcp.command` array in replete.json. This can avoid port conflicts between different Replete processes.
 
     {
         "command": [
             ...
-            "--browser_port=4444",
+            "--browser_port=9325",
             ...
         ],
         "plugins": {
             "mcp": {
                 "command": [
                     ...
-                    "--browser_port=5555",
+                    "--browser_port=0",
                     ...
                 ]
             }

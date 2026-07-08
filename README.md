@@ -186,7 +186,7 @@ as `options.headers` makes it possible to render a JPEG image on the page, where
     document.body.append(img);
 
 #### options.browser_port, `--browser_port`
-The port number of the browser REPL. If omitted, the browser REPL will be unavailable.
+The port number of the browser REPL, or `0` to assign an unused port. If omitted, the browser REPL will be unavailable.
 
 #### options.browser_hostname, `--browser_hostname`
 The hostname of the browser REPL. When this option is omitted, the browser REPL listens only on localhost.

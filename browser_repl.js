@@ -83,6 +83,17 @@ function make_browser_repl(
         });
     }
 
+    function webl_href() {
+        return "http://" + (
+
+// IPv6 addresses must be wrapped in square brackets to appear in a URL.
+
+            hostname.includes(":")
+            ? "[" + hostname + "]"
+            : hostname
+        ) + ":" + port;
+    }
+
     let webl_server;
     let repl;
 
@@ -113,14 +124,7 @@ function make_browser_repl(
         return webl_server.start(port, hostname).then(function (actual_port) {
             port = actual_port;
             capabilities.out(
-                "Waiting for WEBL: http://" + (
-
-// IPv6 addresses must be wrapped in square brackets to appear in a URL.
-
-                    hostname.includes(":")
-                    ? "[" + hostname + "]"
-                    : hostname
-                ) + ":" + port + "\n"
+                "Waiting for WEBL: " + webl_href() + "\n"
             );
         });
     }
@@ -141,7 +145,9 @@ function make_browser_repl(
 // they arrive.
 
         if (clients.length === 0) {
-            return Promise.reject(new Error("No WEBLs connected."));
+            return Promise.reject(new Error(
+                "No WEBLs connected. Open " + webl_href() + " in a browser."
+            ));
         }
         return Promise.all(
             clients.map(function (client) {
