@@ -65,23 +65,27 @@ function run(options) {
             : cwd_href + "/"
         );
     }
-    if (
-        typeof Deno === "object"
-        && options.which_deno === undefined
-        && options.which_deno !== ""
-    ) {
-        options.which_deno = Deno.execPath();
-    } else if (
-        typeof Bun === "object"
-        && options.which_bun === undefined
-        && options.which_bun !== ""
-    ) {
-        options.which_bun = process.argv[0];
-    } else if (
-        options.which_node === undefined
-        && options.which_node !== ""
-    ) {
-        options.which_node = process.argv[0];
+    if (typeof Deno === "object") {
+        if (options.which_deno === undefined) {
+            options.which_deno = Deno.execPath();
+        }
+    } else if (typeof Bun === "object") {
+        if (options.which_bun === undefined) {
+            options.which_bun = process.argv[0];
+        }
+    } else {
+        if (options.which_node === undefined) {
+            options.which_node = process.argv[0];
+        }
+    }
+    if (options.which_node === "") {
+        delete options.which_node;
+    }
+    if (options.which_deno === "") {
+        delete options.which_deno;
+    }
+    if (options.which_bun === "") {
+        delete options.which_bun;
     }
     if (options.node_env === undefined) {
         options.node_env = process.env;
