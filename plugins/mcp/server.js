@@ -15,6 +15,7 @@ import process from "node:process";
 import readline from "node:readline";
 const methodology_href = import.meta.resolve("./methodology.md");
 
+const log_path = process.argv[2];
 const json_rpc_not_found = -32002;
 const json_rpc_invalid_request = -32600;
 const json_rpc_method_not_found = -32601;
@@ -162,8 +163,29 @@ let out_subscribed = false;
 let log_level = "notice";
 let out_reader;
 let subprocess;
+let log_queue = Promise.resolve();
+
+function log(stream, value) {
+    if (log_path === undefined) {
+        return;
+    }
+    const string = (
+        typeof value === "string"
+        ? value
+        : JSON.stringify(value, undefined, 4)
+    );
+    const lines = string.split("\n");
+    const prefixed_lines = lines.map(function (line) {
+        return stream.padEnd(11, " ") + " " + line;
+    });
+    const prefixed = prefixed_lines.join("\n") + "\n";
+    log_queue = log_queue.then(function () {
+        return fs.promises.appendFile(log_path, prefixed);
+    });
+}
 
 function write(message) {
+    log("JSONRPC OUT", message);
     process.stdout.write(JSON.stringify(message) + "\n");
 }
 
@@ -248,10 +270,6 @@ function on_result(message) {
             + indent(out.slice(out_at))
             + "\n\n# Error output\n\n"
             + indent(err.slice(err_at))
-            + "\n\n# Platform\n\n"
-            + request.params.arguments.platform
-            + "\n\n# Evaluated source\n\n"
-            + indent(request.params.arguments.source)
         );
         err_at = err.length;
         out_at = out.length;
@@ -283,14 +301,15 @@ function restart(cwd) {
         path.join(cwd, "replete.json"),
         "utf8"
     ).then(function (text) {
-        return JSON.parse(text).command;
+        const parsed = JSON.parse(text);
+        if (parsed.plugins?.mcp !== undefined) {
+            return parsed.plugins.mcp.command;
+        }
+        return parsed.command;
     }).catch(function () {
-        return (
-            process.argv.length > 2
-            ? process.argv.slice(2)
-            : default_command
-        );
+        return default_command;
     }).then(function (command) {
+        log("Replete CMD", command);
         subprocess = child_process.spawn(
             command[0],
             command.slice(1),
@@ -309,13 +328,18 @@ function restart(cwd) {
                 });
                 out_reader.on("line", function (line) {
                     try {
-                        on_result(JSON.parse(line));
+                        const result = JSON.parse(line);
+                        log("Replete OUT", result);
+                        on_result(result);
                     } catch (exception) {
+                        log("Replete OUT", line);
                         notify({level: "error", data: exception.stack});
                     }
                 });
                 subprocess.stderr.on("data", function (buffer) {
-                    notify({level: "error", data: buffer.toString()});
+                    const string = buffer.toString();
+                    log("Replete ERR", string);
+                    notify({level: "error", data: string});
                 });
                 resolve(subprocess);
             });
@@ -403,6 +427,7 @@ function on_request(message) {
             );
             err_at = err.length;
             out_at = out.length;
+            log("Replete IN", command);
             return subprocess.stdin.write(JSON.stringify(command) + "\n");
         }
         if (message.params.name === "output") {
@@ -480,6 +505,7 @@ fetch(methodology_href).then(function (response) {
     in_reader.on("close", exit);
     in_reader.on("line", function (line) {
         const message = JSON.parse(line);
+        log("JSONRPC IN", message);
         on_request(message);
     });
 });
