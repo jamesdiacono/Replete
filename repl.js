@@ -884,7 +884,7 @@ function make_imports_array_literal(imports) {
                 elements.push([
                     import_nr,
                     the_import.node.source.value,
-                    the_import.names[name]
+                    name
                 ]);
             });
         }
