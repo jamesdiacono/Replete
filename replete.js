@@ -20,8 +20,8 @@
 
 //      $ deno run \
 //          --allow-all \
-//          --importmap https://deno.land/x/replete/import_map.json \
-//          https://deno.land/x/replete/replete.js \
+//          --importmap https://repletejs.org/src/latest/import_map.json \
+//          https://repletejs.org/src/latest/replete.js \
 //          [options]
 
 // To start Replete in Bun v1.1.0+, run

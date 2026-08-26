@@ -20,7 +20,7 @@
 // 3000, gives the Deno REPL full permissions, and serves CSS files in addition
 // to JavaScript files.
 
-//      import run from "https://deno.land/x/replete/run.js";
+//      import run from "https://repletejs.org/src/latest/run.js";
 //      run({
 //          browser_port: 3000,
 //          deno_args: ["--allow-all", "--no-lock"],
@@ -38,7 +38,7 @@
 
 //      $ deno run \
 //          --allow-all \
-//          --importmap https://deno.land/x/replete/import_map.json \
+//          --importmap https://repletejs.org/src/latest/import_map.json \
 //          custom_replete.js
 
 /*jslint node, deno, bun */

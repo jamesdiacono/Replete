@@ -109,7 +109,7 @@ function fileify(http_url, replace_extension) {
 
 if (import.meta.main) {
     fileify(
-        new URL("https://deno.land/x/replete/node_loader.js"),
+        new URL("https://repletejs.org/src/latest/node_loader.js"),
         ".mjs"
     ).then(console.log);
 }

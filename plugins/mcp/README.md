@@ -12,7 +12,7 @@ Code evaluated in any platform other than the browser (such as Deno) has uninhib
 
 Install [Deno](https://deno.com) then configure your editor to start the MCP server using this command:
 
-    deno run --allow-all https://deno.land/x/replete/plugins/mcp/server.js [log_path]
+    deno run --allow-all https://repletejs.org/src/latest/plugins/mcp/server.js [log_path]
 
 MCP messages are read from stdin and written to stdout. Optionally, a debug log with all message traffic between the parent process, the server, and Replete can be written.
 
@@ -44,7 +44,7 @@ To configure the Cursor editor, for example, go to Settings -> Cursor Settings -
                 "args": [
                     "run",
                     "--allow-all",
-                    "https://deno.land/x/replete/plugins/mcp/server.js"
+                    "https://repletejs.org/src/latest/plugins/mcp/server.js"
                 ]
             }
         }

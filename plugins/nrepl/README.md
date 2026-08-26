@@ -15,7 +15,7 @@ nREPL integration is currently buggy, due to some limitations in most nREPL clie
 
 Install [Deno](https://deno.com) then run
 
-    deno run --allow-all https://deno.land/x/replete/plugins/nrepl/server.js [port]
+    deno run --allow-all https://repletejs.org/src/latest/plugins/nrepl/server.js [port]
 
 from the root directory of your project. If no port number is specified, an unused port will be chosen at random. You will see a message like this written to stdout:
 

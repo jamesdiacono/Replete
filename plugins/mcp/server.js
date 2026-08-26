@@ -34,8 +34,8 @@ const default_command = [
     "run",
     "--allow-all",
     "--importmap",
-    "https://deno.land/x/replete/import_map.json",
-    "https://deno.land/x/replete/replete.js",
+    "https://repletejs.org/src/latest/import_map.json",
+    "https://repletejs.org/src/latest/replete.js",
     "--browser_port=0", // prevent collision with the human's WEBL
     "--content_type=js:text/javascript",
     "--content_type=mjs:text/javascript",
