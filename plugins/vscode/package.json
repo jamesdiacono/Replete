@@ -2,7 +2,7 @@
     "name": "replete",
     "displayName": "Replete",
     "description": "REPL-driven development in JavaScript",
-    "version": "0.0.16",
+    "version": "0.0.17",
     "publisher": "jamesdiacono",
     "homepage": "https://repletejs.org",
     "repository": "https://github.com/jamesdiacono/Replete",
