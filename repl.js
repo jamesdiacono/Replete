@@ -1432,6 +1432,39 @@ function test_replize_export_default_anonymous_class() {
 }
 
 const utf8_encoder = new TextEncoder();
+const uint32_mask = 2 ** 32;
+
+function hash32(bytes, seed = 0) {
+
+// The 'hash32' function hashes a Uint8Array into an unsigned 32-bit integer.
+// It should be used only when no better hashing function is available.
+
+    return bytes.reduce(
+        function (hashed, byte) {
+            return (31 * hashed + byte) % uint32_mask;
+        },
+        seed
+    );
+}
+
+function test_hash32() {
+    const a = utf8_encoder.encode("The quick brown fox jumps over lazy dogs.");
+    const b = utf8_encoder.encode("Thf quick brown fox jumps over lazy dogs.");
+    let hash_of_a = hash32(a.slice(0, 8));
+    hash_of_a = hash32(a.slice(8), hash_of_a);
+    if (
+        hash_of_a !== hash32(a)
+        || hash_of_a !== 298706335
+        || hash32(a) === hash32(b)
+        || hash32([]) !== 0
+    ) {
+        throw new Error("FAIL hash32");
+    }
+}
+
+function hexify(uint32) {
+    return uint32.toString(16).padStart(5, "0");
+}
 
 function digest(...args) {
 
@@ -1439,19 +1472,19 @@ function digest(...args) {
 // returned Promise resolves to the hex-encoded hash string.
 
     const text = args.join(",");
-    return crypto.subtle.digest(
-        "SHA-1",
-        utf8_encoder.encode(text)
-    ).then(function (array_buffer) {
-        return Array.from(
-            new Uint32Array(array_buffer),
-            function hexify(uint32) {
-                return uint32.toString(16).padStart(5, "0");
-            }
-        ).join(
-            ""
-        );
-    });
+    const utf8 = utf8_encoder.encode(text);
+    return (
+        (typeof crypto === "object" && crypto.subtle !== undefined)
+        ? crypto.subtle.digest("SHA-1", utf8).then(function (array_buffer) {
+            return Array.from(
+                new Uint32Array(array_buffer),
+                hexify
+            ).join(
+                ""
+            );
+        })
+        : Promise.resolve(hexify(hash32(utf8)))
+    );
 }
 
 const utf8_decoder = new TextDecoder("utf-8", {fatal: true});
@@ -1938,6 +1971,7 @@ function make_repl(capabilities, on_start, on_eval, on_stop, specify) {
 }
 
 if (import.meta.main) {
+    test_hash32();
     test_alter_string();
     test_analyze_module();
     test_analyze_top_immediate();
