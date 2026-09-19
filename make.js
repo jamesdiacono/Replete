@@ -23,6 +23,7 @@ function make_replete({
 
     browser_port,
     browser_hostname,
+    browser_html,
     browser_padawan_type,
     browser_humanoid,
 
@@ -179,6 +180,7 @@ function make_replete({
     if (browser_port !== undefined) {
         repls.browser = make_browser_repl(
             capabilities,
+            browser_html,
             browser_port,
             browser_hostname,
             browser_padawan_type,

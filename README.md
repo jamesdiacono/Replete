@@ -150,7 +150,7 @@ Most plugins support configuration on a per-project basis. Simply create a _repl
 Additional configuration, including [transpilation](https://github.com/jamesdiacono/Replete/issues/6), can be achieved via Replete's programmatic interface. See [run.js](./run.js) for an example.
 
 ### Browser REPL
-The browser REPL evaluates code in a browser tab. All modern browsers are supported. When multiple tabs are connected, the same code is evaluated in all tabs concurrently.
+The browser REPL (the "WEBL") evaluates code in a browser tab. All modern browsers are supported. When multiple tabs are connected, the same code is evaluated in all tabs concurrently.
 
 On startup, a message like
 
@@ -158,7 +158,7 @@ On startup, a message like
 
 is output by Replete. To connect, open the URL in a browser. A blank page with the title "WEBL" should appear.
 
-Because the browser REPL has access to the DOM, it can be used to develop user interfaces. For example, evaluating the following code renders an interactive button on the page:
+Because the WEBL has access to the DOM, it can be used to develop user interfaces. For example, evaluating the following code renders an interactive button on the page:
 
     const button = document.createElement("button");
     button.textContent = "Click me";
@@ -167,7 +167,7 @@ Because the browser REPL has access to the DOM, it can be used to develop user i
     };
     document.body.append(button);
 
-The browser REPL is also capable of serving static files, so long as a suitable `options.headers` function is provided. For example, passing
+The WEBL is also capable of serving static files, so long as a suitable `options.headers` function is provided. For example, passing
 
     function headers(locator) {
         if (locator.endsWith(".js")) {
@@ -186,14 +186,21 @@ as `options.headers` makes it possible to render a JPEG image on the page, where
     document.body.append(img);
 
 #### options.browser_port, `--browser_port`
-The port number of the browser REPL, or `0` to assign an unused port. If omitted, the browser REPL will be unavailable.
+The port number of the WEBL, or `0` to assign an unused port. If omitted, the WEBL will be unavailable.
 
 #### options.browser_hostname, `--browser_hostname`
-The hostname of the browser REPL. When this option is omitted, the browser REPL listens only on localhost.
+The hostname of the WEBL. When this option is omitted, the WEBL listens only on localhost.
 
-A hostname of `"0.0.0.0"` exposes the browser REPL to the local network, making it possible to evaluate code in mobile browsers.
+A hostname of `"0.0.0.0"` exposes the WEBL to the local network, making it possible to evaluate code in mobile browsers.
 
-When exposing the browser REPL to the network, care should be taken to configure `options.headers` such that sensitive files are not accessible.
+When exposing the WEBL to the network, care should be taken to configure `options.headers` such that sensitive files are not accessible.
+
+#### options.browser_html, `--browser_html`
+The HTML served by the WEBL, providing an opportunity to modify WEBL semantics via pragmas such as `<DOCTYPE html>`. The default HTML is found in [webl_server.js](./webl/webl_server.js).
+
+The HTML must contain `<script type="module" src="webl_client.js"></script>` or the WEBL will not work.
+
+The `--browser_html` form takes a path to an HTML file, whereas `options.browser_html` expects an HTML string.
 
 ### Node.js REPL
 [Node.js](https://nodejs.org) is a command-line runtime based on Google's V8 JavaScript engine.

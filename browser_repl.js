@@ -7,6 +7,7 @@ import make_webl_server from "./webl/webl_server.js";
 
 function make_browser_repl(
     capabilities,
+    html,
     port,
     hostname = "localhost",
     padawan_type = "top",
@@ -17,6 +18,9 @@ function make_browser_repl(
 
 //      capabilities
 //          An object containing the standard Replete capability functions.
+
+//      html
+//          The HTML served to the WEBL client.
 
 //      port
 //          The port number of the WEBL server. If undefined, an unallocated
@@ -119,6 +123,7 @@ function make_browser_repl(
                     return res.end();
                 });
             },
+            html,
             humanoid
         );
         return webl_server.start(port, hostname).then(function (actual_port) {

@@ -73,6 +73,7 @@
 
 /*jslint node */
 
+import fs from "node:fs";
 import process from "node:process";
 import run from "./run.js";
 
@@ -125,4 +126,12 @@ if (Object.keys(content_type_object).length > 0) {
     };
 }
 
-run(options);
+(
+    options.browser_html !== undefined
+    ? fs.promises.readFile(options.browser_html, "utf8").then(function (html) {
+        options.browser_html = html;
+    })
+    : Promise.resolve()
+).then(function () {
+    run(options);
+});

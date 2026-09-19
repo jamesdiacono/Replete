@@ -19,7 +19,7 @@ const webl_relay_js_url = new URL("./webl_relay.js", import.meta.url);
 // newline in the HTML source.
 // See https://bugzilla.mozilla.org/show_bug.cgi?id=1880710.
 
-const html = `<!DOCTYPE html>
+const default_html = `<!DOCTYPE html>
 <html>
     <head><script type="module" src="webl_client.js"></script></head>
     <body></body>
@@ -34,6 +34,7 @@ function make_webl_server(
         res.statusCode = 404;
         return res.end();
     },
+    html = default_html,
     humanoid = false
 ) {
 
