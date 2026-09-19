@@ -1432,7 +1432,7 @@ function test_replize_export_default_anonymous_class() {
 }
 
 const utf8_encoder = new TextEncoder();
-const uint32_mask = 2 ** 32;
+const uint32_modulus = 2 ** 32;
 
 function hash32(bytes, seed = 0) {
 
@@ -1441,7 +1441,7 @@ function hash32(bytes, seed = 0) {
 
     return bytes.reduce(
         function (hashed, byte) {
-            return (31 * hashed + byte) % uint32_mask;
+            return (31 * hashed + byte) % uint32_modulus;
         },
         seed
     );
@@ -1450,12 +1450,15 @@ function hash32(bytes, seed = 0) {
 function test_hash32() {
     const a = utf8_encoder.encode("The quick brown fox jumps over lazy dogs.");
     const b = utf8_encoder.encode("Thf quick brown fox jumps over lazy dogs.");
+    const c = utf8_encoder.encode("carcinomas motorists high");
+    const d = utf8_encoder.encode("");
     let hash_of_a = hash32(a.slice(0, 8));
     hash_of_a = hash32(a.slice(8), hash_of_a);
     if (
         hash_of_a !== hash32(a)
         || hash_of_a !== 298706335
         || hash32(a) === hash32(b)
+        || hash32(c) !== hash32(d)
         || hash32([]) !== 0
     ) {
         throw new Error("FAIL hash32");
