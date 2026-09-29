@@ -1458,10 +1458,10 @@ function test_hash32() {
         hash_of_a !== hash32(a)
         || hash_of_a !== 298706335
         || hash32(a) === hash32(b)
-        || hash32(c) !== hash32(d)
+        || hash32(c) !== hash32(d) // known collision
         || hash32([]) !== 0
     ) {
-        throw new Error("FAIL hash32");
+        throw new Error("FAIL");
     }
 }
 
