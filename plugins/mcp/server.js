@@ -13,22 +13,10 @@ import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import readline from "node:readline";
-const methodology_href = import.meta.resolve("./methodology.md");
 
-const log_path = process.argv[2];
-const json_rpc_not_found = -32002;
+const debug_path = process.argv[2];
 const json_rpc_invalid_request = -32600;
 const json_rpc_method_not_found = -32601;
-const log_levels = [
-    "debug",
-    "info",
-    "notice",
-    "warning",
-    "error",
-    "critical",
-    "alert",
-    "emergency"
-];
 const default_command = [
     "deno",
     "run",
@@ -48,93 +36,41 @@ const default_command = [
     "--content_type=png:image/png",
     "--content_type=webp:image/webp"
 ];
-const out_resource = {
-    uri: "file://out.log",
-    name: "out.log",
-    title: "Log output",
-    description: (
-        "For the browser, this is a textual description of arguments passed"
-        + " to console.log."
-        + " For other platforms, this is stdout interpreted as UTF-8."
-    ),
-    mimeType: "text/plain"
-};
-const err_resource = {
-    uri: "file://err.log",
-    name: "err.log",
-    title: "Error output",
-    description: (
-        "For the browser, this is a textual description of any uncaught"
-        + " exceptions or unhandled Promise rejections in string form."
-        + " For other platforms, this is stderr interpreted as UTF-8."
-    ),
-    mimeType: "text/plain"
-};
-
-let evaluate_tool = {
-    name: "evaluate",
-    description: (
-        "Evaluates code. Replete must already be running.\n\n"
-        + "During and after evaluation, there may be output in the form of"
-        + " logging and errors. This output can be vital to understanding"
-        + " the behavior of evaluated code, so always read the "
-        + out_resource.uri + " and " + err_resource.uri + " resources"
-        + " following evaluation. Because output can continue after"
-        + " evaluation completes, for example on a future turn,"
-        + " subscribing to these resources is recommended."
-    ),
-    inputSchema: {
-        type: "object",
-        required: ["source", "platform"],
-        properties: {
-            source: {
-                type: "string",
-                description: (
-                    "The source code to be evaluated, usually JavaScript."
-                    + " It may contain import and export statements."
-                )
-            },
-            locator: {
-                type: "string",
-                description: (
-                    "The file URL of the module containing the"
-                    + " source, if any. Required if the source is contained"
-                    + " in a file on disk."
-                )
-            },
-            platform: {
-                type: "string",
-                description: (
-                    "Either \"browser\", \"node\", \"deno\", \"bun\","
-                    + " or \"tjs\"."
-                    + " This property determines which REPL evaluates the"
-                    + "source. If unsure, try \"deno\"."
-                )
-            }
-        }
-    }
-};
-let output_tool = {
-    name: "output",
-    description: (
-        "Polls for any logs and errors that have occurred since the last"
-        + " call to Output or Evaluate. This is a fallback for clients that"
-        + " want to know the output of evaluated code that runs"
-        + " over many turns of the event loop, but"
-        + " are unable to subscribe to the MCP resources "
-        + out_resource.uri + " and " + err_resource.uri + "."
-    ),
-    inputSchema: {type: "object"}
-};
-let restart_tool = {
+const restart_tool = {
     name: "restart",
-    description: (
-        "Starts Replete, or restarts it if already running. It is not necessary"
-        + " to restart Replete between every evaluation.\n\n"
-        + "Restarting Replete automatically restarts all REPLs (including the"
-        + " WEBL), but this should only be necessary once an unrecoverable"
-        + " state (stray timers, bound ports, infinite loops, etc.) is reached."
-    ),
+    description: `
+The _restart_ tool starts Replete, or restarts it if it is already running.
+
+The tool responds with the path to the _output_ file containing the Replete
+process's stdout and stderr. The _output_ file __must__ be monitored, for it is
+the only way to discover evaluation results, logging, the WEBL's address, and
+startup errors, among other things.
+
+Prior to evaluating code in the browser, a WEBL must first be connected. This is
+accomplished by launching a browser and opening the WEBL's address once it
+appears in the _output_. The agent can then observe and interact with the WEBL
+as necessary.
+
+Replete's stdout appears in the _output_ as one JSON object per line. Each
+object will have one of these properties, all a string representation of a
+value:
+
+- 'evaluation': the value, if evaluation completed.
+- 'exception': the exception, if evaluation failed.
+- 'out': arguments passed to 'console.log', or a UTF-8 interpretation of bytes
+   written to stdout. Also Replete's own status messages, such as "WEBL
+   found.".
+- 'err': an uncaught exception or unhandled Promise rejection that occurred
+   outside of evaluation (for example, in a callback), or a UTF-8
+   interpretation of bytes written to stderr.
+
+In addition, 'evaluation' and 'exception' objects will also carry the
+corresponding 'id' property provided by the _evaluate_ tool, if specified.
+
+The Replete process's stderr appears in the _output_ as lines of unstructured
+text, not JSON. It is usually just chatter but can include important error
+information.
+`,
     inputSchema: {
         type: "object",
         properties: {
@@ -143,30 +79,96 @@ let restart_tool = {
                 description: (
                     "The absolute path to the project directory. Modules"
                     + " outside this directory will not be importable."
+                    + " Where the replete.json file should be located, if there"
+                    + " is one. Defaults to the MCP server's CWD if omitted."
+                )
+            },
+            output: {
+                type: "string",
+                description: (
+                    "The absolute path where the output file will be"
+                    + " created. Defaults to a randomly named file in the"
+                    + " system's temporary directory. Optional."
                 )
             }
         }
     }
 };
-let stop_tool = {
+const evaluate_tool = {
+    name: "evaluate",
+    description: `
+The _evaluate_ tool evaluates JavaScript code and reports the result. It fails
+if Replete is not running.
+
+It responds immediately with the path to the _output_ file, mentioned above,
+which will grow as evaluation proceeds, and possibly afterwards if work has
+been scheduled for a future turn. The vast majority of evaluations complete in
+less than a second, so any evaluation taking longer than that has most likely
+hung.
+
+Unlike most JavaScript REPLs, Replete permits the evaluation of import
+statements and other module syntax. Imports will be resolved relative to the
+'locator' parameter.
+
+Instances of 'import.meta.main' in evaluated source will be replaced
+with 'true'. This can be leveraged to conditionally run module scaffolding such
+as demos or tests. To run a module in this way, provide the file's text as
+the 'source' parameter and its file URL as the 'locator'. __Do not__ import
+such modules from a wrapper script, as the scaffolding will not run.
+
+There is no need to catch errors and log them. Any uncaught exceptions or
+unhandled Promise rejections will be reported as "err" results.
+`,
+    inputSchema: {
+        type: "object",
+        required: ["source", "platform"],
+        properties: {
+            source: {
+                type: "string",
+                description: (
+                    "The source code to be evaluated, usually JavaScript."
+                    + " It may contain import and export statements. Required."
+                )
+            },
+            locator: {
+                type: "string",
+                description: (
+                    "The file URL of the module containing the"
+                    + " source, if any. Required if the source contains"
+                    + " relative import specifiers, or lives in a file on disk."
+                )
+            },
+            platform: {
+                type: "string",
+                description: (
+                    "One of \"browser\", \"node\", \"deno\", etc."
+                    + " Determines which REPL evaluates the"
+                    + "source. If unsure, try \"deno\". Required."
+                )
+            },
+            id: {
+                type: "string",
+                description: (
+                    "An arbitrary value, usually a number or string, that can"
+                    + " be used to correlate a result with a command. Optional."
+                )
+            }
+        }
+    }
+};
+const stop_tool = {
     name: "stop",
     description: "Stops Replete if it is running.",
     inputSchema: {type: "object"}
 };
 
-let err = "";
-let out = "";
-let err_at = err.length;
-let out_at = out.length;
-let err_subscribed = false;
-let out_subscribed = false;
-let log_level = "notice";
-let out_reader;
-let subprocess;
 let log_queue = Promise.resolve();
+let output_path;
+let stdout_reader;
+let subprocess;
 
-function log(stream, value) {
-    if (log_path === undefined) {
+function debug(stream, value) {
+    if (debug_path === undefined) {
         return;
     }
     const string = (
@@ -180,12 +182,12 @@ function log(stream, value) {
     });
     const prefixed = prefixed_lines.join("\n") + "\n";
     log_queue = log_queue.then(function () {
-        return fs.promises.appendFile(log_path, prefixed);
+        return fs.promises.appendFile(debug_path, prefixed);
     });
 }
 
 function write(message) {
-    log("JSONRPC OUT", message);
+    debug("JSONRPC OUT", message);
     process.stdout.write(JSON.stringify(message) + "\n");
 }
 
@@ -205,89 +207,19 @@ function fail(request_id, code, message, data = {}) {
     });
 }
 
-function resource_updated(resource) {
-    return write({
-        jsonrpc: "2.0",
-        method: "notifications/resources/updated",
-        params: resource
-    });
+function output(text) {
+    fs.promises.appendFile(output_path, text + "\n");
 }
 
-function resource_not_found(request_id, uri) {
-    return fail(request_id, json_rpc_not_found, "Resource not found", {uri});
-}
-
-function notify(params) {
-    if (log_levels.indexOf(params.level) >= log_levels.indexOf(log_level)) {
-        return write({
-            jsonrpc: "2.0",
-            method: "notifications/message",
-            params
-        });
-    }
-}
-
-function indent(string) {
-    return string.split("\n").map(function (line) {
-        return "    " + line;
-    }).join("\n");
-}
-
-function on_result(message) {
-    if (message.out !== undefined) {
-        out += message.out;
-        if (out_subscribed) {
-            resource_updated(out_resource);
-        }
-        return;
-    }
-    if (message.err !== undefined) {
-        err += message.err;
-        if (err_subscribed) {
-            resource_updated(err_resource);
-        }
-        return;
-    }
-    if (message.evaluation !== undefined || message.exception !== undefined) {
-        let report = (
-            (
-                message.exception !== undefined
-                ? (
-                    "# Status"
-                    + "\n\nEvaluation failed with an exception."
-                    + "\n\n# Exception\n\n"
-                    + indent(message.exception)
-                )
-                : (
-                    "# Status"
-                    + "\n\nEvaluation succeeded."
-                    + "\n\n# Value\n\n"
-                    + indent(message.evaluation)
-                )
-            )
-            + "\n\n# Log output\n\n"
-            + indent(out.slice(out_at))
-            + "\n\n# Error output\n\n"
-            + indent(err.slice(err_at))
-        );
-        err_at = err.length;
-        out_at = out.length;
-        return ok(message.id, {
-            content: [{type: "text", text: report}],
-            isError: false
-        });
-    }
-}
-
-function close_out() {
-    if (out_reader !== undefined) {
-        out_reader.close();
-        out_reader = undefined;
+function close() {
+    if (stdout_reader !== undefined) {
+        stdout_reader.close();
+        stdout_reader = undefined;
     }
 }
 
 function stop() {
-    close_out();
+    close();
     if (subprocess !== undefined) {
         subprocess.kill();
         subprocess = undefined;
@@ -296,49 +228,52 @@ function stop() {
 
 function restart(cwd) {
     stop();
-    return fs.promises.readFile(
-        path.join(cwd, "replete.json"),
-        "utf8"
-    ).then(function (text) {
-        const parsed = JSON.parse(text);
-        if (parsed.plugins?.mcp !== undefined) {
-            return parsed.plugins.mcp.command;
-        }
-        return parsed.command;
-    }).catch(function () {
-        return default_command;
-    }).then(function (command) {
-        log("Replete CMD", command);
+    return Promise.all([
+        fs.promises.readFile(
+            path.join(cwd, "replete.json"),
+            "utf8"
+        ).then(function (text) {
+            const parsed = JSON.parse(text);
+            if (parsed.plugins?.mcp !== undefined) {
+                return parsed.plugins.mcp.command;
+            }
+            return parsed.command;
+        }).catch(function () {
+            return default_command;
+        }),
+        fs.promises.writeFile(output_path, "")
+    ]).then(function ([command]) {
+        debug("Replete CMD", command);
         subprocess = child_process.spawn(
             command[0],
             command.slice(1),
             {cwd}
         );
         subprocess.on("exit", function () {
-            notify({level: "error", data: "Replete process died."});
-            close_out();
+            output("Replete process died.");
+            close();
             subprocess = undefined;
         });
         return new Promise(function (resolve, reject) {
             subprocess.on("error", reject);
             subprocess.on("spawn", function () {
-                out_reader = readline.createInterface({
+                stdout_reader = readline.createInterface({
                     input: subprocess.stdout
                 });
-                out_reader.on("line", function (line) {
+                stdout_reader.on("line", function (line) {
                     try {
                         const result = JSON.parse(line);
-                        log("Replete OUT", result);
-                        on_result(result);
+                        debug("Replete OUT", result);
+                        output(JSON.stringify(result));
                     } catch (exception) {
-                        log("Replete OUT", line);
-                        notify({level: "error", data: exception.stack});
+                        debug("Replete OUT", line);
+                        output(exception.stack);
                     }
                 });
                 subprocess.stderr.on("data", function (buffer) {
                     const string = buffer.toString();
-                    log("Replete ERR", string);
-                    notify({level: "error", data: string});
+                    debug("Replete ERR", string);
+                    output(string);
                 });
                 resolve(subprocess);
             });
@@ -351,8 +286,6 @@ function on_request(message) {
         return ok(message.id, {
             protocolVersion: "2024-11-05",
             capabilities: {
-                logging: {},
-                resources: {subscribe: true},
                 tools: {}
             },
             serverInfo: {
@@ -362,49 +295,14 @@ function on_request(message) {
             }
         });
     }
-    if (message.method === "logging/setLevel") {
-        log_level = message.params.level;
-        return ok(message.id, {});
-    }
     if (message.method.startsWith("notifications/")) {
         return;
-    }
-    if (message.method === "resources/list") {
-        return ok(message.id, {resources: [out_resource, err_resource]});
-    }
-    if (message.method === "resources/read") {
-        if (message.params.uri === out_resource.uri) {
-            return ok(message.id, {
-                contents: [Object.assign({text: out}, out_resource)]
-            });
-        }
-        if (message.params.uri === err_resource.uri) {
-            return ok(message.id, {
-                contents: [Object.assign({text: err}, err_resource)]
-            });
-        }
-        return resource_not_found(message.id, message.params.uri);
-    }
-    if (message.method === "resources/subscribe") {
-        if (message.params.uri === out_resource.uri) {
-            out_subscribed = true;
-            return ok(message.id, {});
-        }
-        if (message.params.uri === err_resource.uri) {
-            err_subscribed = true;
-            return ok(message.id, {});
-        }
-        return resource_not_found(message.id, message.params.uri);
-    }
-    if (message.method === "resources/templates/list") {
-        return ok(message.id, {resourceTemplates: []});
     }
     if (message.method === "tools/list") {
         return ok(message.id, {
             tools: [
                 restart_tool,
                 evaluate_tool,
-                output_tool,
                 stop_tool
             ]
         });
@@ -420,37 +318,26 @@ function on_request(message) {
                     isError: true
                 });
             }
-            const command = Object.assign(
-                {id: message.id},
-                message.params.arguments
-            );
-            err_at = err.length;
-            out_at = out.length;
-            log("Replete IN", command);
-            return subprocess.stdin.write(JSON.stringify(command) + "\n");
-        }
-        if (message.params.name === "output") {
-            const report = (
-                "\n\n# Log output\n\n"
-                + indent(out.slice(out_at))
-                + "\n\n# Error output\n\n"
-                + indent(err.slice(err_at))
-            );
-            err_at = err.length;
-            out_at = out.length;
-            return ok(message.id, {
-                content: [{type: "text", text: report}],
+            const command = message.params.arguments;
+            debug("Replete IN", command);
+            ok(message.id, {
+                content: [{type: "text", text: output_path}],
                 isError: false
             });
+            return subprocess.stdin.write(JSON.stringify(command) + "\n");
         }
         if (message.params.name === "restart") {
-            const cwd = message.params.arguments.cwd ?? process.cwd();
+            const cwd = (
+                message.params.arguments.cwd
+                ?? process.cwd()
+            );
+            output_path = (
+                message.params.arguments.output
+                ?? path.join(os.tmpdir(), crypto.randomUUID())
+            );
             return restart(cwd).then(function () {
                 ok(message.id, {
-                    content: [{
-                        type: "text",
-                        text: "Replete started in " + cwd + "."
-                    }],
+                    content: [{type: "text", text: output_path}],
                     isError: false
                 });
             }).catch(function (error) {
@@ -485,28 +372,12 @@ function exit() {
     process.exit();
 }
 
-fetch(methodology_href).then(function (response) {
-    return (
-        response.ok
-        ? response.text()
-        : Promise.reject(new Error(response.status))
-    );
-}).catch(function (error) {
-    return "Failed to load " + methodology_href + ": " + error.message;
-}).then(function (methodology_text) {
-    evaluate_tool.description += (
-        "\n\nIf this tool is available to you, you may be"
-        + " expected to practice REPL-driven development. Read on for an"
-        + " introduction to that methodology.\n\n"
-        + methodology_text
-    );
-    const in_reader = readline.createInterface({input: process.stdin});
-    in_reader.on("close", exit);
-    in_reader.on("line", function (line) {
-        const message = JSON.parse(line);
-        log("JSONRPC IN", message);
-        on_request(message);
-    });
+const in_reader = readline.createInterface({input: process.stdin});
+in_reader.on("close", exit);
+in_reader.on("line", function (line) {
+    const message = JSON.parse(line);
+    debug("JSONRPC IN", message);
+    on_request(message);
 });
 process.on("SIGTERM", exit);
 process.on("SIGINT", exit);
