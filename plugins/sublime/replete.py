@@ -239,12 +239,14 @@ class RepleteSendCommand(sublime_plugin.TextCommand):
 
         view = find_repl_view(self.view.window())
         if view is None:
+            sublime.error_message("Replete is not running.")
             return
         try:
             find_repl(view).send_command(message)
         except:
-            view.insert(edit, view.size(), "REPL not running.\n")
+            view.insert(edit, view.size(), "Replete is not running.\n")
             view.show(view.size())
+            sublime.error_message("Replete is not running.")
 
 # Momentarily highlight the evaluated regions in the view. This is a nice touch.
 
