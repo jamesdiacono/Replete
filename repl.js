@@ -1055,7 +1055,16 @@ function replize(
                             ")"
                         ]);
                     } else if (id.type === "ArrayPattern") {
-                        variables.push(...id.elements.map(pattern_name));
+                        variables.push(
+
+// Watch out for empty slots in the array pattern.
+
+                            ...id.elements.filter(
+                                Boolean
+                            ).map(
+                                pattern_name
+                            )
+                        );
                     } else {
                         variables.push(id.name);
                     }
@@ -1279,7 +1288,7 @@ function test_replize_continuity() {
             a: "a",
             b: "b"
         };
-        let [c, d] = [a, b];
+        let [c, , d] = [a, , b];
         (function () {
             const c = "not c";
         }());
